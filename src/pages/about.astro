@@ -1,19 +1,33 @@
 ---
-const pageTitle = 'about me';
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import "../styles/global.css";
+
+import BaseLayout from "../layouts/BaseLayout.astro";
+const pageTitle = "about";
+
+const identity = {
+  name: "club na fealsunachta",
+  topics: ["life", "death", "baseball"],
+};
+
+const topicColor = "navy";
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>{pageTitle}</title>
-  </head>
-  <body>
-    <a href="/">Home</a>
-    <a href="/about/">About</a>
-    <a href="/blog/">Blog</a>
-    <h1>This is the {pageTitle} page</h1>
-  </body>
-</html>
+<style is:global define:vars={{ topicColor }}>
+  h1 {
+    color: purple;
+    font-size: 4rem;
+  }
+  .topic {
+    color: var(--topicColor);
+    font-weight: bold;
+  }
+</style>
+
+<BaseLayout pageTitle={pageTitle}>
+  <h2>topics</h2>
+  <ul>
+    {identity.topics.map((topic) => <li class="topic">{topic}</li>)}
+  </ul>
+</BaseLayout>
