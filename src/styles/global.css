@@ -3,70 +3,85 @@
   --green: #314837;
 }
 
-html {
-  background-color: var(--background-color);
-  font-family: sans-serif;
-}
-
-body {
-  margin: 0 auto;
-  width: 100%;
-  max-width: 80ch;
-  padding: 1rem;
-  line-height: 1.5;
-}
-
 * {
   box-sizing: border-box;
 }
 
+html {
+  background-color: var(--background-color);
+  font-family: "Noto Sans", sans-serif;
+}
+
+body {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  margin: 0 auto;
+  padding: 1rem;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.content {
+  padding-top: 1rem;
+}
+
 h1 {
   margin: 1rem 0;
-  font-size: 2.5rem;
+  font-family: "Playfair Display", serif;
 }
 
-/* nav styles */
-
-.nav-links {
-  width: 100%;
-  top: 5rem;
-  left: 48px;
-  display: none;
-  margin: 0;
+p {
+  font-size: 1rem;
+  font-weight: 300;
 }
 
-.nav-links a {
-  display: block;
-  color: var(--green);
-  text-align: center;
-  padding: 10px 0;
-  text-decoration: none;
-  font-size: 1.2rem;
-  font-weight: bold;
-  text-transform: uppercase;
-}
 
-.nav-links a:hover,
-.nav-links a:focus {
-  background-color: var(--green);
-  color: var(--background-color);
-}
+/* Media Queries */
 
-.expanded {
-  display: unset;
-}
-
-@media screen and (min-width: 636px) {
-  .nav-links {
-    margin-left: 5em;
-    display: block;
-    position: static;
-    width: auto;
-    background: none;
+/* small */
+@media (min-width: 576px) {
+  body {
+    border: 2px solid red;
   }
 
-  .nav-links a {
-    display: inline-block;
-    padding: 15px 20px;
+  .content {
+    border: 2px solid red;
+  }
+}
+
+/* medium */
+@media (min-width: 768px) {
+  body {
+    border: 2px solid blue;
+  }
+
+  .content {
+    border: 2px solid blue;
+    width: 90vw;
+    margin: 0 auto;
+  }
+}
+
+/* large */
+@media (min-width: 992px) {
+  body {
+    border: 2px solid green;
+  }
+
+  .content {
+    border: 2px solid green;
+    width: 85vw;
+  }
+}
+
+/* extra large */
+@media (min-width: 1200px) {
+  body {
+    border: 2px solid darkorange;
+  }
+
+  .content {
+    border: 2px solid darkorange;
+    width: 70vw;
   }
 }

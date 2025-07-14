@@ -1,9 +1,39 @@
 ---
-
+const { pathname } = Astro.url;
 ---
 
-<div class="nav-links">
-  <a href="/">Home</a>
-  <a href="/about/">About</a>
-  <a href="/blog/">Blog</a>
-</div>
+<style>
+  .cnf-nav {
+    display: flex;
+    justify-content: space-between;
+    font-family: "Playfair Display", serif;
+  }
+
+  .cnf-nav__link {
+    text-decoration: none;
+    color: var(--green);
+    font-size: 1.25rem;
+    padding: 0.5rem;
+  }
+
+  .active {
+    border-bottom: 1.5px solid var(--green);
+  }
+</style>
+
+<nav class="cnf-nav">
+  <div>
+    <a class="cnf-nav__link" href="/">logo</a>
+  </div>
+  <div>
+    <!-- <a class="cnf-nav__link" href="/">Home</a> -->
+    <a
+      class={`cnf-nav__link ${pathname.includes("about") ? "active" : ""}`}
+      href="/about/">About</a
+    >
+    <a
+      class={`cnf-nav__link ${pathname.includes("blog") || pathname.includes("post") ? "active" : ""}`}
+      href="/blog/">Blog</a
+    >
+  </div>
+</nav>
