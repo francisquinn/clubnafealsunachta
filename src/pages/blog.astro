@@ -2,15 +2,17 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import BlogPost from "../components/BlogPost.astro";
-const allPosts = await getCollection("blog");
-const pageTitle = "Blog";
+const allPosts = (await getCollection("blog")).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+const pageTitle = "blog";
 ---
 
 <BaseLayout pageTitle={pageTitle}>
   <ul>
     {
       allPosts.map((post: any) => (
-        <BlogPost url={`/posts/${post.id}`} title={post.data.title} />
+        <BlogPost url={`/posts/${post.id}`} data={post.data} />
       ))
     }
   </ul>

@@ -1,7 +1,25 @@
 ---
-const { url, title } = Astro.props;
+import { formatDate } from "../utils/script";
+const { url, data } = Astro.props;
 ---
 
+<style>
+  li {
+    list-style-type: none;
+    border-bottom: 1px solid lightgray;
+    padding: 1rem 0;
+  }
+
+  li:last-child {
+    border-bottom: none;
+  }
+</style>
+
 <li>
-  <a href={url}>{title}</a>
+  <article>
+    <a href={url}>
+      <h2>{data.title}</h2>
+    </a>
+    <span>{formatDate(data.date)}</span>
+  </article>
 </li>

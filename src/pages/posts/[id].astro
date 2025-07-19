@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import { formatDate } from "../../utils/script";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
@@ -15,7 +16,7 @@ const { Content } = await render(post);
 ---
 
 <BaseLayout pageTitle={post.data.title}>
-  <p>{post.data.date}</p>
+  <p>{formatDate(post.data.date)}</p>
   <p>Written by: {post.data.author}</p>
   <Content />
 </BaseLayout>
