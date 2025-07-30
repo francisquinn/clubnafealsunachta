@@ -15,8 +15,11 @@ const { post } = Astro.props;
 const { Content } = await render(post);
 ---
 
-<BaseLayout pageTitle={post.data.title}>
-  <p>{formatDate(post.data.date)}</p>
-  <p>Written by: {post.data.author}</p>
-  <Content />
+<BaseLayout>
+  <section id="post">
+    <h1>{post.data.title}</h1>
+    <p>{formatDate(post.data.date)}</p>
+    <p>Written by: {post.data.author}</p>
+    <Content />
+  </section>
 </BaseLayout>

@@ -9,11 +9,14 @@ const pageTitle = "blog";
 ---
 
 <BaseLayout pageTitle={pageTitle}>
-  <ul>
-    {
-      allPosts.map((post: any) => (
-        <BlogPost url={`/posts/${post.id}`} data={post.data} />
-      ))
-    }
-  </ul>
+  <section id="blogs">
+    <h1>{pageTitle}</h1>
+    <ul>
+      {
+        allPosts.map((post: any) => (
+          <BlogPost url={`/posts/${post.id}`} data={post.data} />
+        ))
+      }
+    </ul>
+  </section>
 </BaseLayout>

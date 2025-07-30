@@ -18,13 +18,7 @@ const pageTitle = "Home";
 
   #hero {
     text-align: center;
-  }
-
-  #about,
-  #latest-blogs,
-  #topic-of-week {
-    padding: 0 1rem;
-    margin: 0 auto;
+    padding-bottom: 2.5rem;
   }
 
   .cnf-hero__logo {
@@ -42,7 +36,14 @@ const pageTitle = "Home";
 
   .cnf-hero__social {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 40px);
+    justify-content: center;
+    gap: 40px;
+    padding-top: 1.5rem;
+  }
+
+  .cnf-hero__social--svg {
+    width: 100%;
   }
 
   .cnf-latest-blogs__post {
@@ -76,6 +77,11 @@ const pageTitle = "Home";
       width: 100%;
       margin: 0;
       order: 2;
+    }
+
+    .cnf-hero__social {
+      justify-content: start;
+      gap: 20px;
     }
   }
 
@@ -149,15 +155,21 @@ const pageTitle = "Home";
       </p>
       <button class="cnf-button cnf-button__primary">Get in touch!</button>
       <div class="cnf-hero__social">
-        <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank"
-          >instagram</a
+        <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank">
+          <object
+            class="cnf-hero__social--svg"
+            data="/instagram.svg"
+            type="image/svg+xml"></object></a
         >
         <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank"
-          >facebook</a
+          ><object
+            class="cnf-hero__social--svg"
+            data="/facebook.svg"
+            type="image/svg+xml"></object></a
         >
-        <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank"
-          >x</a
-        >
+        <!-- <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank"
+          >support</a
+        > -->
       </div>
     </div>
   </section>
@@ -170,10 +182,10 @@ const pageTitle = "Home";
       temporibus fugiat impedit et!
     </p>
   </section> -->
-  <!-- <section id="topic-of-week">
-    <h2>topic of the week</h2>
+  <section id="events">
+    <h2>events</h2>
     <p>topic</p>
-  </section> -->
+  </section>
   <section id="latest-blogs">
     <h2>latest blog posts</h2>
     <ul class="cnf-latest-blogs">

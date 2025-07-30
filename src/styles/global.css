@@ -28,8 +28,27 @@ h3 {
   font-family: "Playfair Display", serif;
 }
 
+h1 {
+  font-size: 2em;
+}
+
 h3 {
   font-weight: normal;
+}
+
+#about,
+#latest-blogs,
+#events,
+#blogs,
+#post {
+  padding: 0 1rem;
+  margin: 0 auto;
+}
+
+footer {
+  width: 100%;
+  padding: 1rem;
+  margin: 0 auto;
 }
 
 a {
@@ -66,8 +85,14 @@ ul {
 
   #about,
   #latest-blogs,
-  #topic-of-week {
+  #events,
+  #blogs,
+  #post {
     width: 90vw;
+  }
+
+  footer {
+    width: 50vw;
   }
 
   .cnf-latest-blogs {
@@ -85,8 +110,14 @@ ul {
 
   #about,
   #latest-blogs,
-  #topic-of-week {
+  #events,
+  #blogs,
+  #post {
     width: 80vw;
+  }
+
+  footer {
+    width: 40vw;
   }
 
   .cnf-latest-blogs {
@@ -102,7 +133,9 @@ ul {
 
   #about,
   #latest-blogs,
-  #topic-of-week {
+  #events,
+  #blogs,
+  #post {
     width: 70vw;
   }
 }
@@ -115,7 +148,13 @@ ul {
 
   #about,
   #latest-blogs,
-  #topic-of-week {
+  #events,
+  #blogs,
+  #post {
     width: 55vw;
+  }
+
+  footer {
+    width: 30vw;
   }
 }
