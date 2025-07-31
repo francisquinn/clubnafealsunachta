@@ -1,0 +1,160 @@
+---
+
+---
+
+<style>
+  h1 {
+    color: var(--green);
+    font-family: "Uncial Antiqua";
+    font-size: 1.75rem;
+    margin: 0.5rem 0 1rem 0;
+  }
+
+  #hero {
+    text-align: center;
+    padding-bottom: 2.5rem;
+  }
+
+  .cnf-hero__logo {
+    width: 40%;
+    margin: 0 auto;
+  }
+
+  .cnf-hero__content {
+    padding: 0 1rem;
+  }
+
+  .cnf-hero__logo object {
+    width: 100%;
+  }
+
+  .cnf-hero__social {
+    display: grid;
+    grid-template-columns: repeat(2, 40px);
+    justify-content: center;
+    gap: 40px;
+    padding-top: 1.5rem;
+  }
+
+  .cnf-hero__social--svg {
+    width: 100%;
+  }
+
+  @media (min-width: 450px) {
+    .cnf-hero__logo {
+      width: 30%;
+    }
+  }
+
+  @media (min-width: 555px) {
+    #hero {
+      display: grid;
+      text-align: start;
+      width: 90%;
+      margin: 0 auto;
+      grid-template-columns: 2fr 1fr;
+    }
+
+    .cnf-hero__content {
+      order: 1;
+    }
+
+    .cnf-hero__logo {
+      width: 100%;
+      margin: 0;
+      order: 2;
+    }
+
+    .cnf-hero__social {
+      justify-content: start;
+      gap: 20px;
+    }
+  }
+
+  @media (min-width: 660px) {
+    #hero {
+      width: 85%;
+    }
+  }
+
+  @media (min-width: 768px) {
+    #hero {
+      width: 80%;
+    }
+
+    .cnf-hero__content--heading {
+      font-size: 2rem;
+    }
+  }
+
+  @media (min-width: 890px) {
+    #hero {
+      width: 75%;
+    }
+
+    .cnf-hero__content--heading {
+      font-size: 2.25rem;
+    }
+  }
+
+  @media (min-width: 1110px) {
+    #hero {
+      width: 70%;
+    }
+
+    .cnf-hero__content--heading {
+      font-size: 2.5rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    #hero {
+      width: 65%;
+    }
+
+    .cnf-hero__content--heading {
+      font-size: 2.75rem;
+    }
+  }
+
+  @media (min-width: 1550px) {
+    #hero {
+      width: 55%;
+    }
+
+    .cnf-hero__content--heading {
+      font-size: 3rem;
+    }
+  }
+</style>
+
+<section id="hero">
+  <div class="cnf-hero__logo">
+    <object data="/cnf-logo.svg" type="image/svg+xml"></object>
+  </div>
+  <div class="cnf-hero__content">
+    <h1 class="cnf-hero__content--heading">Club na Fealsúnachta</h1>
+    <p>
+      Join us for thought-provoking philosophical discussions—no experience
+      needed, just curiosity and an open mind!
+    </p>
+    <button class="cnf-button cnf-button__primary">Get in touch!</button>
+    <div class="cnf-hero__social">
+      <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank">
+        <object
+          class="cnf-hero__social--svg"
+          data="/instagram.svg"
+          type="image/svg+xml"></object></a
+      >
+      <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank"
+        ><object
+          class="cnf-hero__social--svg"
+          data="/facebook.svg"
+          type="image/svg+xml"></object></a
+      >
+      <!-- <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank"
+          >support</a
+        > -->
+    </div>
+  </div>
+</section>
