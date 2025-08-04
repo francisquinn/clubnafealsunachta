@@ -1,5 +1,5 @@
 :root {
-  --background-color: #FAF6E9;
+  --background-color: #faf6e9;
   --green: #314837;
 }
 
@@ -25,6 +25,7 @@ h1,
 h2,
 h3 {
   margin: 0 0 1rem 0;
+  color: var(--green);
   font-family: "Playfair Display", serif;
 }
 
@@ -42,7 +43,7 @@ h3 {
 #blogs,
 #post {
   padding: 0 1rem;
-  margin: 0 auto;
+  margin: 0 auto 3rem auto;
 }
 
 footer {
@@ -84,7 +85,6 @@ ul {
   color: var(--green);
 }
 
-
 /* Media Queries */
 
 /* small */
@@ -98,7 +98,8 @@ ul {
   #events,
   #blogs,
   #post {
-    width: 90vw;
+    width: 80vw;
+    padding: 0;
   }
 
   footer {
@@ -123,7 +124,7 @@ ul {
   #events,
   #blogs,
   #post {
-    width: 80vw;
+    width: 70vw;
   }
 
   footer {
@@ -146,7 +147,7 @@ ul {
   #events,
   #blogs,
   #post {
-    width: 70vw;
+    width: 60vw;
   }
 }
 
@@ -161,7 +162,7 @@ ul {
   #events,
   #blogs,
   #post {
-    width: 55vw;
+    width: 50vw;
   }
 
   footer {

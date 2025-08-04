@@ -1,7 +1,50 @@
 ---
-import Navigation from "./Navigation.astro";
+const { pathname } = Astro.url;
 ---
 
+<style>
+  .cnf-nav {
+    display: flex;
+    justify-content: space-between;
+    font-family: "Playfair Display", serif;
+    padding: 1rem;
+  }
+
+  .cnf-nav__link {
+    display: inline-block;
+    text-decoration: none;
+    color: var(--green);
+    font-size: 1.25rem;
+    padding: 0.5rem;
+  }
+
+  .cnf-nav__link:has(object) {
+    padding: 0;
+  }
+
+  .cnf-nav__link object {
+    pointer-events: none;
+    width: 45px;
+    height: 50px;
+  }
+
+  .active {
+    border-bottom: 1.5px solid var(--green);
+  }
+</style>
+
 <header>
-  <Navigation />
+  <nav class="cnf-nav">
+    <div>
+      <a class="cnf-nav__link" href="/">
+        <object data="/cnf-logo.svg" type="image/svg+xml"></object>
+      </a>
+    </div>
+    <div>
+      <a
+        class={`cnf-nav__link ${pathname.includes("blog") || pathname.includes("post") ? "active" : ""}`}
+        href="/blog/">Blog</a
+      >
+    </div>
+  </nav>
 </header>
