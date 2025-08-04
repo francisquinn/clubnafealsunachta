@@ -6,17 +6,26 @@ const { url, data } = Astro.props;
 <style>
   li {
     list-style-type: none;
-    border-bottom: 1px solid lightgray;
-    padding: 1rem 0;
   }
 
   li:last-child {
     border-bottom: none;
   }
+
+  .cnf-blog__post {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+  }
+
+  h2 {
+    margin: 0;
+  }
 </style>
 
 <li>
-  <article>
+  <article class="cnf-blog__post">
     <a href={url}>
       <h2>{data.title}</h2>
     </a>

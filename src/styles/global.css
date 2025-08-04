@@ -69,9 +69,19 @@ ul {
   font-size: 1rem;
 }
 
+.cnf-button--small {
+  padding: 0.5rem 1rem;
+}
+
 .cnf-button__primary {
   background-color: var(--green);
   color: var(--background-color);
+}
+
+.cnf-button__secondary {
+  background-color: var(--background-color);
+  border: 1px solid var(--green);
+  color: var(--green);
 }
 
 
@@ -156,5 +166,19 @@ ul {
 
   footer {
     width: 30vw;
+  }
+}
+
+@media (min-width: 1620px) {
+  body {
+    border: 2px solid darkblue;
+  }
+
+  #about,
+  #latest-blogs,
+  #events,
+  #blogs,
+  #post {
+    width: 45vw;
   }
 }

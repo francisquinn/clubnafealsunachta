@@ -3,6 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
 import { formatDate } from "../utils/script";
 import Hero from "../components/Hero.astro";
+import Event from "../components/Event.astro";
 const latestBlogEntries = (await getCollection("blog"))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
   .slice(0, 3);
@@ -28,7 +29,8 @@ const pageTitle = "Home";
 
 <BaseLayout pageTitle={pageTitle}>
   <Hero />
-  <!-- <section id="about">
+  <Event />
+  <section id="about">
     <h2>about</h2>
     <p>
       Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vero, velit
@@ -36,11 +38,8 @@ const pageTitle = "Home";
       corrupti fuga dolorum neque ullam asperiores pariatur omnis iste
       temporibus fugiat impedit et!
     </p>
-  </section> -->
-  <section id="events">
-    <h2>events</h2>
-    <p>topic</p>
   </section>
+
   <section id="latest-blogs">
     <h2>latest blog posts</h2>
     <ul class="cnf-latest-blogs">

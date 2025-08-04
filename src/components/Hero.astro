@@ -24,33 +24,41 @@
     padding: 0 1rem;
   }
 
-  .cnf-hero__logo object {
-    width: 100%;
+  .cnf-hero__logo--svg {
+    pointer-events: none;
+    width: 150px;
+    height: 150px;
+  }
+
+  .cnf-hero__links {
+    width: 60%;
+    margin: 0 auto;
+    padding-top: 1rem;
   }
 
   .cnf-hero__social {
-    display: grid;
-    grid-template-columns: repeat(2, 40px);
-    justify-content: center;
+    display: flex;
+    justify-content: space-evenly;
     gap: 40px;
     padding-top: 1.5rem;
   }
 
+  .cnf-hero__social--link {
+    display: inline-block;
+  }
+
   .cnf-hero__social--svg {
-    width: 100%;
+    pointer-events: none;
+    width: 50px;
+    height: 50px;
   }
 
-  @media (min-width: 450px) {
-    .cnf-hero__logo {
-      width: 30%;
-    }
-  }
-
-  @media (min-width: 555px) {
+  @media (min-width: 576px) {
     #hero {
       display: grid;
       text-align: start;
       width: 90%;
+      gap: 10px;
       margin: 0 auto;
       grid-template-columns: 2fr 1fr;
     }
@@ -60,34 +68,47 @@
     }
 
     .cnf-hero__logo {
-      width: 100%;
       margin: 0;
       order: 2;
     }
 
-    .cnf-hero__social {
-      justify-content: start;
-      gap: 20px;
+    .cnf-hero__links {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 24px;
+      width: 100%;
     }
-  }
 
-  @media (min-width: 660px) {
-    #hero {
-      width: 85%;
+    .cnf-hero__social {
+      display: block;
+      padding: 0;
+    }
+
+    .cnf-hero__social--link {
+      margin-right: 1rem;
     }
   }
 
   @media (min-width: 768px) {
     #hero {
-      width: 80%;
+      width: 85%;
     }
 
     .cnf-hero__content--heading {
       font-size: 2rem;
     }
+
+    .cnf-hero__logo--svg {
+      width: 170px;
+      height: 170px;
+    }
+
+    .cnf-hero__social--link {
+      margin-right: 1.5rem;
+    }
   }
 
-  @media (min-width: 890px) {
+  @media (min-width: 992px) {
     #hero {
       width: 75%;
     }
@@ -95,19 +116,30 @@
     .cnf-hero__content--heading {
       font-size: 2.25rem;
     }
+
+    .cnf-hero__logo--svg {
+      width: 200px;
+      height: 200px;
+    }
   }
 
-  @media (min-width: 1110px) {
+  @media (min-width: 1200px) {
     #hero {
       width: 70%;
+      gap: 40px;
     }
 
     .cnf-hero__content--heading {
       font-size: 2.5rem;
     }
+
+    .cnf-hero__logo--svg {
+      width: 220px;
+      height: 220px;
+    }
   }
 
-  @media (min-width: 1280px) {
+  @media (min-width: 1380px) {
     #hero {
       width: 65%;
     }
@@ -115,22 +147,36 @@
     .cnf-hero__content--heading {
       font-size: 2.75rem;
     }
+
+    .cnf-hero__logo--svg {
+      width: 240px;
+      height: 240px;
+    }
   }
 
-  @media (min-width: 1550px) {
+  @media (min-width: 1620px) {
     #hero {
-      width: 55%;
+      width: 60%;
+      gap: 40px;
     }
 
     .cnf-hero__content--heading {
       font-size: 3rem;
+    }
+
+    .cnf-hero__logo--svg {
+      width: 260px;
+      height: 260px;
     }
   }
 </style>
 
 <section id="hero">
   <div class="cnf-hero__logo">
-    <object data="/cnf-logo.svg" type="image/svg+xml"></object>
+    <object
+      class="cnf-hero__logo--svg"
+      data="/cnf-logo.svg"
+      type="image/svg+xml"></object>
   </div>
   <div class="cnf-hero__content">
     <h1 class="cnf-hero__content--heading">Club na Fealsúnachta</h1>
@@ -138,23 +184,32 @@
       Join us for thought-provoking philosophical discussions—no experience
       needed, just curiosity and an open mind!
     </p>
-    <button class="cnf-button cnf-button__primary">Get in touch!</button>
-    <div class="cnf-hero__social">
-      <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank">
-        <object
-          class="cnf-hero__social--svg"
-          data="/instagram.svg"
-          type="image/svg+xml"></object></a
-      >
-      <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank"
-        ><object
-          class="cnf-hero__social--svg"
-          data="/facebook.svg"
-          type="image/svg+xml"></object></a
-      >
-      <!-- <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank"
+    <div class="cnf-hero__links">
+      <button class="cnf-button cnf-button__primary">Get in touch!</button>
+      <div class="cnf-hero__social">
+        <a
+          href="https://www.instagram.com/clubnafealsunachta/"
+          class="cnf-hero__social--link"
+          target="_blank"
+        >
+          <object
+            class="cnf-hero__social--svg"
+            data="/instagram.svg"
+            type="image/svg+xml"></object></a
+        >
+        <a
+          href="https://www.facebook.com/people/Club-na-Fealsúnachta/61578150433186/"
+          class="cnf-hero__social--link"
+          target="_blank"
+          ><object
+            class="cnf-hero__social--svg"
+            data="/facebook.svg"
+            type="image/svg+xml"></object></a
+        >
+        <!-- <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank"
           >support</a
         > -->
+      </div>
     </div>
   </div>
 </section>

@@ -41,10 +41,6 @@ const { pathname } = Astro.url;
   </div>
   <div>
     <a
-      class={`cnf-nav__link ${pathname.includes("about") ? "active" : ""}`}
-      href="/about/">About</a
-    >
-    <a
       class={`cnf-nav__link ${pathname.includes("blog") || pathname.includes("post") ? "active" : ""}`}
       href="/blog/">Blog</a
     >
