@@ -6,19 +6,37 @@
   .cnf-event {
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
+    grid-template-rows: 150px 1fr;
     align-items: center;
-    gap: 20px;
+    border-radius: 20px;
+    box-shadow: rgba(0, 0, 0, 0.15) 0px 5px 15px 0px;
   }
 
   h3 {
-    font-size: 1.5rem;
     margin: 0;
-    color: #000000;
+    color: var(--green);
+    font-family: "Uncial Antiqua";
+    font-size: 1.5rem;
+  }
+
+  .cnf-event__poster {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    padding: 0 1rem;
+    align-items: center;
+    justify-content: center;
   }
 
   .cnf-event__info {
-    grid-row: 1 / 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 1rem;
+    background-color: #fffcf9;
+    border-radius: 0 0 20px 20px;
   }
 
   .cnf-event__social {
@@ -45,17 +63,17 @@
 
   @media (min-width: 480px) {
     .cnf-event {
-      grid-template-columns: 1fr auto;
-      gap: 0;
+      grid-template-columns: auto 1fr;
+      grid-template-rows: 1fr;
     }
 
-    .cnf-event__info {
+    .cnf-event__poster {
       grid-column: 1 / 2;
     }
 
-    .cnf-event__dialog {
-      grid-row: 1 / span 2;
+    .cnf-event__info {
       grid-column: 2 / 3;
+      border-radius: 0 20px 20px 0;
     }
   }
 </style>
@@ -63,10 +81,13 @@
 <section id="events">
   <h2>Upcoming events</h2>
   <div class="cnf-event">
+    <div class="cnf-event__poster">
+      <h3>Striving for perfection</h3>
+    </div>
     <div class="cnf-event__info">
       <ul>
         <li>Thur 30 Jul at 18</li>
-        <li><h3>what makes us human?</h3></li>
+        <!-- <li><h3>what makes us human?</h3></li> -->
         <li class="cnf-event__location">
           <a href="https://maps.app.goo.gl/ZQMv8Jczdzbh4p8ZA" target="_blank">
             Polo Toti Youth Center</a
@@ -93,14 +114,24 @@
                 data="/facebook.svg"
                 type="image/svg+xml"></object></a
             >
+            <a
+              href="https://www.instagram.com/clubnafealsunachta/"
+              class="cnf-event__social--link"
+              target="_blank"
+            >
+              <object
+                class="cnf-event__social--svg"
+                data="/meetup.svg"
+                type="image/svg+xml"></object></a
+            >
           </div>
         </li>
       </ul>
-    </div>
-    <div class="cnf-event__dialog">
-      <button class="cnf-button cnf-button__secondary cnf-button--small">
-        view details
-      </button>
+      <div class="cnf-event__dialog">
+        <button class="cnf-button cnf-button__secondary cnf-button--small">
+          view details
+        </button>
+      </div>
     </div>
   </div>
 </section>

@@ -43,7 +43,7 @@ h3 {
 #blogs,
 #post {
   padding: 0 1rem;
-  margin: 0 auto 3rem auto;
+  margin: 0 auto 4rem auto;
 }
 
 footer {
@@ -80,7 +80,7 @@ ul {
 }
 
 .cnf-button__secondary {
-  background-color: var(--background-color);
+  background-color: transparent;
   border: 1px solid var(--green);
   color: var(--green);
 }
