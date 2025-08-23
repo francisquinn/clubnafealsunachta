@@ -1,14 +1,9 @@
 ---
-# layout: ../../layouts/MarkdownPostLayout.astro
-title: "My First Blog Post"
-date: 2025-01-01
+title: "Welcome to the blog!"
+date: 2025-08-25
 # description: "This is the first post of my blog."
 author: "francis quinn"
-# slug: "this-is-a-custom-id"
-# image:
-#   url: "https://docs.astro.build/assets/rose.webp"
-#   alt: "The Astro logo on a dark background with a pink glow."
-# tags: ["blogging", "learning in public"]
+slug: "welcome-post"
 ---
 
-this is my first here post!
+this is my welcome blog post hehe

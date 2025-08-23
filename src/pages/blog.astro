@@ -2,19 +2,22 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import BlogPost from "../components/BlogPost.astro";
-const allPosts = (await getCollection("blog")).sort(
+const posts = (await getCollection("blog")).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
 );
-const pageTitle = "blog";
+const pageTitle = "Blog";
 ---
 
 <BaseLayout pageTitle={pageTitle}>
   <section id="blogs">
     <h1>{pageTitle}</h1>
-    <p>welcome to the cnf blog page. here i write stuff.</p>
+    <p>
+      Welcome to the Club na Fealsúnachta blog page! Here is where I'll write
+      about various topics and arguments that interest me.
+    </p>
     <ul>
       {
-        allPosts.map((post: any) => (
+        posts.map((post: any) => (
           <BlogPost url={`/posts/${post.id}`} data={post.data} />
         ))
       }

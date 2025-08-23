@@ -1,5 +1,5 @@
 ---
-import { formatDate } from "../utils/script";
+import { formatBlogDate } from "../utils/script";
 const { url, data } = Astro.props;
 ---
 
@@ -13,15 +13,25 @@ const { url, data } = Astro.props;
   }
 
   .cnf-blog__post {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
     margin-bottom: 1.75rem;
+  }
+
+  .cnf-blog__date {
+    display: block;
+    padding-top: 0.5rem;
   }
 
   h2 {
     margin: 0;
   }
+
+  /* @media (min-width: 420px) {
+    .cnf-blog__post {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+  } */
 </style>
 
 <li>
@@ -29,6 +39,6 @@ const { url, data } = Astro.props;
     <a href={url}>
       <h2>{data.title}</h2>
     </a>
-    <span>{formatDate(data.date)}</span>
+    <span class="cnf-blog__date">{formatBlogDate(data.date)}</span>
   </article>
 </li>

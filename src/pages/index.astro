@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
-import { formatDate } from "../utils/script";
+import { formatBlogDate } from "../utils/script";
 import Hero from "../components/Hero.astro";
 import Event from "../components/Event.astro";
 const latestBlogEntries = (await getCollection("blog"))
@@ -19,11 +19,12 @@ const pageTitle = "Home";
   }
 
   .cnf-latest-blogs__post {
-    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
   }
 
   .cnf-latest-blogs__post h3 {
-    margin-bottom: 0.5rem;
+    margin: 0;
+    padding-bottom: 0.5rem;
   }
 </style>
 
@@ -31,7 +32,7 @@ const pageTitle = "Home";
   <Hero />
   <Event />
   <section id="latest-blogs">
-    <h2>latest blog posts</h2>
+    <h2>Latest blog posts</h2>
     <ul class="cnf-latest-blogs">
       {
         latestBlogEntries.map((post: any) => (
@@ -39,7 +40,7 @@ const pageTitle = "Home";
             <a href={`/posts/${post.id}`}>
               <h3>{post.data.title}</h3>
             </a>
-            <span>{formatDate(post.data.date)}</span>
+            <span>{formatBlogDate(post.data.date)}</span>
           </li>
         ))
       }

@@ -1,7 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { formatDate } from "../../utils/script";
+import { formatBlogDate } from "../../utils/script";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
@@ -15,11 +15,13 @@ const { post } = Astro.props;
 const { Content } = await render(post);
 ---
 
-<BaseLayout>
+<BaseLayout pageTitle={post.data.title}>
   <section id="post">
-    <h1>{post.data.title}</h1>
-    <p>{formatDate(post.data.date)}</p>
-    <p>Written by: {post.data.author}</p>
+    <div class="cnf-post__heading">
+      <h1>{post.data.title}</h1>
+      <p>{formatBlogDate(post.data.date)}</p>
+      <p>Written by: {post.data.author}</p>
+    </div>
     <Content />
   </section>
 </BaseLayout>

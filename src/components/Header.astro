@@ -18,11 +18,11 @@ const { pathname } = Astro.url;
     padding: 0.5rem;
   }
 
-  .cnf-nav__link:has(object) {
+  .cnf-nav__link:has(img) {
     padding: 0;
   }
 
-  .cnf-nav__link object {
+  .cnf-nav__link--svg {
     pointer-events: none;
     width: 45px;
     height: 50px;
@@ -37,7 +37,7 @@ const { pathname } = Astro.url;
   <nav class="cnf-nav">
     <div>
       <a class="cnf-nav__link" href="/">
-        <object data="/cnf-logo.svg" type="image/svg+xml"></object>
+        <img class="cnf-nav__link--svg" src="/cnf-logo.svg" />
       </a>
     </div>
     <div>

@@ -25,7 +25,6 @@
   }
 
   .cnf-hero__logo--svg {
-    pointer-events: none;
     width: 150px;
     height: 150px;
   }
@@ -174,10 +173,7 @@
 
 <section id="hero">
   <div class="cnf-hero__logo">
-    <object
-      class="cnf-hero__logo--svg"
-      data="/cnf-logo.svg"
-      type="image/svg+xml"></object>
+    <img class="cnf-hero__logo--svg" src="/cnf-logo.svg" />
   </div>
   <div class="cnf-hero__content">
     <h1 class="cnf-hero__content--heading">Club na Fealsúnachta</h1>
@@ -186,27 +182,30 @@
       needed, just curiosity and an open mind!
     </p>
     <div class="cnf-hero__links">
-      <button class="cnf-button cnf-button__primary">Get in touch!</button>
+      <a href="mailto:clubnafealsunachta@gmail.com">
+        <button class="cnf-button cnf-button__primary">Get in touch!</button>
+      </a>
+
       <div class="cnf-hero__social">
         <a
           href="https://www.instagram.com/clubnafealsunachta/"
           class="cnf-hero__social--link"
           target="_blank"
         >
-          <object
-            class="cnf-hero__social--svg"
-            data="/instagram.svg"
-            type="image/svg+xml"></object></a
+          <img class="cnf-hero__social--svg" src="/instagram.svg" /></a
         >
         <a
           href="https://www.facebook.com/people/Club-na-Fealsúnachta/61578150433186/"
           class="cnf-hero__social--link"
           target="_blank"
-          ><object
-            class="cnf-hero__social--svg"
-            data="/facebook.svg"
-            type="image/svg+xml"></object></a
+          ><img class="cnf-hero__social--svg" src="/facebook.svg" /></a
         >
+        <!-- <a
+          href="https://www.facebook.com/people/Club-na-Fealsúnachta/61578150433186/"
+          class="cnf-hero__social--link"
+          target="_blank"
+          ><img class="cnf-hero__social--svg" src="/donate.svg" /></a
+        > -->
         <!-- <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank"
           >support</a
         > -->

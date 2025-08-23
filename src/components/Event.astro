@@ -1,5 +1,6 @@
 ---
-
+import events from "../../events.json";
+const currentEvent = events[0];
 ---
 
 <style>
@@ -61,9 +62,9 @@
     margin: 0;
   }
 
-  @media (min-width: 480px) {
+  @media (min-width: 768px) {
     .cnf-event {
-      grid-template-columns: auto 1fr;
+      grid-template-columns: auto fit-content;
       grid-template-rows: 1fr;
     }
 
@@ -82,15 +83,14 @@
   <h2>Upcoming events</h2>
   <div class="cnf-event">
     <div class="cnf-event__poster">
-      <h3>Striving for perfection</h3>
+      <h3>{currentEvent.name}</h3>
     </div>
     <div class="cnf-event__info">
       <ul>
-        <li>Thur 30 Jul at 18</li>
-        <!-- <li><h3>what makes us human?</h3></li> -->
+        <li>{currentEvent.date}</li>
         <li class="cnf-event__location">
-          <a href="https://maps.app.goo.gl/ZQMv8Jczdzbh4p8ZA" target="_blank">
-            Polo Toti Youth Center</a
+          <a href={currentEvent.map_url} target="_blank">
+            {currentEvent.location}</a
           >
         </li>
         <li>
@@ -100,38 +100,28 @@
               class="cnf-event__social--link"
               target="_blank"
             >
-              <object
-                class="cnf-event__social--svg"
-                data="/instagram.svg"
-                type="image/svg+xml"></object></a
+              <img class="cnf-event__social--svg" src="/instagram.svg" /></a
             >
             <a
               href="https://www.facebook.com/people/Club-na-Fealsúnachta/61578150433186/"
               class="cnf-event__social--link"
               target="_blank"
-              ><object
-                class="cnf-event__social--svg"
-                data="/facebook.svg"
-                type="image/svg+xml"></object></a
+              ><img class="cnf-event__social--svg" src="/facebook.svg" /></a
             >
-            <a
-              href="https://www.instagram.com/clubnafealsunachta/"
-              class="cnf-event__social--link"
-              target="_blank"
-            >
-              <object
-                class="cnf-event__social--svg"
-                data="/meetup.svg"
-                type="image/svg+xml"></object></a
-            >
+            {
+              currentEvent.meetup && (
+                <a
+                  href="https://www.instagram.com/clubnafealsunachta/"
+                  class="cnf-event__social--link"
+                  target="_blank"
+                >
+                  <img class="cnf-event__social--svg" src="/meetup.svg" />
+                </a>
+              )
+            }
           </div>
         </li>
       </ul>
-      <div class="cnf-event__dialog">
-        <button class="cnf-button cnf-button__secondary cnf-button--small">
-          view details
-        </button>
-      </div>
     </div>
   </div>
 </section>
