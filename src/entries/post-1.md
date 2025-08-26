@@ -1,9 +1,16 @@
 ---
 title: "Welcome to the blog!"
 date: 2025-08-25
-# description: "This is the first post of my blog."
-author: "francis quinn"
+author: "Francis Quinn"
 slug: "welcome-post"
 ---
 
-this is my welcome blog post hehe
+Welcome to the Club na Fealsúnachta blog!
+
+flow of post
+
+- welcome
+- short introduction
+- what this blog will be about.
+- any questions feel free to contact.
+- disclaimer.

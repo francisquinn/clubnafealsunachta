@@ -1,9 +1,25 @@
 [
   {
-    "name": "Striving for perfection",
-    "date": "2025-08-21",
+    "name": "Utopia",
+    "date": "2025-08-28T18:00",
     "location": "Polo Toti Youth Center",
     "map_url": "https://maps.app.goo.gl/ZQMv8Jczdzbh4p8ZA",
+    "links": {
+      "instagram": "https://www.instagram.com/p/DNxvWGGUNFv/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==",
+      "facebook": "https://www.facebook.com/events/2026502111425943?acontext=%7B%22event_action_history%22%3A[%7B%22extra_data%22%3A%22%22%2C%22mechanism%22%3A%22attachment%22%2C%22surface%22%3A%22newsfeed%22%7D%2C%7B%22extra_data%22%3A%22%22%2C%22mechanism%22%3A%22left_rail%22%2C%22surface%22%3A%22bookmark%22%7D%2C%7B%22extra_data%22%3A%22%22%2C%22mechanism%22%3A%22your_upcoming_events_unit%22%2C%22surface%22%3A%22bookmark%22%7D]%2C%22ref_notif_type%22%3Anull%7D",
+      "meetup": ""
+    }
+  },
+  {
+    "name": "Striving for perfection",
+    "date": "2025-08-21T18:00",
+    "location": "Polo Toti Youth Center",
+    "map_url": "https://maps.app.goo.gl/ZQMv8Jczdzbh4p8ZA",
+    "links": {
+      "instagram": "https://www.instagram.com/p/DNfuVVEoR74/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==",
+      "facebook": "https://www.instagram.com/p/DNfuVVEoR74/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==",
+      "meetup": "https://www.meetup.com/clubnafealsunachta/events/310580247/?utm_medium=referral&utm_campaign=share-btn_savedevents_share_modal&utm_source=link&utm_version=v2"
+    },
     "meetup": true
   }
 ]

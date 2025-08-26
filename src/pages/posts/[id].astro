@@ -15,12 +15,17 @@ const { post } = Astro.props;
 const { Content } = await render(post);
 ---
 
+<style>
+  .cnf-post__details {
+    font-size: 1rem;
+  }
+</style>
+
 <BaseLayout pageTitle={post.data.title}>
   <section id="post">
-    <div class="cnf-post__heading">
-      <h1>{post.data.title}</h1>
-      <p>{formatBlogDate(post.data.date)}</p>
-      <p>Written by: {post.data.author}</p>
+    <h1>{post.data.title}</h1>
+    <div class="cnf-post__details">
+      {post.data.author} &#8226; {formatBlogDate(post.data.date)}
     </div>
     <Content />
   </section>

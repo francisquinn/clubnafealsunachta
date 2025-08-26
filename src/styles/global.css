@@ -1,6 +1,7 @@
 :root {
   --background-color: #faf6e9;
   --green: #314837;
+  --white: #fffcf9;
 }
 
 * {
@@ -46,12 +47,6 @@ h3 {
   margin: 0 auto 4rem auto;
 }
 
-footer {
-  width: 100%;
-  padding: 1rem;
-  margin: 0 auto;
-}
-
 a {
   color: var(--green);
 }
@@ -59,6 +54,11 @@ a {
 ul {
   padding: 0;
   list-style-type: none;
+}
+
+p,
+li {
+  font-size: 1.125rem;
 }
 
 .cnf-button {
@@ -70,19 +70,9 @@ ul {
   font-size: 1rem;
 }
 
-.cnf-button--small {
-  padding: 0.5rem 1rem;
-}
-
 .cnf-button__primary {
   background-color: var(--green);
   color: var(--background-color);
-}
-
-.cnf-button__secondary {
-  background-color: transparent;
-  border: 1px solid var(--green);
-  color: var(--green);
 }
 
 /* Media Queries */
@@ -100,10 +90,6 @@ ul {
   #post {
     width: 80vw;
     padding: 0;
-  }
-
-  footer {
-    width: 50vw;
   }
 
   .cnf-latest-blogs {
@@ -125,10 +111,6 @@ ul {
   #blogs,
   #post {
     width: 70vw;
-  }
-
-  footer {
-    width: 40vw;
   }
 
   .cnf-latest-blogs {
@@ -163,10 +145,6 @@ ul {
   #blogs,
   #post {
     width: 50vw;
-  }
-
-  footer {
-    width: 30vw;
   }
 }
 

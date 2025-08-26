@@ -3,7 +3,7 @@ import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import BlogPost from "../components/BlogPost.astro";
 const posts = (await getCollection("blog")).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
 );
 const pageTitle = "Blog";
 ---
@@ -18,7 +18,7 @@ const pageTitle = "Blog";
     <ul>
       {
         posts.map((post: any) => (
-          <BlogPost url={`/posts/${post.id}`} data={post.data} />
+          <BlogPost url={`/posts/${post.id}`} post={post.data} />
         ))
       }
     </ul>

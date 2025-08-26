@@ -1,15 +1,16 @@
 ---
 import events from "../../events.json";
+import { formatEventDate } from "../utils/script";
 const currentEvent = events[0];
+const borderRadius = "20px";
 ---
 
-<style>
+<style define:vars={{ borderRadius }}>
   .cnf-event {
     display: grid;
     grid-template-columns: 1fr;
     grid-template-rows: 150px 1fr;
-    align-items: center;
-    border-radius: 20px;
+    border-radius: var(--borderRadius);
     box-shadow: rgba(0, 0, 0, 0.15) 0px 5px 15px 0px;
   }
 
@@ -22,22 +23,16 @@ const currentEvent = events[0];
 
   .cnf-event__poster {
     display: flex;
-    width: 100%;
-    height: 100%;
     padding: 0 1rem;
     align-items: center;
+    text-align: center;
     justify-content: center;
   }
 
   .cnf-event__info {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 16px;
     padding: 1rem;
-    background-color: #fffcf9;
-    border-radius: 0 0 20px 20px;
+    background-color: var(--white);
+    border-radius: 0 0 var(--borderRadius) var(--borderRadius);
   }
 
   .cnf-event__social {
@@ -52,10 +47,6 @@ const currentEvent = events[0];
     margin-right: 1rem;
     width: 30px;
     height: 30px;
-  }
-
-  .cnf-event__dialog {
-    text-align: center;
   }
 
   ul {
@@ -74,7 +65,7 @@ const currentEvent = events[0];
 
     .cnf-event__info {
       grid-column: 2 / 3;
-      border-radius: 0 20px 20px 0;
+      border-radius: 0 var(--borderRadius) var(--borderRadius) 0;
     }
   }
 </style>
@@ -87,7 +78,7 @@ const currentEvent = events[0];
     </div>
     <div class="cnf-event__info">
       <ul>
-        <li>{currentEvent.date}</li>
+        <li>{formatEventDate(new Date(currentEvent.date))}</li>
         <li class="cnf-event__location">
           <a href={currentEvent.map_url} target="_blank">
             {currentEvent.location}</a
@@ -96,14 +87,14 @@ const currentEvent = events[0];
         <li>
           <div class="cnf-event__social">
             <a
-              href="https://www.instagram.com/clubnafealsunachta/"
+              href={currentEvent.links.instagram}
               class="cnf-event__social--link"
               target="_blank"
             >
               <img class="cnf-event__social--svg" src="/instagram.svg" /></a
             >
             <a
-              href="https://www.facebook.com/people/Club-na-Fealsúnachta/61578150433186/"
+              href={currentEvent.links.facebook}
               class="cnf-event__social--link"
               target="_blank"
               ><img class="cnf-event__social--svg" src="/facebook.svg" /></a
@@ -111,7 +102,7 @@ const currentEvent = events[0];
             {
               currentEvent.meetup && (
                 <a
-                  href="https://www.instagram.com/clubnafealsunachta/"
+                  href={currentEvent.links.meetup}
                   class="cnf-event__social--link"
                   target="_blank"
                 >

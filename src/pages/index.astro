@@ -1,49 +1,14 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { getCollection } from "astro:content";
-import { formatBlogDate } from "../utils/script";
 import Hero from "../components/Hero.astro";
 import Event from "../components/Event.astro";
-const latestBlogEntries = (await getCollection("blog"))
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-  .slice(0, 3);
+import LatestPost from "../components/LatestPost.astro";
+
 const pageTitle = "Home";
 ---
-
-<style>
-  h1 {
-    color: var(--green);
-    font-family: "Uncial Antiqua";
-    font-size: 1.75rem;
-    margin: 0.5rem 0 1rem 0;
-  }
-
-  .cnf-latest-blogs__post {
-    margin-bottom: 1.5rem;
-  }
-
-  .cnf-latest-blogs__post h3 {
-    margin: 0;
-    padding-bottom: 0.5rem;
-  }
-</style>
 
 <BaseLayout pageTitle={pageTitle}>
   <Hero />
   <Event />
-  <section id="latest-blogs">
-    <h2>Latest blog posts</h2>
-    <ul class="cnf-latest-blogs">
-      {
-        latestBlogEntries.map((post: any) => (
-          <li class="cnf-latest-blogs__post">
-            <a href={`/posts/${post.id}`}>
-              <h3>{post.data.title}</h3>
-            </a>
-            <span>{formatBlogDate(post.data.date)}</span>
-          </li>
-        ))
-      }
-    </ul>
-  </section>
+  <LatestPost />
 </BaseLayout>
