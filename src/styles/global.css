@@ -1,7 +1,8 @@
 :root {
-  --background-color: #faf6e9;
+  --beige: #faf6e9;
   --green: #314837;
   --white: #fffcf9;
+  --grey: #666666;
 }
 
 * {
@@ -9,7 +10,7 @@
 }
 
 html {
-  background-color: var(--background-color);
+  background-color: var(--beige);
   font-family: "Noto Sans", sans-serif;
   font-weight: 300;
 }
@@ -72,7 +73,7 @@ li {
 
 .cnf-button__primary {
   background-color: var(--green);
-  color: var(--background-color);
+  color: var(--beige);
 }
 
 /* Media Queries */

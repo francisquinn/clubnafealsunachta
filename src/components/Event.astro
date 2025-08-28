@@ -35,6 +35,11 @@ const borderRadius = "20px";
     border-radius: 0 0 var(--borderRadius) var(--borderRadius);
   }
 
+  .cnf-event__date {
+    font-size: 1rem;
+    color: var(--grey);
+  }
+
   .cnf-event__social {
     margin-top: 0.75rem;
   }
@@ -78,7 +83,9 @@ const borderRadius = "20px";
     </div>
     <div class="cnf-event__info">
       <ul>
-        <li>{formatEventDate(new Date(currentEvent.date))}</li>
+        <li class="cnf-event__date">
+          {formatEventDate(new Date(currentEvent.date))}
+        </li>
         <li class="cnf-event__location">
           <a href={currentEvent.map_url} target="_blank">
             {currentEvent.location}</a

@@ -13,7 +13,12 @@ const latestBlogEntries = (await getCollection("blog"))
 
   .cnf-latest-blogs__post h3 {
     margin: 0;
-    padding-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .cnf-latest-blogs__date {
+    color: var(--grey);
+    font-size: 1rem;
   }
 </style>
 
@@ -26,7 +31,9 @@ const latestBlogEntries = (await getCollection("blog"))
           <a href={`/posts/${post.id}`}>
             <h3>{post.data.title}</h3>
           </a>
-          <span>{formatBlogDate(post.data.date)}</span>
+          <span class="cnf-latest-blogs__date">
+            {formatBlogDate(post.data.date)}
+          </span>
         </li>
       ))
     }
