@@ -9,7 +9,7 @@ Welcome to the Club na Fealsúnachta blog!
 
 I'm going to kindly ask you for a few minutes of your day to explain the purpose behind this blog. But before I begin:
 
-**!!! QUICK DISCLAIMER !!!**
+!!! quick disclaimer !!!
 
 I'm no philosopher by any means. I’m just someone who has a natural inclination to ask questions and be content with not receiving a straight-forward answer. Some of the questions and answers my future self will compose might be completely off, so please, don’t take what I write to be the bible.
 

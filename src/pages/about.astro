@@ -3,14 +3,51 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 const pageTitle = "About";
 ---
 
+<style>
+  .cnf-about__image {
+    border-radius: 20px;
+    max-width: 550px;
+  }
+
+  .cnf-about__info {
+    text-align: justify;
+    margin-bottom: 3rem;
+  }
+
+  @media (min-width: 992px) {
+    .cnf-about {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 40px;
+    }
+  }
+</style>
+
 <BaseLayout pageTitle={pageTitle}>
   <section id="about">
     <h1>{pageTitle}</h1>
-    <p>
-      Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vero, velit
-      tempore. Animi voluptate exercitationem voluptates magni, aspernatur
-      corrupti fuga dolorum neque ullam asperiores pariatur omnis iste
-      temporibus fugiat impedit et!
-    </p>
+    <div class="cnf-about">
+      <div class="cnf-about__info">
+        <p>
+          Club na Fealsúnachta was founded in 2024 by Francis Quinn in the city
+          of Trieste. The idea behind the club is to bring people together to
+          engage in weekly thought-provoking philosophical discussions that aim
+          not to find the answers, but spark the curiosity to listen and
+          question other opinions in a safe and friendly environment.
+        </p>
+        <p>
+          The club is primarily in-person based in Trieste, Italy, but with
+          plans in the future to eventually spread to a wider audience.
+        </p>
+        <p>
+          If you're interested in the club and would like to find out more
+          information or collaborate feel free to <a
+            href="mailto:clubnafealsunachta@gmail.com"
+            target="_blank">contact me</a
+          >.
+        </p> Francis.
+      </div>
+      <img class="cnf-about__image" src="/about.jpeg" width="100%" />
+    </div>
   </section>
 </BaseLayout>

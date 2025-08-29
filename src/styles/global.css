@@ -80,9 +80,9 @@ li {
 
 /* small */
 @media (min-width: 576px) {
-  body {
+  /* body {
     border: 2px solid red;
-  }
+  } */
 
   #about,
   #latest-blogs,
@@ -102,9 +102,9 @@ li {
 
 /* medium */
 @media (min-width: 768px) {
-  body {
+  /* body {
     border: 2px solid blue;
-  }
+  } */
 
   #about,
   #latest-blogs,
@@ -121,11 +121,11 @@ li {
 
 /* large */
 @media (min-width: 992px) {
-  body {
+  /* body {
     border: 2px solid green;
-  }
+  } */
 
-  #about,
+  /* #about, */
   #latest-blogs,
   #events,
   #blogs,
@@ -136,11 +136,11 @@ li {
 
 /* extra large */
 @media (min-width: 1200px) {
-  body {
+  /* body {
     border: 2px solid darkorange;
-  }
+  } */
 
-  #about,
+  /* #about, */
   #latest-blogs,
   #events,
   #blogs,
@@ -150,11 +150,11 @@ li {
 }
 
 @media (min-width: 1620px) {
-  body {
+  /* body {
     border: 2px solid darkblue;
-  }
+  } */
 
-  #about,
+  /* #about, */
   #latest-blogs,
   #events,
   #blogs,
