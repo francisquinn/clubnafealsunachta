@@ -76,7 +76,7 @@ const borderRadius = "20px";
 </style>
 
 <section id="events">
-  <h2>Upcoming events</h2>
+  <h2>Upcoming event</h2>
   <div class="cnf-event">
     <div class="cnf-event__poster">
       <h3>{currentEvent.name}</h3>
@@ -107,7 +107,7 @@ const borderRadius = "20px";
               ><img class="cnf-event__social--svg" src="/facebook.svg" /></a
             >
             {
-              currentEvent.meetup && (
+              currentEvent.links.meetup.length > 0 && (
                 <a
                   href={currentEvent.links.meetup}
                   class="cnf-event__social--link"

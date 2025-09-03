@@ -4,23 +4,27 @@ const pageTitle = "About";
 ---
 
 <style>
+  .cnf-about {
+    text-align: center;
+  }
+
   .cnf-about__image {
     border-radius: 20px;
-    max-width: 550px;
+    max-width: 450px;
   }
 
   .cnf-about__info {
-    text-align: justify;
     margin-bottom: 3rem;
+    text-align: left;
   }
 
-  @media (min-width: 992px) {
+  /* @media (min-width: 992px) {
     .cnf-about {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 40px;
     }
-  }
+  } */
 </style>
 
 <BaseLayout pageTitle={pageTitle}>
@@ -45,7 +49,8 @@ const pageTitle = "About";
             href="mailto:clubnafealsunachta@gmail.com"
             target="_blank">contact me</a
           >.
-        </p> Francis.
+        </p>
+        <p>Francis.</p>
       </div>
       <img class="cnf-about__image" src="/about.jpeg" width="100%" />
     </div>
