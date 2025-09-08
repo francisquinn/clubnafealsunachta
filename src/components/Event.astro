@@ -28,9 +28,13 @@ const borderRadius = "20px";
     text-align: center;
     justify-content: center;
     background-color: var(--beige);
+    border-radius: var(--borderRadius) 0 0 var(--borderRadius);
   }
 
   .cnf-event__info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
     padding: 1rem;
     background-color: var(--white);
     border-radius: 0 0 var(--borderRadius) var(--borderRadius);
@@ -42,6 +46,8 @@ const borderRadius = "20px";
   }
 
   .cnf-event__social {
+    display: flex;
+    justify-content: space-around;
     margin-top: 0.75rem;
   }
 
@@ -50,7 +56,6 @@ const borderRadius = "20px";
   }
 
   .cnf-event__social--svg {
-    margin-right: 1rem;
     width: 30px;
     height: 30px;
   }
@@ -61,7 +66,7 @@ const borderRadius = "20px";
 
   @media (min-width: 576px) {
     .cnf-event {
-      grid-template-columns: auto fit-content;
+      grid-template-columns: 1fr auto;
       grid-template-rows: 1fr;
     }
 
@@ -70,8 +75,13 @@ const borderRadius = "20px";
     }
 
     .cnf-event__info {
+      display: block;
       grid-column: 2 / 3;
       border-radius: 0 var(--borderRadius) var(--borderRadius) 0;
+    }
+
+    .cnf-event__social {
+      justify-content: space-between;
     }
   }
 </style>
@@ -83,44 +93,44 @@ const borderRadius = "20px";
       <h3>{currentEvent.name}</h3>
     </div>
     <div class="cnf-event__info">
-      <ul>
-        <li class="cnf-event__date">
-          {formatEventDate(new Date(currentEvent.date))}
-        </li>
-        <li class="cnf-event__location">
-          <a href={currentEvent.map_url} target="_blank">
-            {currentEvent.location}</a
-          >
-        </li>
-        <li>
-          <div class="cnf-event__social">
+      <div>
+        <ul>
+          <li class="cnf-event__date">
+            {formatEventDate(new Date(currentEvent.date))}
+          </li>
+          <li class="cnf-event__location">
+            <a href={currentEvent.map_url} target="_blank">
+              {currentEvent.location}</a
+            >
+          </li>
+        </ul>
+      </div>
+      <div class="cnf-event__social">
+        <a
+          href={currentEvent.links.instagram}
+          class="cnf-event__social--link"
+          target="_blank"
+        >
+          <img class="cnf-event__social--svg" src="/instagram.svg" /></a
+        >
+        <a
+          href={currentEvent.links.facebook}
+          class="cnf-event__social--link"
+          target="_blank"
+          ><img class="cnf-event__social--svg" src="/facebook.svg" /></a
+        >
+        {
+          currentEvent.links.meetup.length > 0 && (
             <a
-              href={currentEvent.links.instagram}
+              href={currentEvent.links.meetup}
               class="cnf-event__social--link"
               target="_blank"
             >
-              <img class="cnf-event__social--svg" src="/instagram.svg" /></a
-            >
-            <a
-              href={currentEvent.links.facebook}
-              class="cnf-event__social--link"
-              target="_blank"
-              ><img class="cnf-event__social--svg" src="/facebook.svg" /></a
-            >
-            {
-              currentEvent.links.meetup.length > 0 && (
-                <a
-                  href={currentEvent.links.meetup}
-                  class="cnf-event__social--link"
-                  target="_blank"
-                >
-                  <img class="cnf-event__social--svg" src="/meetup.svg" />
-                </a>
-              )
-            }
-          </div>
-        </li>
-      </ul>
+              <img class="cnf-event__social--svg" src="/meetup.svg" />
+            </a>
+          )
+        }
+      </div>
     </div>
   </div>
 </section>
