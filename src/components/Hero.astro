@@ -13,15 +13,24 @@
   #hero {
     text-align: center;
     padding-bottom: 5rem;
+    position: relative;
   }
 
   .cnf-hero__content {
     padding: 0 1rem;
   }
 
+  .cnf-hero__logo {
+    position: absolute;
+    z-index: -1;
+    top: 150px;
+    right: -120px;
+  }
+
   .cnf-hero__logo--svg {
-    width: 150px;
-    height: 150px;
+    width: 400px;
+    height: 400px;
+    opacity: 0.08;
   }
 
   .cnf-hero__links {
@@ -47,24 +56,28 @@
     height: 50px;
   }
 
+  /* small */
   @media (min-width: 576px) {
     #hero {
-      display: grid;
       text-align: start;
       width: 90%;
-      gap: 10px;
       margin: 0 auto;
-      grid-template-columns: 2fr 1fr;
-    }
-
-    .cnf-hero__content {
-      order: 1;
-      padding: 0;
     }
 
     .cnf-hero__logo {
-      margin: 0;
-      order: 2;
+      right: 0;
+      left: auto;
+      top: auto;
+      transform: none;
+    }
+
+    .cnf-hero__logo--svg {
+      width: 500px;
+      height: 500px;
+    }
+
+    .cnf-hero__content {
+      width: 90%;
     }
 
     .cnf-hero__links {
@@ -84,18 +97,18 @@
     }
   }
 
+  /* medium */
   @media (min-width: 768px) {
     #hero {
       width: 85%;
     }
 
-    .cnf-hero__content--heading {
-      font-size: 2rem;
+    .cnf-hero__content {
+      width: 75%;
     }
 
-    .cnf-hero__logo--svg {
-      width: 170px;
-      height: 170px;
+    .cnf-hero__content--heading {
+      font-size: 2rem;
     }
 
     .cnf-hero__social--link {
@@ -103,6 +116,7 @@
     }
   }
 
+  /* large */
   @media (min-width: 992px) {
     #hero {
       width: 75%;
@@ -113,15 +127,19 @@
     }
 
     .cnf-hero__logo--svg {
-      width: 200px;
-      height: 200px;
+      width: 550px;
+      height: 550px;
     }
   }
 
+  /* extra large */
   @media (min-width: 1200px) {
     #hero {
       width: 70%;
-      gap: 40px;
+    }
+
+    .cnf-hero__content {
+      width: 65%;
     }
 
     .cnf-hero__content--heading {
@@ -129,30 +147,18 @@
     }
 
     .cnf-hero__logo--svg {
-      width: 220px;
-      height: 220px;
-    }
-  }
-
-  @media (min-width: 1380px) {
-    #hero {
-      width: 65%;
-    }
-
-    .cnf-hero__content--heading {
-      font-size: 2.75rem;
-    }
-
-    .cnf-hero__logo--svg {
-      width: 240px;
-      height: 240px;
+      width: 600px;
+      height: 600px;
     }
   }
 
   @media (min-width: 1620px) {
     #hero {
       width: 60%;
-      gap: 40px;
+    }
+
+    .cnf-hero__content {
+      width: 60%;
     }
 
     .cnf-hero__content--heading {
@@ -160,8 +166,8 @@
     }
 
     .cnf-hero__logo--svg {
-      width: 260px;
-      height: 260px;
+      width: 650px;
+      height: 650px;
     }
   }
 </style>
