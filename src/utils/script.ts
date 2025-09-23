@@ -9,7 +9,7 @@ export function formatEventDate(date: Date): string {
     weekday: "short",
   })} ${date.toLocaleDateString("en-US", {
     month: "short",
-  })} ${date.getDate()} at ${date.getHours()}:${String(
+  })} ${date.getDate()} @ ${date.getHours()}:${String(
     date.getMinutes()
   ).padStart(2, "0")}`;
 }
