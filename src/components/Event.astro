@@ -1,8 +1,9 @@
 ---
-import events from "../../events.json";
-import { formatEventDate } from "../utils/script";
-const currentEvent = events[0];
+import { formatEventDate, getCurrentEvent } from "../utils/script";
 const borderRadius = "20px";
+const currentEvent = await getCurrentEvent();
+const hasCurrentEventExpired = () =>
+  currentEvent ? new Date(currentEvent.date) < new Date() : true;
 ---
 
 <style define:vars={{ borderRadius }}>
@@ -84,49 +85,54 @@ const borderRadius = "20px";
 
 <section id="events">
   <h2>Upcoming event</h2>
-  <div class="cnf-event">
-    <div class="cnf-event__poster">
-      <h3>{currentEvent.name}</h3>
-    </div>
-    <div class="cnf-event__info">
-      <div>
-        <ul>
-          <li class="cnf-event__date">
-            {formatEventDate(new Date(currentEvent.date))}
-          </li>
-          <li class="cnf-event__location">
-            <a href={currentEvent.map_url} target="_blank">
-              {currentEvent.location}</a
-            >
-          </li>
-        </ul>
-      </div>
-      <div class="cnf-event__social">
-        <a
-          href={currentEvent.links.instagram}
-          class="cnf-event__social--link"
-          target="_blank"
-        >
-          <img class="cnf-event__social--svg" src="/instagram.svg" /></a
-        >
-        <a
-          href={currentEvent.links.facebook}
-          class="cnf-event__social--link"
-          target="_blank"
-          ><img class="cnf-event__social--svg" src="/facebook.svg" /></a
-        >
-        {
-          currentEvent.links.meetup.length > 0 && (
+  {
+    hasCurrentEventExpired() ? (
+      <p>No upcoming events at the moment. Stay tuned for further updates!</p>
+    ) : (
+      <div class="cnf-event">
+        <div class="cnf-event__poster">
+          <h3>{currentEvent.name}</h3>
+        </div>
+        <div class="cnf-event__info">
+          <div>
+            <ul>
+              <li class="cnf-event__date">
+                {formatEventDate(new Date(currentEvent.date))}
+              </li>
+              <li class="cnf-event__location">
+                <a href={currentEvent.map_url} target="_blank">
+                  {currentEvent.location}
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div class="cnf-event__social">
             <a
-              href={currentEvent.links.meetup}
+              href={currentEvent.links.instagram}
               class="cnf-event__social--link"
               target="_blank"
             >
-              <img class="cnf-event__social--svg" src="/meetup.svg" />
+              <img class="cnf-event__social--svg" src="/instagram.svg" />
             </a>
-          )
-        }
+            <a
+              href={currentEvent.links.facebook}
+              class="cnf-event__social--link"
+              target="_blank"
+            >
+              <img class="cnf-event__social--svg" src="/facebook.svg" />
+            </a>
+            {currentEvent.links.meetup.length > 0 && (
+              <a
+                href={currentEvent.links.meetup}
+                class="cnf-event__social--link"
+                target="_blank"
+              >
+                <img class="cnf-event__social--svg" src="/meetup.svg" />
+              </a>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
+    )
+  }
 </section>
