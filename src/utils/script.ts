@@ -1,5 +1,3 @@
-const TOPICS_GIST = import.meta.env.TOPICS_GIST;
-
 export function formatBlogDate(date: Date): string {
   return `${date.toLocaleDateString("en-US", {
     month: "short",
@@ -18,7 +16,9 @@ export function formatEventDate(date: Date): string {
 
 export async function fetchEventGistJson() {
   try {
-    const gistRes = await fetch(TOPICS_GIST);
+    const gistRes = await fetch(
+      "https://api.github.com/gists/1cd791792915a94f892707c3296413e5"
+    );
     const data = await gistRes.json();
     const file = data.files["cnf-topics.json"];
 
@@ -28,7 +28,6 @@ export async function fetchEventGistJson() {
     console.error("whoops, an error has occured fetching the gist data :(", e);
     return [];
   }
-
 }
 
 export async function getCurrentEvent() {
