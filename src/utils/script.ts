@@ -1,3 +1,5 @@
+import type { EventData } from "../types/types";
+
 export function formatBlogDate(date: Date): string {
   return `${date.toLocaleDateString("en-US", {
     month: "short",
@@ -14,7 +16,7 @@ export function formatEventDate(date: Date): string {
   ).padStart(2, "0")}`;
 }
 
-export async function fetchEventGistJson() {
+export async function fetchEventGistJson(): Promise<EventData[]> {
   try {
     const gistRes = await fetch(
       "https://api.github.com/gists/1cd791792915a94f892707c3296413e5"
@@ -30,7 +32,7 @@ export async function fetchEventGistJson() {
   }
 }
 
-export async function getCurrentEvent() {
-  const topics = await fetchEventGistJson();
+export async function getCurrentEvent(): Promise<EventData | null> {
+  const topics: EventData[] = await fetchEventGistJson();
   return topics[0] ?? null;
 }

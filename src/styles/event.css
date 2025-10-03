@@ -1,0 +1,74 @@
+.cnf-event {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 150px 1fr;
+  border-radius: 20px;
+  box-shadow: rgba(0, 0, 0, 0.15) 0px 5px 15px 0px;
+}
+
+.cnf-event h3 {
+  margin: 0;
+  color: var(--green);
+  font-family: "Uncial Antiqua";
+  font-size: 1.5rem;
+}
+
+.cnf-event__poster {
+  display: flex;
+  padding: 0 1rem;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  background-color: var(--beige);
+  border-radius: 20px 0 0 20px;
+}
+
+.cnf-event__info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 1rem;
+  background-color: var(--white);
+  border-radius: 0 0 20px 20px;
+}
+
+.cnf-event__info ul {
+  margin: 0;
+}
+
+.cnf-event__date {
+  font-size: 1rem;
+  color: var(--grey);
+}
+
+.cnf-event__social {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 0.75rem;
+}
+
+.cnf-event__location {
+  margin-top: 0.25rem;
+}
+
+.cnf-event__social--svg {
+  width: 30px;
+  height: 30px;
+}
+
+@media (min-width: 576px) {
+  .cnf-event {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: 1fr;
+  }
+
+  .cnf-event__poster {
+    grid-column: 1 / 2;
+  }
+
+  .cnf-event__info {
+    display: block;
+    grid-column: 2 / 3;
+    border-radius: 0 20px 20px 0;
+  }
+}
