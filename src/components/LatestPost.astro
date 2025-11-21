@@ -26,7 +26,7 @@ const latestBlogEntries = (await getCollection("blog"))
   <h2>Latest blog posts</h2>
   <ul class="cnf-latest-blogs">
     {
-      latestBlogEntries.map((post: any) => (
+      latestBlogEntries.map((post) => (
         <li class="cnf-latest-blogs__post">
           <a href={`/posts/${post.id}`}>
             <h3>{post.data.title}</h3>

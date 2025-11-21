@@ -1,0 +1,23 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+const pageTitle = "Events";
+import "../styles/event.css";
+import EventList from "../components/EventList";
+---
+
+<BaseLayout pageTitle={pageTitle}>
+  <section class="cnf-section">
+    <h1>{pageTitle}</h1>
+    <EventList client:load />
+
+    <!-- <ul class="event-grid">
+      {
+        events.map((event: Event) => (
+          <li>
+            <EventCard event={event} dateFormatter={formatBlogDate} />
+          </li>
+        ))
+      }
+    </ul> -->
+  </section>
+</BaseLayout>

@@ -29,10 +29,6 @@ const { pathname } = Astro.url;
     width: 45px;
     height: 50px;
   }
-
-  .active {
-    border-bottom: 1.5px solid var(--green);
-  }
 </style>
 
 <header>
@@ -44,11 +40,15 @@ const { pathname } = Astro.url;
     </div>
     <div>
       <a
-        class={`cnf-nav__link ${pathname.includes("about") ? "active" : ""}`}
+        class={`cnf-nav__link ${pathname.includes("about") ? "tab-active" : ""}`}
         href="/about/">About</a
       >
       <a
-        class={`cnf-nav__link ${pathname.includes("blog") || pathname.includes("post") ? "active" : ""}`}
+        class={`cnf-nav__link ${pathname.includes("events") ? "tab-active" : ""}`}
+        href="/events/">Events</a
+      >
+      <a
+        class={`cnf-nav__link ${pathname.includes("blog") || pathname.includes("post") ? "tab-active" : ""}`}
         href="/blog/">Blog</a
       >
     </div>

@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Hero from "../components/Hero.astro";
-import Event from "../components/Event";
+import UpcomingEvent from "../components/UpcomingEvent";
 import LatestPost from "../components/LatestPost.astro";
 
 const pageTitle = "Home";
@@ -9,6 +9,9 @@ const pageTitle = "Home";
 
 <BaseLayout pageTitle={pageTitle}>
   <Hero />
-  <Event client:load />
+  <section id="events">
+    <h2>Upcoming event</h2>
+    <UpcomingEvent responsive={true} client:load />
+  </section>
   <LatestPost />
 </BaseLayout>

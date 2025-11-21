@@ -43,6 +43,7 @@ h3 {
   font-weight: normal;
 }
 
+.cnf-section,
 #about,
 #latest-blogs,
 #events,
@@ -64,6 +65,10 @@ ul {
 p,
 li {
   font-size: 1.125rem;
+}
+
+.tab-active {
+  border-bottom: 1.5px solid var(--green);
 }
 
 .cnf-button {
@@ -88,6 +93,7 @@ li {
     border: 2px solid red;
   } */
 
+  .cnf-section,
   #about,
   #latest-blogs,
   #events,
@@ -110,6 +116,7 @@ li {
     border: 2px solid blue;
   } */
 
+  .cnf-section,
   #about,
   #latest-blogs,
   #events,
@@ -129,6 +136,7 @@ li {
     border: 2px solid green;
   } */
 
+  .cnf-section,
   #about,
   #latest-blogs,
   #events,
@@ -144,6 +152,7 @@ li {
     border: 2px solid darkorange;
   } */
 
+  .cnf-section,
   #about,
   #latest-blogs,
   #events,
@@ -158,6 +167,7 @@ li {
     border: 2px solid darkblue;
   } */
 
+  .cnf-section,
   #about,
   #latest-blogs,
   #events,
