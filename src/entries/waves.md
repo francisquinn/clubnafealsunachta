@@ -29,4 +29,4 @@ The same goes for life, but instead of the waves there’re invisible forces of 
 
 So if I were to sum this brief reflection by the waves of Peniche it would be to not fight against the greater natural forces that are present throughout the duration our lives, but to accept them as the orchestra that guides us through the chaos and beauty of it all.
 
-Le grà.
+Le grá.
