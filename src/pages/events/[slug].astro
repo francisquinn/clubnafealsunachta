@@ -1,0 +1,71 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { fetchEventGistJson, formatEventDate } from "../../utils/script";
+import type { Event } from "../../types/types";
+import "../../styles/event.css";
+
+export async function getStaticPaths() {
+  const events: Event[] = await fetchEventGistJson();
+  return events.map((event: Event) => ({
+    params: { slug: event.slug },
+    props: { event },
+  }));
+}
+
+const { event } = Astro.props as { event: Event };
+---
+
+<BaseLayout pageTitle={event.name}>
+  <section id="post">
+    <h1>{event.name}</h1>
+    <div class="cnf-event-page__details">
+      <span>{formatEventDate(new Date(event.date))}</span>
+      <a
+        href={event.map_url}
+        class="cnf-event-page__details-link"
+        target="_blank"
+      >
+        <img src="/map-pin.svg" />
+        {event.location}
+      </a>
+    </div>
+    <div class="cnf-event-page__social">
+      <ul>
+        <li>
+          <a
+            href={event.links.instagram}
+            class="cnf-event-page__social-link"
+            target="_blank"
+          >
+            <img class="cnf-event__social-svg" src="/instagram.svg" />
+            Instagram
+          </a>
+        </li>
+        <li>
+          <a
+            href={event.links.facebook}
+            class="cnf-event-page__social-link"
+            target="_blank"
+          >
+            <img class="cnf-event__social-svg" src="/facebook.svg" />
+            Facebook
+          </a>
+        </li>
+        <li>
+          {
+            event.links.meetup && (
+              <a
+                href={event.links.meetup}
+                class="cnf-event-page__social-link"
+                target="_blank"
+              >
+                <img class="cnf-event__social-svg" src="/meetup.svg" />
+                Meetup
+              </a>
+            )
+          }
+        </li>
+      </ul>
+    </div>
+  </section>
+</BaseLayout>

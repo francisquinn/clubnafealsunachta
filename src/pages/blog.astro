@@ -17,7 +17,7 @@ const pageTitle = "Blog";
     </p>
     <ul>
       {
-        posts.map((post: any) => (
+        posts.map((post) => (
           <BlogPost url={`/posts/${post.id}`} post={post.data} />
         ))
       }
