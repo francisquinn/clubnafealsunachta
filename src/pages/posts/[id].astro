@@ -23,7 +23,7 @@ const { Content } = await render(post);
 </style>
 
 <BaseLayout pageTitle={post.data.title}>
-  <section id="post">
+  <section class="cnf-section">
     <h1>{post.data.title}</h1>
     <div class="cnf-post__details">
       {post.data.author} &#8226; {formatBlogDate(post.data.date)}

@@ -129,6 +129,10 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .cnf-events--grid:has(p) {
+    grid-template-columns: 1fr;
+  }
+
   .cnf-event--responsive {
     grid-template-columns: 1fr auto;
     grid-template-rows: 1fr;

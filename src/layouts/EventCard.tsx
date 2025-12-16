@@ -20,21 +20,21 @@ export default function EventCard({
               {dateFormatter(new Date(event.date))}
             </li>
             <li className="cnf-event__location">
-              <a href={event.map_url} target="_blank">
-                {event.location}
+              <a href={event.location.url} target="_blank">
+                {event.location.name}
               </a>
             </li>
           </ul>
         </div>
         <div className="cnf-event__social">
-          <a href={event.links.instagram} target="_blank">
+          <a href={event.social.instagram} target="_blank">
             <img className="cnf-event__social-svg" src="/instagram.svg" />
           </a>
-          <a href={event.links.facebook} target="_blank">
+          <a href={event.social.facebook} target="_blank">
             <img className="cnf-event__social-svg" src="/facebook.svg" />
           </a>
-          {event.links.meetup && (
-            <a href={event.links.meetup} target="_blank">
+          {event.social.meetup && (
+            <a href={event.social.meetup} target="_blank">
               <img className="cnf-event__social-svg" src="/meetup.svg" />
             </a>
           )}
