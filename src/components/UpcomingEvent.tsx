@@ -1,15 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { isEventExpired } from "../utils/script";
 import { type Event } from "../types/types";
 import "../styles/event.css";
 import EventCard from "../layouts/EventCard";
 
 export default function UpcomingEvent(props: UpcomingEventProps) {
-  const [event] = useState<Event | null>(props.event);
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setEvent(props.event);
+    setLoading(false);
+  }, [])
 
   const isExpired = (): boolean => {
     return isEventExpired(event);
   };
+
+  function renderLoading() {
+    return loading && <p>Loading...</p>;
+  }
 
   function renderExpiry() {
     return (
@@ -35,6 +45,7 @@ export default function UpcomingEvent(props: UpcomingEventProps) {
 
   return (
     <>
+      {renderLoading()}
       {renderExpiry()}
       {renderEvent()}
     </>
