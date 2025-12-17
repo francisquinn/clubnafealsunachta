@@ -16,7 +16,7 @@ const { event } = Astro.props;
 ---
 
 <BaseLayout pageTitle={event.data.name}>
-  <section id="post">
+  <section class="cnf-section">
     <h1>{event.data.name}</h1>
     <div class="cnf-event-page__details">
       <span>{formatEventDate(new Date(event.data.date))}</span>
