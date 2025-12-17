@@ -3,15 +3,20 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import Hero from "../components/Hero.astro";
 import UpcomingEvent from "../components/UpcomingEvent";
 import LatestPost from "../components/LatestPost.astro";
+import { getCollection } from "astro:content";
+
+const currentEvent = (await getCollection("event")).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+)[0];
 
 const pageTitle = "Home";
 ---
 
 <BaseLayout pageTitle={pageTitle}>
   <Hero />
-  <section id="events">
+  <section class="cnf-section">
     <h2>Upcoming event</h2>
-    <UpcomingEvent responsive={true} client:load />
+    <UpcomingEvent event={currentEvent.data} responsive={true} client:load />
   </section>
   <LatestPost />
 </BaseLayout>

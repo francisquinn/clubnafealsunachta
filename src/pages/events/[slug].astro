@@ -1,39 +1,39 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { fetchEventGistJson, formatEventDate } from "../../utils/script";
-import type { Event } from "../../types/types";
+import { formatEventDate } from "../../utils/script";
 import "../../styles/event.css";
+import { getCollection, render } from "astro:content";
 
 export async function getStaticPaths() {
-  const events: Event[] = await fetchEventGistJson();
-  return events.map((event: Event) => ({
-    params: { slug: event.slug },
+  const events = await getCollection("event");
+  return events.map((event) => ({
+    params: { slug: event.data.slug },
     props: { event },
   }));
 }
 
-const { event } = Astro.props as { event: Event };
+const { event } = Astro.props;
 ---
 
-<BaseLayout pageTitle={event.name}>
+<BaseLayout pageTitle={event.data.name}>
   <section id="post">
-    <h1>{event.name}</h1>
+    <h1>{event.data.name}</h1>
     <div class="cnf-event-page__details">
-      <span>{formatEventDate(new Date(event.date))}</span>
+      <span>{formatEventDate(new Date(event.data.date))}</span>
       <a
-        href={event.map_url}
+        href={event.data.location.url}
         class="cnf-event-page__details-link"
         target="_blank"
       >
         <img src="/map-pin.svg" />
-        {event.location}
+        {event.data.location.name}
       </a>
     </div>
     <div class="cnf-event-page__social">
       <ul>
         <li>
           <a
-            href={event.links.instagram}
+            href={event.data.social.instagram}
             class="cnf-event-page__social-link"
             target="_blank"
           >
@@ -43,7 +43,7 @@ const { event } = Astro.props as { event: Event };
         </li>
         <li>
           <a
-            href={event.links.facebook}
+            href={event.data.social.facebook}
             class="cnf-event-page__social-link"
             target="_blank"
           >
@@ -53,9 +53,9 @@ const { event } = Astro.props as { event: Event };
         </li>
         <li>
           {
-            event.links.meetup && (
+            event.data.social.meetup && (
               <a
-                href={event.links.meetup}
+                href={event.data.social.meetup}
                 class="cnf-event-page__social-link"
                 target="_blank"
               >

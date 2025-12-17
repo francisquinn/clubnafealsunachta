@@ -1,10 +1,12 @@
 export type Event = {
   name: string;
-  date: string;
-  location: string;
+  date: Date;
+  location: {
+    name: string;
+    url: string;
+  };
   slug: string;
-  map_url: string;
-  links: {
+  social: {
     instagram: string;
     facebook: string;
     meetup?: string;

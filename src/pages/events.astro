@@ -3,21 +3,20 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 const pageTitle = "Events";
 import "../styles/event.css";
 import EventList from "../components/EventList";
+import { getCollection } from "astro:content";
+
+const sortedEvents = (await getCollection("event")).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
 ---
 
 <BaseLayout pageTitle={pageTitle}>
   <section class="cnf-section">
     <h1>{pageTitle}</h1>
-    <EventList client:load />
-
-    <!-- <ul class="event-grid">
-      {
-        events.map((event: Event) => (
-          <li>
-            <EventCard event={event} dateFormatter={formatBlogDate} />
-          </li>
-        ))
-      }
-    </ul> -->
+    <EventList
+      events={sortedEvents}
+      currentEvent={sortedEvents[0].data}
+      client:load
+    />
   </section>
 </BaseLayout>

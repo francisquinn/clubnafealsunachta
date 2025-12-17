@@ -1,11 +1,11 @@
 import { useState, type JSX } from "react";
 import UpcomingEvent from "../components/UpcomingEvent";
-import { fetchEventGistJson, isEventExpired } from "../utils/script";
+import { isEventExpired } from "../utils/script";
 import EventCard from "../layouts/EventCard";
 import { formatBlogDate } from "../utils/script";
-const events = await fetchEventGistJson();
+import type { Event } from "../types/types";
 
-export default function EventList() {
+export default function EventList(props: EventListProps) {
   const [showUpcoming, setShowUpcoming] = useState<boolean>(true);
 
   function renderNavigation(): JSX.Element {
@@ -31,16 +31,16 @@ export default function EventList() {
 
   function renderEvents(): JSX.Element {
     return <div className="cnf-events--grid">
-      {showUpcoming ? <UpcomingEvent /> : renderPastEvents()}
+      {showUpcoming ? <UpcomingEvent event={props.currentEvent} /> : renderPastEvents()}
     </div>;
   }
 
   function renderPastEvents() {
-    return events.map(
-      (event, index) =>
-        isEventExpired(event) && (
+    return props.events.map(
+      (event: any, index: number) =>
+        isEventExpired(event.data) && (
           <EventCard
-            event={event}
+            event={event.data}
             key={index}
             dateFormatter={formatBlogDate}
           />
@@ -55,3 +55,8 @@ export default function EventList() {
     </>
   );
 }
+
+type EventListProps = {
+  events: any;
+  currentEvent: Event;
+};
