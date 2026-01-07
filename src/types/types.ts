@@ -8,7 +8,7 @@ export type Event = {
   slug: string;
   social: {
     instagram: string;
-    facebook: string;
+    facebook?: string;
     meetup?: string;
   };
 };

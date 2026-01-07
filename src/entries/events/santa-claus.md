@@ -11,4 +11,16 @@ social:
   meetup: "https://www.meetup.com/clubnafealsunachta/events/312434602/?utm_medium=referral&utm_campaign=share-btn_savedevents_share_modal&utm_source=link&utm_version=v2&member_id=471921296"
 ---
 
-this is a test
+## Description
+
+Considering this week is the Christmas special, I thought it would be appropriate to explore the topic of Santa Claus. This topic will touch on areas such as the value of sustaining mythology in society, if it’s right to deceive and add false surveillance on children, the morality of the naughty and nice list, how Santa can be used to drive consumerism, and finally how, upon finding out he doesn’t exist (sorry for the spoiler), should we (or not) pass down the belief to the next generation.
+
+## Summary
+
+We discussed many areas such as the historical origin of the modern day Santa Claus, how he is represented across different cultures, and how the western version is taking over the narrative of Santa.
+
+We also touched on how Santa can be used as a moral compass to promote goodness in exchange for gifts, but at the same time, how this can be abused both by children themselves and by big corporations trying to sell products. We questioned whether removing the image of Santa would allow us to focus on the true nature of Christmas, avoiding the consumption aspect, or if his figure promotes the joy of the Christmas spirit.
+
+This topic concludes the year of 2025. I just wanted to say a big thank you to everyone for supporting the club and making it what it is. I hope everyone will enjoy the Christmas break and that you’ll take the time to reflect, spend some quality time with friends and family, and we’ll start up again in the new year!
+
+Le grá.

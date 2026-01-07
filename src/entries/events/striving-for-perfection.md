@@ -11,4 +11,10 @@ social:
   meetup: "https://www.meetup.com/clubnafealsunachta/events/310580247/?utm_medium=referral&utm_campaign=share-btn_savedevents_share_modal&utm_source=link&utm_version=v2"
 ---
 
-this is a test
+## Description
+
+Back again after a short wee break with yet another topic for discussion, that being, striving for perfection. This topic focuses on areas such as whether we should seek to be perfect, should we learn to accept imperfections, and the potential downsides of being perfect.
+
+## Summary
+
+The group was fairly split, some veering more towards perfectionism whilst others more towards imperfectionism. We touched on areas such as what it means to be perfect and whether we can quantitatively measure it, does optimisation equal perfection, and how social media is feeding us a distorted view of perfection.

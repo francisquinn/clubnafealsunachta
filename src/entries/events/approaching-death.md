@@ -11,4 +11,10 @@ social:
   meetup: "https://www.meetup.com/clubnafealsunachta/events/311941149/?utm_medium=referral&utm_campaign=share-btn_savedevents_share_modal&utm_source=link&utm_version=v2"
 ---
 
-this is a test
+## Description
+
+To fit in with november being the month of the dead, this weeks topic will be about how to approach death. We’ll touch on areas such as how we structure our lives around death, should we avoid the topic of death or embrace it, and how being mortal can help us prioritise our time to give us a meaning or purpose.
+
+## Summary
+
+We touched on areas such as what it means to be alive, do we fear dying or death, the concept of a second death through being forgotten, and how as a society we tend to avoid questioning and facing up to death.

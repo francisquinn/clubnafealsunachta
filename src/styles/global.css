@@ -57,6 +57,10 @@ ul {
   list-style-type: none;
 }
 
+p {
+  margin: 1rem 0;
+}
+
 p,
 li {
   font-size: 1.125rem;

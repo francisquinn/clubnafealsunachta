@@ -11,4 +11,10 @@ social:
   meetup: "https://www.meetup.com/clubnafealsunachta/events/311411150/?utm_medium=referral&utm_campaign=share-btn_savedevents_share_modal&utm_source=link&utm_version=v2"
 ---
 
-this is a test
+## Description
+
+Considering it’s the week of the Barcolana here in Trieste, I decided to propose the question: Should we aim to win? This topic raises questions on how we should approach competitive pursuits, is winning the ultimate goal or is taking part equally important, and how our we should handle failure.
+
+## Summary
+
+We touched on many aspects such as to win in something requires a losing part, how this ties into winning over yourself, the difference between winning and success, and how the aim of winning might not be the end goal but the journey.

@@ -22,7 +22,7 @@ const event = defineCollection({
     slug: z.string(),
     social: z.object({
       instagram: z.string().url(),
-      facebook: z.string().url(),
+      facebook: z.string().url().optional(),
       meetup: z.string().url().optional(),
     }),
   }),

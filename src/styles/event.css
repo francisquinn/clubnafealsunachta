@@ -99,6 +99,7 @@
 .cnf-event-page__details {
   display: flex;
   gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .cnf-event-page__details-link {

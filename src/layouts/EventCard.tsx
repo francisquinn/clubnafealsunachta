@@ -30,9 +30,11 @@ export default function EventCard({
           <a href={event.social.instagram} target="_blank">
             <img className="cnf-event__social-svg" src="/instagram.svg" />
           </a>
-          <a href={event.social.facebook} target="_blank">
-            <img className="cnf-event__social-svg" src="/facebook.svg" />
-          </a>
+          {event.social.facebook && (
+            <a href={event.social.facebook} target="_blank">
+              <img className="cnf-event__social-svg" src="/facebook.svg" />
+            </a>
+          )}
           {event.social.meetup && (
             <a href={event.social.meetup} target="_blank">
               <img className="cnf-event__social-svg" src="/meetup.svg" />

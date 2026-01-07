@@ -10,4 +10,10 @@ social:
   facebook: "https://www.facebook.com/events/728124423516076?acontext=%7B%22event_action_history%22%3A[]%7D"
 ---
 
-this is a test
+## Description
+
+Given recent events, I thought it would be appropriate to have a discussion about whether political violence can ever be justified. This topic will touch on areas such as if violence is necessary to gain political advantage, can the assassination of a politician or politically influential figure be morally justified, and given the chance, would you kill baby Hitler?
+
+## Summary
+
+We touched on areas such as if violence against a politician or political movement could be justified in wartime, how violence shouldn’t be the first means of achieving political advantage, and that killing baby Hitler probably wouldn’t have prevented the atrocities of the war as there is a high chance another one could emerged from the given environment.

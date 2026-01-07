@@ -11,4 +11,14 @@ social:
   meetup: "https://www.meetup.com/clubnafealsunachta/events/312158146/?isFirstPublish=tru"
 ---
 
-this is a test
+## Description
+
+To conclude the final week of the month of death, I’ve decided to step away from the human aspect and to explore the ethics of killing and eating animals.
+
+This topic will touch on the moral implications of eating animals, should animals have rights? the damages caused by overconsumption and how it impacts the environment, and what are the alternative options available to us.
+
+## Summary
+
+We touched on areas such as trying to define what is an animal, what differentiates the human, how humans should use their global dominance to protect animal welfare, and how we as the consumer can make a difference by how we consume animal products by buying from animal-friendly sources, not wasting food on our plates, and by abstaining entirely.
+
+If we all start making conscious decisions on the animal produce we consume, slowly but surely the market will start to shift in favour of animal welfare. We all have a responsibility, so let’s take it one chicken at a time.
