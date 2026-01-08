@@ -13,3 +13,9 @@ social:
 ## Description
 
 Back at it again. I hope everyone enjoyed the Christmas break. To kickstart 2026 we’ll be discussing the topic of resolutions. We’ll touch on areas such as what is a goal, how we should go about setting/achieving them (if necessary), how the new year sparks this drive set resolutions, and if it’s possible to live a goalless life?
+
+## Summary
+
+This week we discussed the topic of resolutions. We explored areas such as defining the difference between a goal and a resolution, how a goal is more specific and measurable while a resolution is more of a commitment to a practise.
+
+We also touched on how setting resolutions are a means of shaping our identity based on our actions, how our desires to resolve them could come from the subconscious realm, and if it’s possible to live life without having any major goals.
