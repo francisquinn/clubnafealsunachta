@@ -19,3 +19,7 @@ export function formatEventDate(date: Date): string {
 export function isEventExpired(event: Event | null) {
   return event ? new Date(event.date) < new Date() : true;
 }
+
+export function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}

@@ -3,6 +3,8 @@
   --color-green: 135.65, 19.01%, 23.73%;
   --color-white: 30, 100%, 98.82%;
   --color-grey: 0, 0%, 40%;
+  --color-red: 0, 84.96%, 44.31%;
+  --color-light-green: 120, 75%, 31.37%;
 }
 
 * {
@@ -71,6 +73,7 @@ li {
 }
 
 .cnf-button {
+  position: relative;
   padding: 1rem 1.5rem;
   border-radius: 50px;
   border: none;
@@ -79,9 +82,77 @@ li {
   font-size: 1rem;
 }
 
+.cnf-button--compact {
+  padding: 0.7rem 1.2rem;
+}
+
 .cnf-button__primary {
   background-color: hsl(var(--color-green));
+}
+
+.cnf-button__primary .cnf-button__text {
   color: hsl(var(--color-beige));
+}
+
+.cnf-button--loading .cnf-button__text {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.cnf-button--loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  border: 3px solid transparent;
+  border-top-color: hsl(var(--color-white));
+  border-radius: 50%;
+  animation: button-loading-spinner 1s ease infinite;
+}
+
+.cnf-button:disabled {
+  cursor: not-allowed;
+  opacity: .7;
+}
+
+@keyframes button-loading-spinner {
+  from {
+    transform: rotate(0turn);
+  }
+
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+.cnf-form {
+  display: grid;
+  gap: 10px;
+}
+
+.cnf-form fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.cnf-form__input {
+  padding: 0.7rem 1.2rem;
+  line-height: 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid hsl(var(--color-green));
+  font-size: 1rem;
+}
+
+.cnf-form__input:focus-visible {
+  outline: none;
+  border-bottom: 2px solid hsl(var(--color-green));
 }
 
 /* Media Queries */
