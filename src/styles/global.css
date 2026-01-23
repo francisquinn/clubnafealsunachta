@@ -1,8 +1,8 @@
 :root {
-  --beige: #faf6e9;
-  --green: #314837;
-  --white: #fffcf9;
-  --grey: #666666;
+  --color-beige: 45.88, 62.96%, 94.71%;
+  --color-green: 135.65, 19.01%, 23.73%;
+  --color-white: 30, 100%, 98.82%;
+  --color-grey: 0, 0%, 40%;
 }
 
 * {
@@ -10,7 +10,7 @@
 }
 
 html {
-  background-color: var(--beige);
+  background-color: hsl(var(--color-beige));
   font-family: "Noto Sans", sans-serif;
   font-weight: 300;
 }
@@ -31,7 +31,7 @@ h1,
 h2,
 h3 {
   margin: 0 0 1rem 0;
-  color: var(--green);
+  color: hsl(var(--color-green));
   font-family: "Playfair Display", serif;
 }
 
@@ -49,7 +49,7 @@ h3 {
 }
 
 a {
-  color: var(--green);
+  color: hsl(var(--color-green));
 }
 
 ul {
@@ -67,7 +67,7 @@ li {
 }
 
 .tab-active {
-  border-bottom: 1.5px solid var(--green);
+  border-bottom: 1.5px solid hsl(var(--color-green));
 }
 
 .cnf-button {
@@ -80,8 +80,8 @@ li {
 }
 
 .cnf-button__primary {
-  background-color: var(--green);
-  color: var(--beige);
+  background-color: hsl(var(--color-green));
+  color: hsl(var(--color-beige));
 }
 
 /* Media Queries */

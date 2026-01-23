@@ -14,7 +14,7 @@
 
 .cnf-event h3 {
   margin: 0;
-  color: var(--green);
+  color: hsl(var(--color-green));
   font-family: "Uncial Antiqua";
   font-size: 1.5rem;
 }
@@ -25,7 +25,7 @@
   align-items: center;
   text-align: center;
   justify-content: center;
-  background-color: var(--beige);
+  background-color: hsl(var(--color-beige));
   border-radius: 20px 0 0 20px;
 }
 
@@ -34,7 +34,7 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
   padding: 1rem;
-  background-color: var(--white);
+  background-color: hsl(var(--color-white));
   border-radius: 0 0 20px 20px;
 }
 
@@ -44,7 +44,7 @@
 
 .cnf-event__date {
   font-size: 1rem;
-  color: var(--grey);
+  color: hsl(var(--color-grey));
 }
 
 .cnf-event__location {
@@ -94,6 +94,10 @@
 .cnf-events__tab {
   padding: 0.5rem;
   cursor: pointer;
+}
+
+.cnf-event-page__details-date {
+  color: hsl(var(--color-grey));
 }
 
 .cnf-event-page__details {

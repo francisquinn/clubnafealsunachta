@@ -20,7 +20,9 @@ const { Content } = await render(event);
   <section class="cnf-section">
     <h1>{event.data.name}</h1>
     <div class="cnf-event-page__details">
-      <span>{formatEventDate(new Date(event.data.date))}</span>
+      <span class="cnf-event-page__details-date"
+        >{formatEventDate(new Date(event.data.date))}</span
+      >
       <a
         href={event.data.location.url}
         class="cnf-event-page__details-link"
