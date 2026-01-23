@@ -41,4 +41,4 @@ Spend it wisely though, because this gift can’t be returned.
 
 Christmas is a wonderful time of year that brings together communities and families. It goes without saying that it’ll be around for a while. I hope my reflections inspire you consider how you spent your time during this Christmas and whether that gift you bought your mum from Dunnes measures up to the true gift of presence.
 
-La grá.
+Le grá.
