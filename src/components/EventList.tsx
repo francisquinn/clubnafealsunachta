@@ -3,7 +3,7 @@ import UpcomingEvent from "../components/UpcomingEvent";
 import { isEventExpired } from "../utils/script";
 import EventCard from "../layouts/EventCard";
 import { formatBlogDate } from "../utils/script";
-import type { Event } from "../types/types";
+import type { Event, EventCollection } from "../types/types";
 
 export default function EventList(props: EventListProps) {
   const [showUpcoming, setShowUpcoming] = useState<boolean>(true);
@@ -37,7 +37,7 @@ export default function EventList(props: EventListProps) {
 
   function renderPastEvents() {
     return props.events.map(
-      (event: any, index: number) =>
+      (event: EventCollection, index: number) =>
         isEventExpired(event.data) && (
           <EventCard
             event={event.data}
@@ -57,6 +57,6 @@ export default function EventList(props: EventListProps) {
 }
 
 type EventListProps = {
-  events: any;
+  events: EventCollection[];
   currentEvent: Event;
 };

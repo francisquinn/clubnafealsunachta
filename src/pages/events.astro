@@ -4,19 +4,17 @@ const pageTitle = "Events";
 import "../styles/event.css";
 import EventList from "../components/EventList";
 import { getCollection } from "astro:content";
+import type { EventCollection, Event } from "../types/types";
 
-const sortedEvents = (await getCollection("event")).sort(
+const sortedEvents: EventCollection[] = (await getCollection("event")).sort(
   (a, b) => b.data.date.getTime() - a.data.date.getTime(),
 );
+const currentEvent: Event = sortedEvents[0].data;
 ---
 
 <BaseLayout pageTitle={pageTitle}>
   <section class="cnf-section">
     <h1>{pageTitle}</h1>
-    <EventList
-      events={sortedEvents}
-      currentEvent={sortedEvents[0].data}
-      client:load
-    />
+    <EventList events={sortedEvents} currentEvent={currentEvent} client:load />
   </section>
 </BaseLayout>

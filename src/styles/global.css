@@ -80,6 +80,7 @@ li {
   cursor: pointer;
   font-family: "Noto Sans", sans-serif;
   font-size: 1rem;
+  transition: transform .1s ease;
 }
 
 .cnf-button--compact {
@@ -113,6 +114,10 @@ li {
   border-top-color: hsl(var(--color-white));
   border-radius: 50%;
   animation: button-loading-spinner 1s ease infinite;
+}
+
+.cnf-button:active {
+  transform: scale(.95);
 }
 
 .cnf-button:disabled {

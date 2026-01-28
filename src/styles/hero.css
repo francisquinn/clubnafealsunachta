@@ -1,0 +1,141 @@
+  h1 {
+    color: hsl(var(--color-green));
+    font-family: "Uncial Antiqua";
+    font-size: 1.75rem;
+    margin: 0.5rem 0 1rem 0;
+  }
+
+  #hero {
+    padding-bottom: 4rem;
+    position: relative;
+  }
+
+  .cnf-hero__content {
+    padding: 0 1rem;
+  }
+
+  .cnf-hero__logo {
+    position: absolute;
+    z-index: -1;
+    top: 150px;
+    right: -120px;
+  }
+
+  .cnf-hero__logo--svg {
+    width: 400px;
+    height: 400px;
+    opacity: 0.05;
+  }
+
+  .cnf-hero__links {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.5rem;
+    width: 100%;
+  }
+
+  .cnf-hero__social {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .cnf-hero__social--svg {
+    pointer-events: none;
+    width: 50px;
+    height: 50px;
+  }
+
+  /* small */
+  @media (min-width: 576px) {
+    #hero {
+      text-align: start;
+      width: 90%;
+      margin: 0 auto;
+    }
+
+    .cnf-hero__logo {
+      right: 0;
+      left: auto;
+      top: auto;
+      transform: none;
+    }
+
+    .cnf-hero__logo--svg {
+      width: 500px;
+      height: 500px;
+    }
+
+    .cnf-hero__content {
+      width: 90%;
+    }
+  }
+
+  /* medium */
+  @media (min-width: 768px) {
+    #hero {
+      width: 85%;
+    }
+
+    .cnf-hero__content {
+      width: 75%;
+    }
+
+    .cnf-hero__content--heading {
+      font-size: 2rem;
+    }
+  }
+
+  /* large */
+  @media (min-width: 992px) {
+    #hero {
+      width: 75%;
+    }
+
+    .cnf-hero__content--heading {
+      font-size: 2.25rem;
+    }
+
+    .cnf-hero__logo--svg {
+      width: 550px;
+      height: 550px;
+    }
+  }
+
+  /* extra large */
+  @media (min-width: 1200px) {
+    #hero {
+      width: 70%;
+    }
+
+    .cnf-hero__content {
+      width: 65%;
+    }
+
+    .cnf-hero__content--heading {
+      font-size: 2.5rem;
+    }
+
+    .cnf-hero__logo--svg {
+      width: 600px;
+      height: 600px;
+    }
+  }
+
+  @media (min-width: 1620px) {
+    #hero {
+      width: 65%;
+    }
+
+    .cnf-hero__content {
+      width: 60%;
+    }
+
+    .cnf-hero__content--heading {
+      font-size: 3rem;
+    }
+
+    .cnf-hero__logo--svg {
+      width: 650px;
+      height: 650px;
+    }
+  }

@@ -1,3 +1,7 @@
+import type { CollectionEntry } from "astro:content";
+
+export type EventCollection = CollectionEntry<"event">;
+
 export type Event = {
   name: string;
   date: Date;
