@@ -14,3 +14,7 @@ social:
 ## Description
 
 This week we’ll discuss the topic of Naturalism. We’ll explore areas such as what is natural vs artificial, whether everything can be explained using natural laws, how much does our culture shape our understanding of what is natural, and whether technological advancements are distancing us from our own nature.
+
+## Summary
+
+This week we discussed the topic of Naturalism. We explored areas such as trying to uncover what is natural, how it compares it to artificial/unnatural, how human interaction can interfere with what is natural, but at the same time, how everything could be in itself considered natural. We also side stepped a bit into questioning the natural state of a human, how culture plays a large role in defining what is natural/unnatural, and whether the societies we constructed could be classed as our natural habitat.
