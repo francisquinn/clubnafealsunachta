@@ -1,0 +1,15 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import NewsletterForm from "../components/NewsletterForm";
+const pageTitle = "Newsletter";
+---
+
+<BaseLayout pageTitle={pageTitle}>
+  <section class="cnf-section">
+    <h1>Newsletter</h1>
+    <p class="cnf-newsletter__description">
+      Stay up to date with events, blog posts and updates.
+    </p>
+    <NewsletterForm client:load />
+  </section>
+</BaseLayout>

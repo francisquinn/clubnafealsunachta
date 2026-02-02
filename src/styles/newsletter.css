@@ -1,12 +1,5 @@
 .cnf-form {
-  max-width: 450px;
-  margin: auto;
-  grid-template-rows: 1fr auto 1fr;
-}
-
-.cnf-newsletter__description {
-  font-size: 1rem;
-  color: hsl(var(--color-grey));
+  max-width: 600px;
 }
 
 .cnf-form__message--error {

@@ -1,27 +1,65 @@
 ---
-import Newsletter from "./Newsletter";
+const year = new Date().getFullYear();
 ---
 
 <style>
   .cnf-footer {
-    display: flex;
-    justify-content: space-around;
+    display: grid;
+    justify-items: center;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(3, auto);
+    row-gap: 1.25rem;
     padding: 1rem;
     width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
+  }
+
+  .cnf-footer__social {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+    max-width: 200px;
+    width: 100%;
+  }
+
+  .cnf-footer__social-svg {
+    width: 30px;
+    height: 30px;
+  }
+
+  .cnf-footer__links {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .cnf-footer__sign {
+    color: hsl(var(--color-grey));
   }
 </style>
 
-<Newsletter client:load />
 <footer class="cnf-footer">
-  <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank"
-    >instagram</a
-  >
-  <a
-    href="https://www.facebook.com/people/Club-na-Fealsúnachta/61578150433186/"
-    target="_blank">facebook</a
-  >
-  <a href="https://ko-fi.com/clubnafealsunachta" target="_blank">support</a>
-  <a href="mailto:info@clubnafealsunachta.com" target="_blank">contact</a>
+  <div class="cnf-footer__links">
+    <a href="https://ko-fi.com/clubnafealsunachta" target="_blank">Support</a>
+    <a href="/newsletter">Newsletter</a>
+    <a href="mailto:info@clubnafealsunachta.com" target="_blank">Contact</a>
+  </div>
+  <div class="cnf-footer__social">
+    <a href="https://www.instagram.com/clubnafealsunachta/" target="_blank">
+      <img class="cnf-footer__social-svg" src="/instagram.svg" /></a
+    >
+    <a
+      href="https://www.facebook.com/people/Club-na-Fealsúnachta/61578150433186/"
+      target="_blank"
+    >
+      <img class="cnf-footer__social-svg" src="/facebook.svg" /></a
+    >
+    <a href="https://www.meetup.com/clubnafealsunachta/" target="_blank">
+      <img class="cnf-footer__social-svg" src="/meetup.svg" /></a
+    >
+  </div>
+
+  <div class="cnf-footer__sign">
+    Club na Fealsúnachta &#183; {year}
+  </div>
 </footer>

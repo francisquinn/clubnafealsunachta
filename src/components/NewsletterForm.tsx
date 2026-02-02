@@ -1,19 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent, type JSX } from "react";
 import "../styles/newsletter.css";
 
-export default function Newsletter() {
+export default function NewsletterForm() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isFormSubmitted, setIsFormSubmitted] = useState<boolean>(false);
-  const [isSubscribed, setIsSubscribed] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const formRef = useRef<HTMLFormElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
-  const LOCALSTORAGE_KEY = "newsletter_subscribed";
 
-  useEffect(() => {
-    setIsSubscribed(Boolean(localStorage.getItem(LOCALSTORAGE_KEY)));
-  }, []);
+  useEffect(() => localStorage.removeItem("newsletter_subscribed"), []);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
@@ -39,7 +35,6 @@ export default function Newsletter() {
       setErrorMessage(data.message);
       setSuccessMessage(null);
     } else {
-      localStorage.setItem(LOCALSTORAGE_KEY, "true");
       setSuccessMessage(data.message);
       setIsFormSubmitted(true);
       setErrorMessage(null);
@@ -76,18 +71,12 @@ export default function Newsletter() {
 
   return (
     <>
-      {!isSubscribed && (
-        <section className="cnf-section" style={{ textAlign: "center" }}>
-          <h3>Subscribe to the newsletter!</h3>
-          <p className="cnf-newsletter__description">Stay up to date with events, blog posts and updates.</p>
-          {!isFormSubmitted ? (
-            renderForm()
-          ) : (
-            <>
-              <div className="cnf-form__message--success">{successMessage}</div>
-            </>
-          )}
-        </section>
+      {!isFormSubmitted ? (
+        renderForm()
+      ) : (
+        <>
+          <div className="cnf-form__message--success">{successMessage}</div>
+        </>
       )}
     </>
   );
