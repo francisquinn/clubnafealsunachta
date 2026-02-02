@@ -7,12 +7,13 @@ export function formatBlogDate(date: Date): string {
 }
 
 export function formatEventDate(date: Date): string {
+  console.log(date)
   return `${date.toLocaleDateString("en-US", {
     weekday: "short",
   })} ${date.toLocaleDateString("en-US", {
     month: "short",
-  })} ${date.getDate()} @ ${date.getHours()}:${String(
-    date.getMinutes()
+  })} ${date.getUTCDate()} @ ${date.getUTCHours()}:${String(
+    date.getUTCMinutes()
   ).padStart(2, "0")}`;
 }
 
