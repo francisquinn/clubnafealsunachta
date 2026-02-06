@@ -13,3 +13,7 @@ social:
 ## Description
 
 With my date of birth celebration fast approaching, I thought it fitting to mark the occasion by discussing the topic of time. We’ll dive into areas such as if time is a human construct, how we perceive time, whether the past and future even exist, and given our time is limited, how should we best spend it?
+
+## Summary
+
+This week we discussed the topic of time. We touched on many different aspects such as our perception of internal and external time, the cultural pressure to use our time productively and if it’s possible to waste time. We also asked if the limits of our time give us meaning, how best to invest it, and how schedules and deadlines can sometimes make us feel like a slave to time.
