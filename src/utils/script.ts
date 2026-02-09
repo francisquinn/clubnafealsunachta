@@ -7,7 +7,6 @@ export function formatBlogDate(date: Date): string {
 }
 
 export function formatEventDate(date: Date): string {
-  console.log(date)
   return `${date.toLocaleDateString("en-US", {
     weekday: "short",
   })} ${date.toLocaleDateString("en-US", {
