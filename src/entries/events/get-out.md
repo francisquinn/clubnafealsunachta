@@ -14,3 +14,7 @@ social:
 ## Description
 
 This week we’ll discuss the topic of Escapism. We’ll not avoid talking about how we face our problems, the different means in which we seek to escape reality, the point in which a good habit can become harmful, and we’ll share our personal methods that we use to get out.
+
+## Summary
+
+We dived into areas such as defining reality, the different means of escaping it, both positive and negative, how being in a flow state can be interpreted as connecting rather than escaping, and how avoiding necessary actions, such as filling out our tax forms, can lead to negative consequences for our future self.
