@@ -1,0 +1,44 @@
+---
+
+---
+
+<style>
+  a {
+    text-decoration: none;
+  }
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  @media (min-width: 768px) {
+    .cnf-support {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 30px;
+    }
+  }
+</style>
+
+<section class="cnf-section">
+  <div class="cnf-support">
+    <div class="cnf-support__text">
+      <h3>Fancy supporting the club?</h3>
+      <p>
+        If you're enjoying what we're at, why not chip in and help keep things
+        going!
+      </p>
+    </div>
+    <div class="cnf-support__action">
+      <a href="https://ko-fi.com/clubnafealsunachta" target="_blank">
+        <button class="cnf-button cnf-button__secondary">
+          <span class="cnf-button__text">Supply the tea</span>
+          <span class="cnf-button__emoji">&#9749;</span></button
+        >
+      </a>
+    </div>
+  </div>
+</section>
