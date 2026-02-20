@@ -15,3 +15,7 @@ social:
 With carnival season in full swing, I thought it would be a good idea to discuss the topic of anonymity. We’ll dive into areas such how it shapes both individual and group behaviour, the effects it can have on morality, does it lead to freedom, and by removing all the masks, can we uncover our true identity?
 
 In keeping with the theme, I encourage everyone to bring some sort of face mask with them (other than the one you wear on a daily basis, of course), both online and in-person.
+
+## Summary
+
+We dived into areas such as attempting to identifying the true self, how we create many versions of ourself depending on the social situation, how it can be used as protection, whether we should always be held accountable for our actions, and to what extent should we care about our privacy.
