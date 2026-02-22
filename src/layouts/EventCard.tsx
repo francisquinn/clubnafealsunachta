@@ -7,7 +7,7 @@ export default function EventCard({
   responsive = false,
 }: EventCardProps) {
   return (
-    <div className={`cnf-event ${responsive && "cnf-event--responsive"}`}>
+    <div className={`cnf-event ${responsive ? 'cnf-event--responsive' : ''} ${event.debate ? 'cnf-event--debate' : ''}`}>
       <div className="cnf-event__poster">
         <a className="cnf-event__link" href={`/events/${event.slug}`}>
           <h3>{event.name}</h3>

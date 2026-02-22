@@ -20,7 +20,7 @@ const { Content } = await render(event);
   <section class="cnf-section">
     <h1>{event.data.name}</h1>
     <div class="cnf-event-page__details">
-      <span class="cnf-event-page__details-date"
+      <span class="cnf-event-page__details-info"
         >{formatEventDate(new Date(event.data.date))}</span
       >
       <a
@@ -31,6 +31,13 @@ const { Content } = await render(event);
         <img src="/map-pin.svg" />
         {event.data.location.name}
       </a>
+      {
+        event.data.debate ? (
+          <span class="cnf-event-page__details-info">Debate</span>
+        ) : (
+          <span class="cnf-event-page__details-info">Discussion</span>
+        )
+      }
     </div>
     <Content />
     <div class="cnf-event-page__social">

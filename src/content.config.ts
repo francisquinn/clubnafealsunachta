@@ -25,6 +25,7 @@ const event = defineCollection({
       facebook: z.string().url().optional(),
       meetup: z.string().url().optional(),
     }),
+    debate: z.boolean().optional()
   }),
 });
 
