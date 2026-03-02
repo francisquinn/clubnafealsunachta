@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type JSX } from "react";
-import "../styles/newsletter.css";
+import "../styles/form.css";
 
 export default function NewsletterForm() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -61,7 +61,7 @@ export default function NewsletterForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className={`cnf-button cnf-button__primary cnf-button--compact ${isLoading && 'cnf-button--loading'}`}
+          className={`cnf-form__submit cnf-button cnf-button__gold ${isLoading && 'cnf-button--loading'}`}
         >
           <span className="cnf-button__text">Subscribe</span>
         </button>
@@ -75,7 +75,7 @@ export default function NewsletterForm() {
         renderForm()
       ) : (
         <>
-          <div className="cnf-form__message--success">{successMessage}</div>
+          <p className="cnf-form__message--success">{successMessage}</p>
         </>
       )}
     </>

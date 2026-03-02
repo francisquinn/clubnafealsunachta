@@ -2,7 +2,7 @@
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { formatBlogDate } from "../../utils/script";
-import Support from "../../components/Support.astro";
+import Banner from "../../layouts/Banner.astro";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
@@ -31,5 +31,13 @@ const { Content } = await render(post);
     </div>
     <Content />
   </section>
-  <Support />
+  <Banner
+    title="Fancy supporting the club?"
+    description="If you're enjoying what we're at, why not chip in and help keep things going!"
+    location={{
+      name: "Supply the tea",
+      url: "https://ko-fi.com/clubnafealsunachta",
+      isExternal: true,
+    }}
+  />
 </BaseLayout>

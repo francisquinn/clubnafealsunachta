@@ -1,14 +1,20 @@
 :root {
   --color-beige: 45.88, 62.96%, 94.71%;
+  --color-gold: 47.54, 53.72%, 47.45%;
   --color-green: 135.65, 19.01%, 23.73%;
   --color-white: 30, 100%, 98.82%;
   --color-grey: 0, 0%, 40%;
   --color-red: 0, 84.96%, 44.31%;
   --color-light-green: 120, 75%, 31.37%;
+  --border-radius: 1rem;
 }
 
 * {
   box-sizing: border-box;
+}
+
+*:focus-visible {
+  outline-color: hsl(var(--color-green));
 }
 
 html {
@@ -64,7 +70,9 @@ p {
 }
 
 p,
-li {
+li,
+span,
+a {
   font-size: 1.125rem;
 }
 
@@ -72,19 +80,27 @@ li {
   border-bottom: 1.5px solid hsl(var(--color-green));
 }
 
+.text-sm {
+  font-size: 1rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
 .cnf-button {
   position: relative;
   padding: 1rem 1.5rem;
-  border-radius: 50px;
+  border-radius: var(--border-radius);
   border: none;
   cursor: pointer;
   font-family: "Noto Sans", sans-serif;
-  font-size: 1rem;
-  transition: transform .1s ease;
+  font-size: 1.125rem;
+  transition: transition 0.1s ease;
 }
 
 .cnf-button--compact {
-  padding: 0.7rem 1.2rem;
+  padding: 0.5rem 1rem;
 }
 
 .cnf-button__primary {
@@ -97,7 +113,22 @@ li {
   border: 2px solid hsl(var(--color-green));
 }
 
-.cnf-button__primary .cnf-button__text {
+.cnf-button__gold {
+  background-color: hsl(var(--color-gold));
+}
+
+.cnf-button__link {
+  background-color: transparent;
+  color: hsl(var(--color-green));
+}
+
+.cnf-button__emoji {
+  font-size: 1.5rem;
+  line-height: 1rem;
+}
+
+.cnf-button__primary .cnf-button__text,
+.cnf-button__gold .cnf-button__text {
   color: hsl(var(--color-beige));
 }
 
@@ -123,12 +154,14 @@ li {
 }
 
 .cnf-button:active {
-  transform: scale(.95);
+  transform: scale(0.95);
+  box-shadow: none;
 }
 
 .cnf-button:disabled {
   cursor: not-allowed;
-  opacity: .7;
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 @keyframes button-loading-spinner {
@@ -139,31 +172,6 @@ li {
   to {
     transform: rotate(1turn);
   }
-}
-
-.cnf-form {
-  display: grid;
-  gap: 10px;
-}
-
-.cnf-form fieldset {
-  border: 0;
-  padding: 0;
-  margin: 0;
-}
-
-.cnf-form__input {
-  padding: 0.7rem 1.2rem;
-  line-height: 1rem;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid hsl(var(--color-green));
-  font-size: 1rem;
-}
-
-.cnf-form__input:focus-visible {
-  outline: none;
-  border-bottom: 2px solid hsl(var(--color-green));
 }
 
 /* Media Queries */

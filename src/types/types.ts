@@ -17,3 +17,13 @@ export type Event = {
   };
   debate?: boolean;
 };
+
+export interface BannerProps {
+  title: string;
+  description: string;
+  location: {
+    name: string;
+    url: string;
+    isExternal?: boolean;
+  }
+};

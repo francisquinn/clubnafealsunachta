@@ -36,11 +36,19 @@ const year = new Date().getFullYear();
   .cnf-footer__sign {
     color: hsl(var(--color-grey));
   }
+
+  .cnf-footer__icon {
+    width: 0.8rem;
+    height: 0.8rem;
+  }
 </style>
 
 <footer class="cnf-footer">
   <div class="cnf-footer__links">
-    <a href="https://ko-fi.com/clubnafealsunachta" target="_blank">Support</a>
+    <a href="https://ko-fi.com/clubnafealsunachta" target="_blank">
+      Support
+      <img class="cnf-footer__icon" src="/link.svg" />
+    </a>
     <a href="/newsletter">Newsletter</a>
     <a href="mailto:info@clubnafealsunachta.com" target="_blank">Contact</a>
   </div>
