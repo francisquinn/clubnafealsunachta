@@ -1,0 +1,13 @@
+---
+import SuggestTopicForm from "../components/SuggestTopicForm";
+import BaseLayout from "../layouts/BaseLayout.astro";
+const pageTitle = "Suggest a topic";
+---
+
+<BaseLayout pageTitle={pageTitle}>
+  <section class="cnf-section">
+    <h1>Suggest a topic</h1>
+    <p>Add a topic or two to my never-ending list.</p>
+    <SuggestTopicForm client:load />
+  </section>
+</BaseLayout>

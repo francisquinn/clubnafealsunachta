@@ -1,0 +1,40 @@
+.cnf-form {
+  display: grid;
+  gap: 10px;
+  max-width: 600px;
+}
+
+.cnf-form fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.cnf-form__input {
+  padding: 1rem 1.5rem;
+  line-height: 1.5rem;
+  background: hsl(var(--color-white));
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1.125rem;
+  box-shadow: inset rgba(0, 0, 0, 0.15) 2px 2px 3px;
+}
+
+.cnf-form__message--error {
+  color: hsl(var(--color-red));
+  text-align: start;
+}
+
+.cnf-form__message--success {
+  color: hsl(var(--color-light-green));
+}
+
+.cnf-form__submit {
+  width: 100%;
+}
+
+@media (min-width: 576px) {
+  .cnf-form__submit {
+    width: fit-content;
+  }
+}

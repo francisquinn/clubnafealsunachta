@@ -1,0 +1,25 @@
+---
+import type { BannerProps } from "../types/types";
+
+const { title, description, location } = Astro.props as BannerProps;
+---
+
+<style>
+  .cnf-banner__icon {
+    width: 0.8rem;
+    height: 0.8rem;
+  }
+</style>
+
+<section class="cnf-section">
+  <h3>{title}</h3>
+  <p>{description}</p>
+  <a
+    href={location.url}
+    target={location.isExternal ? "_blank" : undefined}
+    rel={location.isExternal ? "noopener noreferrer" : undefined}
+  >
+    {location.name}
+    {location.isExternal && <img class="cnf-banner__icon" src="/link.svg" />}
+  </a>
+</section>

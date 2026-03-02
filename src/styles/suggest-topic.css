@@ -1,0 +1,44 @@
+.cnf-suggest {
+  display: grid;
+  gap: 1rem;
+}
+
+.cnf-suggest__input {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.cnf-suggest__list {
+  list-style-type: lower-greek;
+  padding-left: 40px;
+}
+
+.cnf-suggest__topic {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.cnf-suggest__count {
+  background-color: hsl(var(--color-white));
+  padding: 0.2rem 0.5rem;
+  color: hsl(var(--color-green));
+  border-radius: 50px;
+}
+
+.cnf-suggest__icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (min-width: 576px) {
+  .cnf-suggest__input {
+    max-width: 400px;
+  }
+
+  .cnf-suggest__list {
+    max-width: 380px;
+  }
+}

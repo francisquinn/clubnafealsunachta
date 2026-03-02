@@ -3,6 +3,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import { formatEventDate } from "../../utils/script";
 import "../../styles/event.css";
 import { getCollection, render } from "astro:content";
+import Banner from "../../layouts/Banner.astro";
 
 export async function getStaticPaths() {
   const events = await getCollection("event");
@@ -84,4 +85,12 @@ const { Content } = await render(event);
       </ul>
     </div>
   </section>
+  <Banner
+    title="Like to suggest a topic?"
+    description="Why not help the never-ending list of topics grow even more!"
+    location={{
+      name: "Suggest topic",
+      url: "/suggest-topic",
+    }}
+  />
 </BaseLayout>
