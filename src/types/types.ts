@@ -15,5 +15,5 @@ export type Event = {
     facebook?: string;
     meetup?: string;
   };
-  debate: boolean;
+  debate?: boolean;
 };
