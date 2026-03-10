@@ -17,3 +17,10 @@ debate: true
 This week will be the first attempt at running a structured debate. The question we’ll be debating: Is social media harming society more than it helps?
 The structure on how it’ll run is yet to be defined but I hope you take the time to reflect over the next few days on the arguments both for and against the statement.
 I look forward to seeing everyone there!
+
+## Summary
+
+Well done to everyone who participated in the first official Club na Fealsúnachta debate! Congratulations again to the winning team, even though the emphasis was more on taking part and having fun, everyone won (or lost) in the end.
+I appreciate all the feedback and look forward to improving on this structure for the next time!
+
+Le grá.

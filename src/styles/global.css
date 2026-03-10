@@ -97,11 +97,6 @@ li {
   border: 2px solid hsl(var(--color-green));
 }
 
-.cnf-button__emoji {
-  font-size: 1.5rem;
-  line-height: 1rem;
-}
-
 .cnf-button__primary .cnf-button__text {
   color: hsl(var(--color-beige));
 }
