@@ -14,7 +14,7 @@
 }
 
 *:focus-visible {
-  outline-color: hsl(var(--color-green));
+  outline: 2px solid hsl(var(--color-green));
 }
 
 html {

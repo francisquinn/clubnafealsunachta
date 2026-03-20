@@ -15,3 +15,7 @@ social:
 
 This week we’ll discuss the topic of gender identity.
 We’ll explore into areas such as the difference between sex and gender, what it means to be a man or a woman, the social expectations and norms attached to gender, the many types of genders, and what role may gender play in the coming future.
+
+## Summary
+
+We touched on areas such as how gender can be separated from the biological sex, the societal prejudices towards different genders, the evolution of gender roles across cultures, how we should educate children on the matter, and addressing the division on separating public toilets based on sex.
