@@ -76,6 +76,13 @@ a {
   font-size: 1.125rem;
 }
 
+blockquote {
+  border-left: 4px solid color-mix(in hsl, hsl(var(--color-green)) 50%, white);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: hsl(var(--color-grey));
+}
+
 .tab-active {
   border-bottom: 1.5px solid hsl(var(--color-green));
 }
@@ -111,6 +118,12 @@ a {
   color: hsl(var(--color-green));
   background-color: hsl(var(--color-beige));
   border: 2px solid hsl(var(--color-green));
+}
+
+.cnf-button__gold {
+  background: linear-gradient(to bottom,
+      color-mix(in hsl, hsl(var(--color-gold)) 80%, white),
+      hsl(var(--color-gold)));
 }
 
 .cnf-button__gold {
