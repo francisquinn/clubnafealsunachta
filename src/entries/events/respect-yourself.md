@@ -16,3 +16,12 @@ social:
 Considering there are a few threads open from last week’s discussion, I thought to schedule a part two but this time focus our attention on the question: Is self-respect a prerequisite for respecting others?
 
 We’ll explore what it means to respect yourself, the difference between respect and love, do we inherently respect what we value, and the outcomes that occur through lack of self-respect.
+
+## Summary
+
+We touched on areas such as if respect is an act or a feeling, whether respect must always genuine or it can be faked, how our values are closely tied to what we respect, and how self-respect can be viewed as respecting your future self.
+
+Thanks to everyone for following along with the new discussion structure. I appreciate all the feedback and look forward to implementing them in the coming weeks.
+I wish everyone a happy easter! We’ll be back up and running on the 9th April. ‘Till then, stay safe.
+
+Le grá.
