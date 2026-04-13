@@ -16,3 +16,7 @@ social:
 This week we’ll explore the theme of over-talking. We’ll focus our attention around the question: Do we talk for the sake of talking?
 
 This topic will touch on areas such as how we seek to avoid the discomfort of silence, if over-talking is a failure to listen or need to be heard, our endless pursuit to put labels on everything, the different ways of communicating besides talking, and could we start to learn more about ourselves and the world around us by simply shutting up?
+
+## Summary
+
+We explored areas such as the social pressure to fill up space and to avoid silence by talking, if words are necessary to understand ourselves and to build connections with others, the differences between talking, connection, and communication, how listening is equally important as talking, and finally, how we can develop the skill of knowing when to talk and when to shut up.
