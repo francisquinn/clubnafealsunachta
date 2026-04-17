@@ -15,3 +15,7 @@ social:
 This week we’ll discuss the topic of connection. We’ll revolve the discussion around the question: Do we ever truly connect with people, or only with our idea of them?
 
 We’ll explore what it means to form a connection, the role perception plays, the limits of language, loneliness, and much more!
+
+## Summary
+
+We explored areas such as what it means to connect with a person, the different layers of the self, one-way binding connections, separating out the intellectual from the spiritual connections, whether we’re lacking or need deeper connections in our lives, and how seeing your younger or current self in others could lead to building long-lasting connections.
