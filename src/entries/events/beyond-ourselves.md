@@ -16,3 +16,7 @@ social:
 Following on from our last discussion on connection, this week we’ll turn our attention away from the human aspect to explore the spiritual realm of connection and ask: can connection exist beyond ourselves?
 
 This week’s questions explores whether we can form a genuine connection with something non-human, be it a tree, animals, the sun, or even the ground beneath our feet.
+
+## Summary
+
+We dived into areas such as how external sources could lead us to connecting deeper with ourselves, the limitations of the ego, if other species seek connection, and how we can connect to God or this underlying energy source that governs the universe.
