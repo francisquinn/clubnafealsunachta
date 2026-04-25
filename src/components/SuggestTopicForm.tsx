@@ -25,7 +25,7 @@ export default function TopicSuggestForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(topics),
+        body: JSON.stringify({ topics }),
       });
 
       const data = await response.json();
@@ -64,10 +64,10 @@ export default function TopicSuggestForm() {
 
   function renderTopics() {
     return (
-      <div>
-        <span className="cnf-suggest__count">{topics.length}</span> Suggested
-        topic(s):
-        <ul className="cnf-suggest__list">
+      <div aria-live="polite">
+        <span className="cnf-suggest__count" aria-hidden="true">{topics.length}</span> Suggested
+        topic{topics.length !== 1 ? "s" : ""}:
+        <ul className="cnf-suggest__list" aria-label="Suggested topics">
           {topics.map((topic: string, key: number) => (
             <li key={key}>
               <div className="cnf-suggest__topic">
@@ -75,8 +75,9 @@ export default function TopicSuggestForm() {
                 <button
                   className="cnf-button cnf-button__link cnf-button--compact"
                   onClick={() => removeTopic(key)}
+                  aria-label={`Remove ${topic}`}
                 >
-                  <img className="cnf-suggest__icon" src="/x.svg" />
+                  <img className="cnf-suggest__icon" src="/x.svg" alt="" aria-hidden="true" />
                 </button>
               </div>
             </li>
@@ -88,9 +89,10 @@ export default function TopicSuggestForm() {
 
   function renderForm(): JSX.Element {
     return (
-      <div className="cnf-suggest">
+      <div className="cnf-suggest" role="form" aria-label="Suggest a topic">
         <div className="cnf-suggest__input">
           <input
+            id="topic-input"
             type="text"
             name="topic"
             className="cnf-form__input"
@@ -113,11 +115,12 @@ export default function TopicSuggestForm() {
             type="submit"
             onClick={onSubmit}
             disabled={isLoading || topics.length === 0}
+            aria-busy={isLoading}
             className={`cnf-form__submit cnf-button cnf-button__gold ${isLoading ? "cnf-button--loading" : ""}`}
           >
             <span className="cnf-button__text">Send</span>
           </button>
-          <p className="text-sm">
+          <p className="text-sm" id="anonymous-note">
             Just so you know, the form is completely anonymous.
           </p>
         </div>
