@@ -5,7 +5,7 @@ import "../styles/event.css";
 import EventCard from "../layouts/EventCard";
 
 export default function UpcomingEvent(props: UpcomingEventProps) {
-  const [event, setEvent] = useState<Event | null>(null);
+  const [event, setEvent] = useState<Event | null | undefined>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,7 +14,7 @@ export default function UpcomingEvent(props: UpcomingEventProps) {
   }, [])
 
   const isExpired = (): boolean => {
-    return isEventExpired(event);
+    return isEventExpired(event ?? null);
   };
 
   function renderLoading() {
@@ -23,8 +23,7 @@ export default function UpcomingEvent(props: UpcomingEventProps) {
 
   function renderExpiry() {
     return (
-      !event ||
-      (isExpired() && (
+      (!event || isExpired()) && (
         <p
           style={{
             margin: 0
@@ -32,7 +31,7 @@ export default function UpcomingEvent(props: UpcomingEventProps) {
         >
           No upcoming events at the moment. Stay tuned for further updates!
         </p>
-      ))
+      )
     );
   }
 
@@ -53,6 +52,6 @@ export default function UpcomingEvent(props: UpcomingEventProps) {
 }
 
 type UpcomingEventProps = {
-  event: Event;
+  event?: Event;
   responsive?: boolean;
 };

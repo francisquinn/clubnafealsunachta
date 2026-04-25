@@ -1,0 +1,28 @@
+.cnf-select {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 1rem;
+}
+
+.cnf-select__label {
+  font-size: 1rem;
+}
+
+.cnf-select__input {
+  padding: 1rem 1.5rem;
+  line-height: 1.5rem;
+  background: hsl(var(--color-white));
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1.125rem;
+  box-shadow: inset rgba(0, 0, 0, 0.15) 2px 2px 3px;
+  cursor: pointer;
+}
+
+@media (min-width: 576px) {
+  .cnf-select__input {
+    width: fit-content;
+    min-width: 150px;
+  }
+}
