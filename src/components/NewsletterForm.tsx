@@ -47,20 +47,23 @@ export default function NewsletterForm() {
 
   function renderForm(): JSX.Element {
     return (
-      <form className="cnf-form" noValidate onSubmit={onSubmit} ref={formRef}>
+      <form className="cnf-form" noValidate onSubmit={onSubmit} ref={formRef} aria-label="Newsletter subscription">
         <input
+          id="newsletter-email"
           type="email"
           name="email"
           className="cnf-form__input"
           placeholder="Enter your email"
           required
+          aria-describedby="newsletter-error"
           onChange={onChange}
           ref={emailRef}
         />
-        <div className="cnf-form__message--error">{errorMessage}</div>
+        <div id="newsletter-error" className="cnf-form__message--error" role="alert" aria-live="polite">{errorMessage}</div>
         <button
           type="submit"
           disabled={isLoading}
+          aria-busy={isLoading}
           className={`cnf-form__submit cnf-button cnf-button__gold ${isLoading && 'cnf-button--loading'}`}
         >
           <span className="cnf-button__text">Subscribe</span>
