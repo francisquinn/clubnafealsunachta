@@ -15,6 +15,7 @@ const event = defineCollection({
   schema: z.object({
     name: z.string(),
     date: z.coerce.date(),
+    city: z.string().default("Trieste"),
     location: z.object({
       name: z.string(),
       url: z.string().url(),

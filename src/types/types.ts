@@ -5,6 +5,7 @@ export type EventCollection = CollectionEntry<"event">;
 export type Event = {
   name: string;
   date: Date;
+  city?: string;
   location: {
     name: string;
     url: string;

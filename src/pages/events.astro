@@ -2,21 +2,21 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 const pageTitle = "Events";
 import "../styles/event.css";
+import "../styles/select.css";
 import EventList from "../components/EventList";
 import { getCollection } from "astro:content";
-import type { EventCollection, Event } from "../types/types";
+import type { EventCollection } from "../types/types";
 import Banner from "../layouts/Banner.astro";
 
 const sortedEvents: EventCollection[] = (await getCollection("event")).sort(
   (a, b) => b.data.date.getTime() - a.data.date.getTime(),
 );
-const currentEvent: Event = sortedEvents[0].data;
 ---
 
 <BaseLayout pageTitle={pageTitle}>
   <section class="cnf-section">
     <h1>{pageTitle}</h1>
-    <EventList events={sortedEvents} currentEvent={currentEvent} client:load />
+    <EventList events={sortedEvents} client:load />
   </section>
   <Banner
     title="Like to suggest a topic?"
