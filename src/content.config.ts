@@ -1,8 +1,10 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
+import { eventsLoader } from "./loaders/events";
+import 'dotenv/config';
 
 const blog = defineCollection({
-  loader: glob({ pattern: "*.md", base: "./src/entries/posts" }),
+  loader: glob({ pattern: "**/*.md", base: "./src/entries/posts" }),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
@@ -11,22 +13,23 @@ const blog = defineCollection({
 });
 
 const event = defineCollection({
-  loader: glob({ pattern: "*.md", base: "./src/entries/events" }),
+  loader: eventsLoader(),
   schema: z.object({
     name: z.string(),
-    date: z.coerce.date(),
-    city: z.string().default("Trieste"),
+    date: z.date(),
+    city: z.string().nullable(),
     location: z.object({
-      name: z.string(),
-      url: z.string().url(),
+      name: z.string().nullable(),
+      url: z.string().nullable(),
     }),
     slug: z.string(),
+    description: z.string().nullable(),
+    summary: z.string().nullable(),
     social: z.object({
-      instagram: z.string().url(),
-      facebook: z.string().url().optional(),
-      meetup: z.string().url().optional(),
+      instagram: z.string().nullable(),
+      facebook: z.string().nullable(),
+      meetup: z.string().nullable(),
     }),
-    debate: z.boolean().optional()
   }),
 });
 

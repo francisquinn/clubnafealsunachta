@@ -4,10 +4,13 @@ import Hero from "../components/Hero.astro";
 import UpcomingEvent from "../components/UpcomingEvent";
 import LatestPost from "../components/LatestPost.astro";
 import { getCollection } from "astro:content";
+import type { EventCollection } from "../types/types";
+import { isEventExpired } from "../utils/script";
 
-const currentEvent = (await getCollection("event")).sort(
-  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
-)[0];
+const events = await getCollection("event") as EventCollection[];
+const currentEvent = events
+  .filter((e) => !isEventExpired(e.data))
+  .sort((a, b) => a.data.date.getTime() - b.data.date.getTime())[0];
 
 const pageTitle = "Home";
 ---
@@ -16,7 +19,11 @@ const pageTitle = "Home";
   <Hero />
   <section class="cnf-section">
     <h2>Upcoming events in Trieste</h2>
-    <UpcomingEvent event={currentEvent.data} responsive={true} client:load />
+    {
+      currentEvent
+        ? <UpcomingEvent event={currentEvent.data} responsive={true} client:load />
+        : <p>No upcoming events at the moment. Stay tuned for further updates!</p>
+    }
   </section>
   <LatestPost />
 </BaseLayout>

@@ -1,36 +1,85 @@
 .cnf-form {
   display: grid;
-  gap: 10px;
-  max-width: 600px;
+  gap: 1rem;
 }
 
-.cnf-form fieldset {
-  border: 0;
-  padding: 0;
-  margin: 0;
+.cnf-form__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cnf-form__label {
+  font-size: 1rem;
 }
 
 .cnf-form__input {
   padding: 1rem 1.5rem;
   line-height: 1.5rem;
-  background: hsl(var(--color-white));
   border: none;
   border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-inset);
   font-size: 1.125rem;
-  box-shadow: inset rgba(0, 0, 0, 0.15) 2px 2px 3px;
+  font-family: inherit;
 }
 
-.cnf-form__message--error {
-  color: hsl(var(--color-red));
-  text-align: start;
+select.cnf-form__input {
+  padding-right: 2.5rem;
+  background-color: hsl(var(--color-white));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  color: inherit;
 }
 
-.cnf-form__message--success {
-  color: hsl(var(--color-light-green));
+.cnf-form__hint {
+  color: hsl(var(--color-grey));
+  font-size: 0.875rem;
 }
 
 .cnf-form__submit {
   width: 100%;
+}
+
+.cnf-form__button {
+  padding: 0.75rem 1.5rem;
+  background: hsl(var(--color-green));
+  color: hsl(var(--color-white));
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.cnf-form__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cnf-form__message--error:empty {
+  display: none;
+}
+
+.cnf-form__message--error {
+  color: hsl(var(--color-red));
+  padding: 1rem;
+  background: hsl(var(--color-red) / 0.1);
+  border-radius: var(--border-radius);
+}
+
+.cnf-form__success {
+  padding: 2rem;
+  background: hsl(var(--color-light-green));
+  border-radius: var(--border-radius);
+  text-align: center;
+}
+
+.cnf-form__success-button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
 }
 
 @media (min-width: 576px) {

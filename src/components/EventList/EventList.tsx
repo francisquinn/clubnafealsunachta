@@ -1,14 +1,17 @@
 import { useState, type JSX } from "react";
-import UpcomingEvent from "../components/UpcomingEvent";
-import { isEventExpired } from "../utils/script";
-import EventCard from "../layouts/EventCard";
-import { formatBlogDate } from "../utils/script";
-import Selector from "./Selector/Selector";
-import type { EventCollection } from "../types/types";
+import UpcomingEvent from "../UpcomingEvent";
+import { isEventExpired } from "../../utils/script";
+import EventCard from "../../layouts/EventCard";
+import { formatBlogDate } from "../../utils/script";
+import Selector from "../Selector/Selector";
+import type { City, EventCollection } from "../../types/types";
+import { CITY } from "../../types/types";
 
 export default function EventList(props: EventListProps) {
+  const cities = [...new Set(props.events.map((e) => e.data.city).filter(Boolean))] as City[];
+
   const [showUpcoming, setShowUpcoming] = useState<boolean>(true);
-  const [selectedCity, setSelectedCity] = useState<string>("Trieste");
+  const [selectedCity, setSelectedCity] = useState<City>(cities[0] ?? CITY.TRIESTE);
 
   const filteredEvents = props.events.filter(
     (event) => event.data.city === selectedCity
@@ -16,12 +19,9 @@ export default function EventList(props: EventListProps) {
   const upcomingEvents = filteredEvents.filter(
     (event) => !isEventExpired(event.data)
   );
-  const pastEvents = filteredEvents.filter((event) =>
-    isEventExpired(event.data)
-  );
-  const currentEvent = upcomingEvents[0]?.data;
-
-  const cities = [...new Set(props.events.map((e) => e.data.city).filter(Boolean))] as string[];
+  const pastEvents = filteredEvents
+    .filter((event) => isEventExpired(event.data))
+    .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 
   function renderCitySelector(): JSX.Element {
     return (
@@ -57,7 +57,9 @@ export default function EventList(props: EventListProps) {
   function renderEvents(): JSX.Element {
     if (showUpcoming) {
       return <div className="cnf-events--grid">
-        {currentEvent ? <UpcomingEvent event={currentEvent} /> : <p>No upcoming events at the moment. Stay tuned for further updates!</p>}
+        {upcomingEvents.length > 0
+          ? upcomingEvents.map((event) => <UpcomingEvent event={event.data} key={event.data.slug} />)
+          : <p>No upcoming events at the moment. Stay tuned for further updates!</p>}
       </div>;
     }
     return <div className="cnf-events--grid">
@@ -67,10 +69,10 @@ export default function EventList(props: EventListProps) {
 
   function renderPastEvents() {
     return pastEvents.map(
-      (event: EventCollection, index: number) =>
+      (event: EventCollection) =>
         <EventCard
           event={event.data}
-          key={index}
+          key={event.data.slug}
           dateFormatter={formatBlogDate}
         />
     );

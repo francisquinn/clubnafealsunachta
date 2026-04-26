@@ -3,14 +3,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 const pageTitle = "Events";
 import "../styles/event.css";
 import "../styles/select.css";
-import EventList from "../components/EventList";
+import EventList from "../components/EventList/EventList";
 import { getCollection } from "astro:content";
 import type { EventCollection } from "../types/types";
 import Banner from "../layouts/Banner.astro";
 
-const sortedEvents: EventCollection[] = (await getCollection("event")).sort(
-  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
-);
+const sortedEvents = (await getCollection("event")) as EventCollection[];
 ---
 
 <BaseLayout pageTitle={pageTitle}>

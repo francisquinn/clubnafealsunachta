@@ -1,8 +1,9 @@
 ---
+export const prerender = true;
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { formatEventDate } from "../../utils/script";
 import "../../styles/event.css";
-import { getCollection, render } from "astro:content";
+import { getCollection } from "astro:content";
 import Banner from "../../layouts/Banner.astro";
 
 export async function getStaticPaths() {
@@ -14,7 +15,6 @@ export async function getStaticPaths() {
 }
 
 const { event } = Astro.props;
-const { Content } = await render(event);
 ---
 
 <BaseLayout pageTitle={event.data.name}>
@@ -40,7 +40,18 @@ const { Content } = await render(event);
         )
       }
     </div>
-    <Content />
+    {event.data.description && (
+      <div class="cnf-event-page__description">
+        <h2>Description</h2>
+        <p>{event.data.description}</p>
+      </div>
+    )}
+    {event.data.summary && (
+      <div class="cnf-event-page__summary">
+        <h2>Summary</h2>
+        <p>{event.data.summary}</p>
+      </div>
+    )}
     <div class="cnf-event-page__social">
       <h2>Social links</h2>
       <ul>

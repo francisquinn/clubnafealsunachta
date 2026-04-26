@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /create-event
+
+Sitemap: https://clubnafealsunachta.com/sitemap-index.xml

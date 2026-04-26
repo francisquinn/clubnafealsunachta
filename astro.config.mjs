@@ -7,6 +7,7 @@ import sitemap from '@astrojs/sitemap';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://clubnafealsunachta.com',
+  output: 'static',
   integrations: [react(), sitemap()],
   adapter: netlify(),
 });
