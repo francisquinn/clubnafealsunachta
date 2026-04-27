@@ -12,7 +12,7 @@ export type Event = {
   };
   slug: string;
   social: {
-    instagram: string;
+    instagram?: string;
     facebook?: string;
     meetup?: string;
   };
