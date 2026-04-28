@@ -9,31 +9,46 @@ const createEvent = defineAction({
       throw new Error('Supabase not configured');
     }
 
-    const input = {
-      name: formData.get('name') as string,
-      date: formData.get('date') as string,
-      city: (formData.get('city') as string) || CITY.TRIESTE,
-      location_name: formData.get('location_name') as string || undefined,
-      location_url: formData.get('location_url') as string || undefined,
-      slug: formData.get('slug') as string,
-      instagram: formData.get('instagram') as string || undefined,
-      facebook: formData.get('facebook') as string || undefined,
-      meetup: formData.get('meetup') as string || undefined,
-      description: formData.get('description') as string || undefined,
-      summary: formData.get('summary') as string || undefined,
-    };
+    const name = formData.get('name') as string;
+    const date = formData.get('date') as string;
+    const slug = formData.get('slug') as string;
+    const city = (formData.get('city') as string) || CITY.TRIESTE;
+    const location_name = (formData.get('location_name') as string) || null;
+    const location_url = (formData.get('location_url') as string) || null;
 
-    if (!input.name || !input.date || !input.slug) {
+    if (!name || !date || !slug) {
       throw new Error('Missing required fields');
     }
 
-    if (!/^[a-z0-9-]+$/.test(input.slug)) {
+    if (!/^[a-z0-9-]+$/.test(slug)) {
       throw new Error('Slug must contain only lowercase letters, numbers and hyphens');
+    }
+
+    let venue_id: number | null = null;
+    if (location_name) {
+      const { data: venue, error: venueError } = await supabase
+        .from('venues')
+        .upsert({ name: location_name, url: location_url, city }, { onConflict: 'name,city' })
+        .select('id')
+        .single();
+
+      if (venueError) throw new Error(venueError.message);
+      venue_id = venue.id;
     }
 
     const { error } = await supabase
       .from('events')
-      .insert([input])
+      .insert([{
+        name,
+        date,
+        slug,
+        venue_id,
+        instagram: (formData.get('instagram') as string) || null,
+        facebook: (formData.get('facebook') as string) || null,
+        meetup: (formData.get('meetup') as string) || null,
+        description: (formData.get('description') as string) || null,
+        summary: (formData.get('summary') as string) || null,
+      }])
       .select()
       .single();
 

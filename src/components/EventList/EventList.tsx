@@ -4,14 +4,14 @@ import { isEventExpired } from "../../utils/script";
 import EventCard from "../../layouts/EventCard";
 import { formatBlogDate } from "../../utils/script";
 import Selector from "../Selector/Selector";
-import type { City, EventCollection } from "../../types/types";
+import type { EventCollection } from "../../types/types";
 import { CITY } from "../../types/types";
 
 export default function EventList(props: EventListProps) {
-  const cities = [...new Set(props.events.map((e) => e.data.city).filter(Boolean))] as City[];
+  const cities = [...new Set(props.events.map((e) => e.data.city).filter(Boolean))] as string[];
 
   const [showUpcoming, setShowUpcoming] = useState<boolean>(true);
-  const [selectedCity, setSelectedCity] = useState<City>(cities[0] ?? CITY.TRIESTE);
+  const [selectedCity, setSelectedCity] = useState<string>(cities[0] ?? CITY.TRIESTE);
 
   const filteredEvents = props.events.filter(
     (event) => event.data.city === selectedCity

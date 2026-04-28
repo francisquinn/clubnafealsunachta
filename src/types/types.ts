@@ -10,16 +10,16 @@ export type EventCollection = CollectionEntry<"event">;
 export type Event = {
   name: string;
   date: Date;
-  city?: City;
+  city?: string | null;
   location: {
-    name: string;
-    url: string;
+    name: string | null;
+    url: string | null;
   };
   slug: string;
   social: {
-    instagram?: string;
-    facebook?: string;
-    meetup?: string;
+    instagram?: string | null;
+    facebook?: string | null;
+    meetup?: string | null;
   };
   debate?: boolean;
 };

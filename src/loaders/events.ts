@@ -5,9 +5,12 @@ interface SupabaseEvent {
   id: number;
   name: string;
   date: string;
-  city: string | null;
-  location_name: string | null;
-  location_url: string | null;
+  venue_id: number | null;
+  venues: {
+    name: string;
+    url: string | null;
+    city: string;
+  } | null;
   slug: string;
   instagram: string | null;
   facebook: string | null;
@@ -29,7 +32,7 @@ export function eventsLoader(): Loader {
 
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select('*, venues(name, url, city)')
         .order('date', { ascending: true })
         .returns<SupabaseEvent[]>();
 
@@ -43,10 +46,10 @@ export function eventsLoader(): Loader {
           data: {
             name: event.name,
             date: new Date(event.date),
-            city: event.city,
+            city: event.venues?.city ?? null,
             location: {
-              name: event.location_name,
-              url: event.location_url,
+              name: event.venues?.name ?? null,
+              url: event.venues?.url ?? null,
             },
             slug: event.slug,
             description: event.description,

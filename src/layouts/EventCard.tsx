@@ -20,9 +20,10 @@ export default function EventCard({
               {dateFormatter(new Date(event.date))}
             </li>
             <li className="cnf-event__location">
-              <a href={event.location.url} target="_blank">
-                {event.location.name}
-              </a>
+              {event.location.url
+                ? <a href={event.location.url} target="_blank">{event.location.name}</a>
+                : <span>{event.location.name}</span>
+              }
             </li>
           </ul>
         </div>
