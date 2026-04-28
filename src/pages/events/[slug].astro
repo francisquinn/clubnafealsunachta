@@ -55,16 +55,20 @@ const { event } = Astro.props;
     <div class="cnf-event-page__social">
       <h2>Social links</h2>
       <ul>
-        <li>
-          <a
-            href={event.data.social.instagram}
-            class="cnf-event-page__social-link"
-            target="_blank"
-          >
-            <img class="cnf-event__social-svg" src="/instagram.svg" />
-            Instagram
-          </a>
-        </li>
+        {
+          event.data.social.instagram && (
+            <li>
+              <a
+                href={event.data.social.instagram}
+                class="cnf-event-page__social-link"
+                target="_blank"
+              >
+                <img class="cnf-event__social-svg" src="/instagram.svg" />
+                Instagram
+              </a>
+            </li>
+          )
+        }
         {
           event.data.social.facebook && (
             <li>

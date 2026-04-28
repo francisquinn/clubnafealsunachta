@@ -27,9 +27,11 @@ export default function EventCard({
           </ul>
         </div>
         <div className="cnf-event__social">
-          <a href={event.social.instagram} target="_blank">
-            <img className="cnf-event__social-svg" src="/instagram.svg" />
-          </a>
+          {event.social.instagram && (
+            <a href={event.social.instagram} target="_blank">
+              <img className="cnf-event__social-svg" src="/instagram.svg" />
+            </a>
+          )}
           {event.social.facebook && (
             <a href={event.social.facebook} target="_blank">
               <img className="cnf-event__social-svg" src="/facebook.svg" />
