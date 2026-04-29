@@ -67,6 +67,23 @@ const createEvent = defineAction({
   }
 });
 
+const getVenues = defineAction({
+  handler: async () => {
+    if (!supabase) {
+      throw new Error('Supabase not configured');
+    }
+
+    const { data, error } = await supabase
+      .from('venues')
+      .select('id, name, url, city')
+      .order('name');
+
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  }
+});
+
 export const server = {
   createEvent,
+  getVenues,
 };

@@ -23,6 +23,10 @@
   font-family: inherit;
 }
 
+textarea.cnf-form__input {
+  resize: vertical;
+}
+
 select.cnf-form__input {
   padding-right: 2.5rem;
   background-color: hsl(var(--color-white));
@@ -65,7 +69,6 @@ select.cnf-form__input {
 
 .cnf-form__message--error {
   color: hsl(var(--color-red));
-  padding: 1rem;
   background: hsl(var(--color-red) / 0.1);
   border-radius: var(--border-radius);
 }
