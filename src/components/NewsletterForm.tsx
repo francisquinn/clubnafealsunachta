@@ -25,7 +25,7 @@ export default function NewsletterForm() {
     const response = await fetch("/api/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(email),
+      body: JSON.stringify({ email }),
     });
 
     const data = await response.json();
@@ -59,7 +59,7 @@ export default function NewsletterForm() {
           onChange={onChange}
           ref={emailRef}
         />
-        <div id="newsletter-error" className="cnf-form__message--error" role="alert" aria-live="polite">{errorMessage}</div>
+        {errorMessage && <div id="newsletter-error" className="cnf-form__message--error" role="alert" aria-live="polite">{errorMessage}</div>}
         <button
           type="submit"
           disabled={isLoading}
@@ -78,7 +78,7 @@ export default function NewsletterForm() {
         renderForm()
       ) : (
         <>
-          <p className="cnf-form__message--success">{successMessage}</p>
+          <p>{successMessage}</p>
         </>
       )}
     </>

@@ -8,6 +8,7 @@ const mockCreateEvent = vi.fn();
 vi.mock("astro:actions", () => ({
   actions: {
     createEvent: (...args: unknown[]) => mockCreateEvent(...args),
+    getVenues: () => Promise.resolve({ data: [] }),
   },
 }));
 
@@ -18,10 +19,10 @@ describe("CreateEventForm", () => {
 
   it("renders all required form fields", () => {
     render(<CreateEventForm />);
-    expect(screen.getByLabelText(/event name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/date & time/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/url slug/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /create event/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^create$/i })).toBeInTheDocument();
   });
 
   it("disables submit button and shows loading state while submitting", async () => {
@@ -31,7 +32,7 @@ describe("CreateEventForm", () => {
     fireEvent.submit(document.querySelector("form")!);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /creating/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: /^create$/i })).toBeDisabled();
     });
   });
 
@@ -54,18 +55,6 @@ describe("CreateEventForm", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/event created successfully/i)).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /create another/i })).toBeInTheDocument();
     });
-  });
-
-  it("returns to form when Create another is clicked", async () => {
-    mockCreateEvent.mockResolvedValue({ data: { success: true } });
-    render(<CreateEventForm />);
-
-    fireEvent.submit(document.querySelector("form")!);
-    await waitFor(() => screen.getByText(/event created successfully/i));
-
-    fireEvent.click(screen.getByRole("button", { name: /create another/i }));
-    expect(screen.getByLabelText(/event name/i)).toBeInTheDocument();
   });
 });

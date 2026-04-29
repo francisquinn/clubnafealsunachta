@@ -29,7 +29,6 @@ export default function TopicSuggestForm() {
       });
 
       const data = await response.json();
-      setIsFormSubmitted(true);
 
       if (!response.ok) {
         throw new Error(data.message);
@@ -37,6 +36,7 @@ export default function TopicSuggestForm() {
 
       setSuccessMessage(data.message);
       setErrorMessage(null);
+      setIsFormSubmitted(true);
     } catch (err) {
       if (err instanceof Error) {
         setErrorMessage(err.message);
@@ -134,11 +134,12 @@ export default function TopicSuggestForm() {
         <>
           {renderTopics()}
           {renderForm()}
+          {errorMessage && <p className="cnf-form__message--error">{errorMessage}</p>}
         </>
       ) : (
         <>
           {successMessage !== null && (
-            <p className="cnf-form__message--success">{successMessage}</p>
+            <p>{successMessage}</p>
           )}
           {errorMessage !== null && (
             <p className="cnf-form__message--error">{errorMessage}</p>
