@@ -1,11 +1,11 @@
 import { defineAction } from 'astro:actions';
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseAdmin } from '../lib/supabase';
 import { CITY } from '../types/types';
 
 const createEvent = defineAction({
   accept: 'form',
   handler: async (formData) => {
-    if (!supabase) {
+    if (!supabaseAdmin) {
       throw new Error('Supabase not configured');
     }
 
@@ -26,7 +26,7 @@ const createEvent = defineAction({
 
     let venue_id: number | null = null;
     if (location_name) {
-      const { data: venue, error: venueError } = await supabase
+      const { data: venue, error: venueError } = await supabaseAdmin
         .from('venues')
         .upsert({ name: location_name, url: location_url, city }, { onConflict: 'name,city' })
         .select('id')
@@ -36,7 +36,7 @@ const createEvent = defineAction({
       venue_id = venue.id;
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('events')
       .insert([{
         name,

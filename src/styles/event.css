@@ -126,6 +126,10 @@
   height: 20px;
 }
 
+.cnf-event-page__summary p {
+  white-space: pre-wrap;
+}
+
 .cnf-event-page__social ul {
   display: flex;
   flex-wrap: wrap;
