@@ -1,54 +1,20 @@
-import { useEffect, useState } from "react";
 import { isEventExpired } from "../utils/script";
 import { type Event } from "../types/types";
 import "../styles/event.css";
 import EventCard from "../layouts/EventCard";
 
 export default function UpcomingEvent(props: UpcomingEventProps) {
-  const [event, setEvent] = useState<Event | null | undefined>(null);
-  const [loading, setLoading] = useState(true);
+  const isExpired = isEventExpired(props.event ?? null);
 
-  useEffect(() => {
-    setEvent(props.event);
-    setLoading(false);
-  }, [])
-
-  const isExpired = (): boolean => {
-    return isEventExpired(event ?? null);
-  };
-
-  function renderLoading() {
-    return loading && <p>Loading...</p>;
-  }
-
-  function renderExpiry() {
+  if (!props.event || isExpired) {
     return (
-      (!event || isExpired()) && (
-        <p
-          style={{
-            margin: 0
-          }}
-        >
-          No upcoming events at the moment. Stay tuned for further updates!
-        </p>
-      )
+      <p style={{ margin: 0 }}>
+        No upcoming events at the moment. Stay tuned for further updates!
+      </p>
     );
   }
 
-  function renderEvent() {
-    return (
-      event &&
-      !isExpired() && <EventCard event={event} responsive={props.responsive} />
-    );
-  }
-
-  return (
-    <>
-      {renderLoading()}
-      {renderExpiry()}
-      {renderEvent()}
-    </>
-  );
+  return <EventCard event={props.event} responsive={props.responsive} />;
 }
 
 type UpcomingEventProps = {

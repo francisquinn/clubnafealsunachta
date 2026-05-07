@@ -1,0 +1,13 @@
+---
+export const prerender = false;
+import BaseLayout from "../layouts/BaseLayout.astro";
+import ContactForm from "../components/ContactForm/ContactForm";
+import "../styles/form.css";
+---
+
+<BaseLayout pageTitle="Contact">
+  <section class="cnf-section">
+    <h1>Get in touch</h1>
+    <ContactForm client:load />
+  </section>
+</BaseLayout>

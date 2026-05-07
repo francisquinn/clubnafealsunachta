@@ -126,6 +126,7 @@
   height: 20px;
 }
 
+.cnf-event-page__description p,
 .cnf-event-page__summary p {
   white-space: pre-wrap;
 }
