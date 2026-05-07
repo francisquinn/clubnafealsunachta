@@ -63,6 +63,15 @@ select.cnf-form__input {
   cursor: not-allowed;
 }
 
+.cnf-form__honeypot {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .cnf-form__message--error:empty {
   display: none;
 }
@@ -71,18 +80,6 @@ select.cnf-form__input {
   color: hsl(var(--color-red));
   background: hsl(var(--color-red) / 0.1);
   border-radius: var(--border-radius);
-}
-
-.cnf-form__success {
-  padding: 2rem;
-  background: hsl(var(--color-light-green));
-  border-radius: var(--border-radius);
-  text-align: center;
-}
-
-.cnf-form__success-button {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
 }
 
 @media (min-width: 576px) {
