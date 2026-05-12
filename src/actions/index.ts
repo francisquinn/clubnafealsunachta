@@ -1,5 +1,6 @@
 import { defineAction } from 'astro:actions';
 import { supabase, supabaseAdmin } from '../lib/supabase';
+import { createMailchimpDraft } from '../lib/mailchimp';
 import { CITY } from '../types/types';
 
 const createEvent = defineAction({
@@ -62,6 +63,14 @@ const createEvent = defineAction({
         console.error('Netlify build hook failed:', e)
       );
     }
+
+    await createMailchimpDraft({
+      name,
+      date,
+      slug,
+      venue_name: location_name,
+      venue_url: location_url,
+    }).catch((e) => console.error('Mailchimp draft creation failed:', e));
 
     return { success: true };
   }
