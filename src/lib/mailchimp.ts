@@ -19,11 +19,11 @@ function formatEventDate(dateStr: string): string {
   const date = new Date(dateStr);
   const datePart = date.toLocaleDateString('en-IE', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-    timeZone: 'Europe/Rome',
+    timeZone: 'UTC',
   });
   const timePart = date.toLocaleTimeString('en-IE', {
     hour: '2-digit', minute: '2-digit',
-    timeZone: 'Europe/Rome',
+    timeZone: 'UTC',
   });
   return `${datePart} @ ${timePart}`;
 }
@@ -166,9 +166,9 @@ function buildEmailHtml(event: EventDraft): string {
 </html>`;
 }
 
-export async function createMailchimpDraft(event: EventDraft): Promise<void> {
+export async function sendMailchimpEmail(event: EventDraft): Promise<void> {
   if (!MAILCHIMP_API_KEY || !MAILCHIMP_AUDIENCE_ID || !DC) {
-    console.warn('Mailchimp not configured — skipping draft creation');
+    console.warn('Mailchimp not configured — skipping email send');
     return;
   }
 
@@ -206,5 +206,15 @@ export async function createMailchimpDraft(event: EventDraft): Promise<void> {
   if (!contentRes.ok) {
     const err = await contentRes.json();
     throw new Error(`Mailchimp content update failed: ${err.detail ?? contentRes.statusText}`);
+  }
+
+  const sendRes = await fetch(`${baseUrl}/campaigns/${campaignId}/actions/send`, {
+    method: 'POST',
+    headers: { Authorization: authHeader },
+  });
+
+  if (!sendRes.ok) {
+    const err = await sendRes.json();
+    throw new Error(`Mailchimp send failed: ${err.detail ?? sendRes.statusText}`);
   }
 }

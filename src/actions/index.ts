@@ -1,6 +1,6 @@
 import { defineAction } from 'astro:actions';
 import { supabase, supabaseAdmin } from '../lib/supabase';
-import { createMailchimpDraft } from '../lib/mailchimp';
+import { sendMailchimpEmail } from '../lib/mailchimp';
 import { CITY } from '../types/types';
 
 const createEvent = defineAction({
@@ -64,7 +64,7 @@ const createEvent = defineAction({
       );
     }
 
-    await createMailchimpDraft({
+    await sendMailchimpEmail({
       name,
       date,
       slug,
