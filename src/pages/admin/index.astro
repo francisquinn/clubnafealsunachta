@@ -1,0 +1,24 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+---
+
+<AdminLayout pageTitle="Admin">
+  <section class="cnf-section">
+    <h1>Admin</h1>
+    <nav class="cnf-admin-nav">
+      <a href="/admin/events">View events</a>
+    </nav>
+    <a href="/">Home</a>
+    <a href="/api/logout">Log out</a>
+  </section>
+</AdminLayout>
+
+<style>
+  .cnf-admin-nav {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+</style>

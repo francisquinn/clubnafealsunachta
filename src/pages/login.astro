@@ -1,0 +1,24 @@
+---
+export const prerender = false;
+import BaseLayout from "../layouts/BaseLayout.astro";
+import LoginForm from "../components/LoginForm/LoginForm";
+import { getSessionToken, verifySessionToken } from "../lib/auth";
+import "../styles/form.css";
+
+const token = getSessionToken(Astro.request);
+if (token) {
+  const payload = verifySessionToken(token);
+  if (payload) {
+    return Astro.redirect("/admin");
+  }
+}
+
+---
+
+<BaseLayout pageTitle="Login">
+  <meta slot="head" name="robots" content="noindex, nofollow" />
+  <section class="cnf-section" style="max-width: 480px">
+    <h1>Login</h1>
+    <LoginForm client:load />
+  </section>
+</BaseLayout>
