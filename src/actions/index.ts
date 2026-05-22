@@ -1,11 +1,18 @@
-import { defineAction } from 'astro:actions';
+import { defineAction, ActionError } from 'astro:actions';
 import { supabase, supabaseAdmin } from '../lib/supabase';
 import { sendMailchimpEmail } from '../lib/mailchimp';
+import { verifySessionToken } from '../lib/auth';
 import { CITY } from '../types/types';
 
 const createEvent = defineAction({
   accept: 'form',
-  handler: async (formData) => {
+  handler: async (formData, context) => {
+    const token = context.cookies.get('session')?.value;
+    const payload = token ? verifySessionToken(token) : null;
+    if (!payload) {
+      throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
+    }
+
     if (!supabaseAdmin) {
       throw new Error('Supabase not configured');
     }
@@ -77,7 +84,13 @@ const createEvent = defineAction({
 });
 
 const getVenues = defineAction({
-  handler: async () => {
+  handler: async (_, context) => {
+    const token = context.cookies.get('session')?.value;
+    const payload = token ? verifySessionToken(token) : null;
+    if (!payload) {
+      throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
+    }
+
     if (!supabase) {
       throw new Error('Supabase not configured');
     }

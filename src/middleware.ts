@@ -1,30 +1,17 @@
 import { defineMiddleware } from "astro:middleware";
+import { getSessionToken, verifySessionToken } from "./lib/auth";
 
-export const onRequest = defineMiddleware((context, next) => {
-  if (context.url.pathname !== "/create-event") {
+export const onRequest = defineMiddleware(async (context, next) => {
+  if (!context.url.pathname.startsWith("/admin")) {
     return next();
   }
 
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword) {
-    return new Response("Forbidden", { status: 403 });
+  const token = getSessionToken(context.request);
+
+  if (token) {
+    const payload = verifySessionToken(token);
+    if (payload) return next();
   }
 
-  const auth = context.request.headers.get("authorization");
-  if (auth) {
-    const [scheme, encoded] = auth.split(" ");
-    if (scheme === "Basic" && encoded) {
-      const [, password] = atob(encoded).split(":");
-      if (password === adminPassword) {
-        return next();
-      }
-    }
-  }
-
-  return new Response("Unauthorised", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": 'Basic realm="Admin"',
-    },
-  });
+  return context.redirect("/login");
 });

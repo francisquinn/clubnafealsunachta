@@ -110,6 +110,7 @@ blockquote {
   font-family: "Noto Sans", sans-serif;
   font-size: 1.125rem;
   transition: transition 0.1s ease;
+  text-decoration: none;
 }
 
 .cnf-button--compact {

@@ -1,5 +1,6 @@
 ---
 const { pathname } = Astro.url;
+const { showNav = true } = Astro.props;
 ---
 
 <style>
@@ -38,6 +39,7 @@ const { pathname } = Astro.url;
         <img class="cnf-nav__link--svg" src="/cnf-logo.svg" />
       </a>
     </div>
+  {showNav && (
     <div>
       <a
         class={`cnf-nav__link ${pathname.startsWith("/about") ? "tab-active" : ""}`}
@@ -52,5 +54,6 @@ const { pathname } = Astro.url;
         href="/blog/">Blog</a
       >
     </div>
+  )}
   </nav>
 </header>

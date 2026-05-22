@@ -1,0 +1,72 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getCollection } from "astro:content";
+import type { EventCollection } from "../../types/types";
+import { formatBlogDate } from "../../utils/script";
+
+const events = (await getCollection("event")) as EventCollection[];
+const sorted = [...events].sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime()
+);
+---
+
+<AdminLayout pageTitle="Events">
+  <section class="cnf-section">
+    <div class="cnf-admin-events__header">
+      <h1>Events</h1>
+      <a href="/admin/create-event" class="cnf-button cnf-button__gold">
+        <span class="cnf-button__text">Create event</span>
+      </a>
+    </div>
+    <table class="cnf-admin-events__table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Date</th>
+          <th>City</th>
+        </tr>
+      </thead>
+      <tbody>
+        {sorted.map((event) => (
+          <tr>
+            <td>{event.data.name}</td>
+            <td>{formatBlogDate(event.data.date)}</td>
+            <td>{event.data.city ?? "—"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+  </section>
+</AdminLayout>
+
+<style>
+  .cnf-admin-events__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  .cnf-admin-events__table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .cnf-admin-events__table th,
+  .cnf-admin-events__table td {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid hsl(var(--color-grey) / 0.2);
+  }
+
+  .cnf-admin-events__table th {
+    font-weight: 600;
+    color: hsl(var(--color-grey));
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+</style>

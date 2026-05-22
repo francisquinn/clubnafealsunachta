@@ -1,6 +1,5 @@
 ---
 import Header from "../components/Header.astro";
-import Footer from "../components/Footer.astro";
 import "../styles/global.css";
 const { pageTitle } = Astro.props;
 ---
@@ -17,14 +16,12 @@ const { pageTitle } = Astro.props;
       href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Uncial+Antiqua&display=swap"
       rel="stylesheet"
     />
-    <title>{pageTitle} | Club na Fealsúnachta</title>
-    <slot name="head" />
+    <title>{pageTitle} | Admin</title>
   </head>
   <body>
-    <Header />
+    <Header showNav={false} />
     <main class="content">
       <slot />
     </main>
-    <Footer />
   </body>
 </html>
