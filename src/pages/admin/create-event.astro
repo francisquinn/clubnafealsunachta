@@ -1,13 +1,13 @@
 ---
 export const prerender = false;
 import AdminLayout from "../../layouts/AdminLayout.astro";
-import CreateEventForm from "../../components/CreateEventForm/CreateEventForm";
+import EventForm from "../../components/EventForm/EventForm";
 import "../../styles/form.css";
 ---
 
 <AdminLayout pageTitle="Create Event">
   <section class="cnf-section">
     <h1>Create event</h1>
-    <CreateEventForm client:load />
+    <EventForm mode="create" client:load />
   </section>
 </AdminLayout>

@@ -7,7 +7,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "vitest"
+    "test": "vitest",
+    "sync-env": "node scripts/sync-env.mjs"
   },
   "dependencies": {
     "@astrojs/netlify": "^6.6.4",

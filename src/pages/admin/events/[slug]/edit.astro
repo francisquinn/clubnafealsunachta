@@ -1,0 +1,59 @@
+---
+export const prerender = false;
+import AdminLayout from "../../../../layouts/AdminLayout.astro";
+import EventForm from "../../../../components/EventForm/EventForm";
+import type { EventFormInitialData } from "../../../../components/EventForm/EventForm";
+import { supabase } from "../../../../lib/supabase";
+import "../../../../styles/form.css";
+
+const { slug } = Astro.params;
+
+const { data: event, error } = await supabase!
+  .from("events")
+  .select("id, name, date, slug, venue_id, instagram, facebook, meetup, description, summary, venues(id, name, url, city)")
+  .eq("slug", slug!)
+  .single();
+
+if (error || !event) {
+  return Astro.redirect("/admin/events");
+}
+
+// Format date to datetime-local string (YYYY-MM-DDTHH:MM)
+const dateStr = new Date(event.date).toISOString().slice(0, 16);
+
+const venue = Array.isArray(event.venues) ? event.venues[0] : event.venues;
+
+const initialData: EventFormInitialData = {
+  name: event.name,
+  date: dateStr,
+  city: venue?.city ?? "Trieste",
+  slug: event.slug,
+  venueId: venue?.id,
+  locationName: venue?.name,
+  locationUrl: venue?.url ?? undefined,
+  instagram: event.instagram ?? undefined,
+  facebook: event.facebook ?? undefined,
+  meetup: event.meetup ?? undefined,
+  description: event.description ?? undefined,
+  summary: event.summary ?? undefined,
+};
+---
+
+<AdminLayout pageTitle={`Edit: ${event.name}`}>
+  <section class="cnf-section">
+    <div class="cnf-admin-events__header">
+      <h1>Edit event</h1>
+      <a href="/admin/events">Back to events</a>
+    </div>
+    <EventForm mode="edit" initialData={initialData} client:load />
+  </section>
+</AdminLayout>
+
+<style>
+  .cnf-admin-events__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+</style>

@@ -25,6 +25,7 @@ const sorted = [...events].sort(
           <th>Name</th>
           <th>Date</th>
           <th>City</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -33,6 +34,7 @@ const sorted = [...events].sort(
             <td>{event.data.name}</td>
             <td>{formatBlogDate(event.data.date)}</td>
             <td>{event.data.city ?? "—"}</td>
+            <td><a href={`/admin/events/${event.data.slug}/edit`}>Edit</a></td>
           </tr>
         ))}
       </tbody>
