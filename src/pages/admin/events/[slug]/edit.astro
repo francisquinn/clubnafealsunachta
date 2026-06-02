@@ -10,7 +10,7 @@ const { slug } = Astro.params;
 
 const { data: event, error } = await supabase!
   .from("events")
-  .select("id, name, date, slug, venue_id, instagram, facebook, meetup, description, summary, venues(id, name, url, city)")
+  .select("id, name, date, slug, location_id, venue_id, meeting_url, instagram, facebook, meetup, description, summary, venues(id, name, url), locations(id, name)")
   .eq("slug", slug!)
   .single();
 
@@ -18,19 +18,20 @@ if (error || !event) {
   return Astro.redirect("/admin/events");
 }
 
-// Format date to datetime-local string (YYYY-MM-DDTHH:MM)
 const dateStr = new Date(event.date).toISOString().slice(0, 16);
 
 const venue = Array.isArray(event.venues) ? event.venues[0] : event.venues;
+const location = Array.isArray(event.locations) ? event.locations[0] : event.locations;
 
 const initialData: EventFormInitialData = {
   name: event.name,
   date: dateStr,
-  city: venue?.city ?? "Trieste",
+  locationId: location?.id,
   slug: event.slug,
   venueId: venue?.id,
   locationName: venue?.name,
   locationUrl: venue?.url ?? undefined,
+  meetingUrl: event.meeting_url ?? undefined,
   instagram: event.instagram ?? undefined,
   facebook: event.facebook ?? undefined,
   meetup: event.meetup ?? undefined,

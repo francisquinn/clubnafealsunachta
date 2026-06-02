@@ -8,10 +8,9 @@ import type { EventCollection } from "../types/types";
 import { isEventExpired } from "../utils/script";
 
 const events = await getCollection("event") as EventCollection[];
-const upcomingEvents = events
+const nextEvent = events
   .filter((e) => !isEventExpired(e.data))
-  .sort((a, b) => a.data.date.getTime() - b.data.date.getTime())
-  .map((e) => e.data);
+  .sort((a, b) => a.data.date.getTime() - b.data.date.getTime())[0]?.data;
 
 const pageTitle = "Home";
 ---
@@ -19,8 +18,8 @@ const pageTitle = "Home";
 <BaseLayout pageTitle={pageTitle}>
   <Hero />
   <section class="cnf-section">
-    <h2>Upcoming events in Trieste</h2>
-    <UpcomingEvent events={upcomingEvents} responsive={true} client:load />
+    <h2>Upcoming events</h2>
+    <UpcomingEvent event={nextEvent} responsive={true} client:load />
   </section>
   <LatestPost />
 </BaseLayout>

@@ -17,11 +17,14 @@ const event = defineCollection({
   schema: z.object({
     name: z.string(),
     date: z.date(),
-    city: z.string().nullable(),
     location: z.object({
+      id: z.number(),
+      name: z.string(),
+    }).nullable(),
+    venue: z.object({
       name: z.string().nullable(),
       url: z.string().nullable(),
-    }),
+    }).nullable(),
     slug: z.string(),
     description: z.string().nullable(),
     summary: z.string().nullable(),
@@ -30,6 +33,7 @@ const event = defineCollection({
       facebook: z.string().nullable(),
       meetup: z.string().nullable(),
     }),
+    meetingUrl: z.string().nullable(),
   }),
 });
 

@@ -109,6 +109,7 @@ blockquote {
   cursor: pointer;
   font-family: "Noto Sans", sans-serif;
   font-size: 1.125rem;
+  font-weight: 400;
   transition: transition 0.1s ease;
   text-decoration: none;
 }

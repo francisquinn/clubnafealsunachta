@@ -3,11 +3,7 @@ import EventCard from "../layouts/EventCard";
 import type { Event } from "../types/types";
 
 export default function UpcomingEvent(props: UpcomingEventProps) {
-  const currentEvent = props.events.find(
-    (e) => new Date(e.date) > new Date()
-  );
-
-  if (!currentEvent) {
+  if (!props.event) {
     return (
       <p style={{ margin: 0 }}>
         No upcoming events at the moment. Stay tuned for further updates!
@@ -15,10 +11,10 @@ export default function UpcomingEvent(props: UpcomingEventProps) {
     );
   }
 
-  return <EventCard event={currentEvent} responsive={props.responsive} />;
+  return <EventCard event={props.event} responsive={props.responsive} />;
 }
 
 type UpcomingEventProps = {
-  events: Event[];
+  event?: Event;
   responsive?: boolean;
 };

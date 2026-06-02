@@ -13,7 +13,10 @@ vi.mock("../Selector/Selector", () => ({
 }));
 
 vi.mock("../UpcomingEvent", () => ({
-  default: ({ event }: { event: { name: string } }) => <div data-testid="upcoming-event">{event.name}</div>,
+  default: ({ events }: { events: { name: string }[] }) => {
+    const current = events.find(() => true);
+    return <div data-testid="upcoming-event">{current?.name}</div>;
+  },
 }));
 
 vi.mock("../../layouts/EventCard", () => ({
@@ -22,16 +25,17 @@ vi.mock("../../layouts/EventCard", () => ({
 
 vi.mock("../../styles/event.css", () => ({}));
 
-function makeEvent(name: string, date: Date, city = "Trieste"): EventCollection {
+function makeEvent(name: string, date: Date, locationName = "Trieste"): EventCollection {
   return {
     id: name,
     data: {
       name,
       date,
-      city,
+      location: { id: 1, name: locationName },
+      venue: { name: "Test Venue", url: "https://maps.google.com" },
       slug: name.toLowerCase().replace(/ /g, "-"),
-      location: { name: "Test Venue", url: "https://maps.google.com" },
       social: { instagram: "https://instagram.com/test" },
+      meetingUrl: null,
     },
   } as unknown as EventCollection;
 }
@@ -83,7 +87,7 @@ describe("EventList", () => {
       expect(cards[2]).toHaveTextContent("Oldest");
     });
 
-    it("shows empty state when no past events in selected city", () => {
+    it("shows empty state when no past events in selected location", () => {
       const events = [makeEvent("Future Event", futureDate1, "Trieste")];
       render(<EventList events={events} />);
       fireEvent.click(screen.getByText("Past"));
@@ -91,8 +95,8 @@ describe("EventList", () => {
     });
   });
 
-  describe("city filtering", () => {
-    it("filters events by selected city", () => {
+  describe("location filtering", () => {
+    it("filters events by selected location", () => {
       const events = [
         makeEvent("Trieste Event", futureDate1, "Trieste"),
         makeEvent("Dublin Event", futureDate2, "Dublin"),

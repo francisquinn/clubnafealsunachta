@@ -1,27 +1,25 @@
 import type { CollectionEntry } from "astro:content";
 
-export const CITY = {
-  TRIESTE: "Trieste",
-} as const;
-export type City = typeof CITY[keyof typeof CITY];
-
 export type EventCollection = CollectionEntry<"event">;
 
 export type Event = {
   name: string;
   date: Date;
-  city?: string | null;
   location: {
+    id: number;
+    name: string;
+  } | null;
+  venue: {
     name: string | null;
     url: string | null;
-  };
+  } | null;
   slug: string;
   social: {
     instagram?: string | null;
     facebook?: string | null;
     meetup?: string | null;
   };
-  debate?: boolean;
+  meetingUrl: string | null;
 };
 
 export interface BannerProps {

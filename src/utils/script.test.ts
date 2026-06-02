@@ -28,8 +28,10 @@ describe("isEventExpired", () => {
       slug: "test",
       name: "Test",
       date: new Date("2020-01-01"),
-      location: { name: "Test", url: "https://test.com" },
+      location: { id: 1, name: "Trieste" },
+      venue: { name: "Test Venue", url: "https://test.com" },
       social: { instagram: "https://instagram.com" },
+      meetingUrl: null,
     };
     expect(isEventExpired(pastEvent)).toBe(true);
   });
@@ -39,8 +41,10 @@ describe("isEventExpired", () => {
       slug: "test",
       name: "Test",
       date: new Date("2099-12-31"),
-      location: { name: "Test", url: "https://test.com" },
+      location: { id: 1, name: "Trieste" },
+      venue: { name: "Test Venue", url: "https://test.com" },
       social: { instagram: "https://instagram.com" },
+      meetingUrl: null,
     };
     expect(isEventExpired(futureEvent)).toBe(false);
   });

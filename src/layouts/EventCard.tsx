@@ -7,7 +7,7 @@ export default function EventCard({
   responsive = false,
 }: EventCardProps) {
   return (
-    <div className={`cnf-event ${responsive ? 'cnf-event--responsive' : ''} ${event.debate ? 'cnf-event--debate' : ''}`}>
+    <div className={`cnf-event ${responsive ? 'cnf-event--responsive' : ''}`}>
       <div className="cnf-event__poster">
         <a className="cnf-event__link" href={`/events/${event.slug}`}>
           <h3>{event.name}</h3>
@@ -20,9 +20,13 @@ export default function EventCard({
               {dateFormatter(new Date(event.date))}
             </li>
             <li className="cnf-event__location">
-              {event.location.url
-                ? <a href={event.location.url} target="_blank">{event.location.name}</a>
-                : <span>{event.location.name}</span>
+              {event.meetingUrl
+                ? <a href={event.meetingUrl} target="_blank">Online</a>
+                : event.venue?.url
+                  ? <a href={event.venue.url} target="_blank">{event.venue.name}</a>
+                  : event.venue?.name
+                    ? <span>{event.venue.name}</span>
+                    : null
               }
             </li>
           </ul>

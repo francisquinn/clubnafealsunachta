@@ -5,12 +5,14 @@ import EventForm from "./EventForm";
 
 const mockCreateEvent = vi.fn();
 const mockUpdateEvent = vi.fn();
+const mockGetLocations = vi.fn();
 const mockGetVenues = vi.fn();
 
 vi.mock("astro:actions", () => ({
   actions: {
     createEvent: (...args: unknown[]) => mockCreateEvent(...args),
     updateEvent: (...args: unknown[]) => mockUpdateEvent(...args),
+    getLocations: (...args: unknown[]) => mockGetLocations(...args),
     getVenues: (...args: unknown[]) => mockGetVenues(...args),
   },
 }));
@@ -18,11 +20,10 @@ vi.mock("astro:actions", () => ({
 const sampleInitialData = {
   name: "Test Event",
   date: "2025-06-01T19:00",
-  city: "Trieste",
+  locationId: 1,
   slug: "test-event",
 };
 
-/** Waits for the async venue fetch to complete so the real select is rendered. */
 async function waitForVenuesToLoad() {
   await waitFor(() => {
     expect(screen.queryByText("Loading venues…")).not.toBeInTheDocument();
@@ -32,6 +33,7 @@ async function waitForVenuesToLoad() {
 describe("EventForm (create mode)", () => {
   beforeEach(() => {
     mockCreateEvent.mockReset();
+    mockGetLocations.mockResolvedValue({ data: [{ id: 1, name: "Trieste" }, { id: 2, name: "Online" }] });
     mockGetVenues.mockResolvedValue({ data: [] });
   });
 
@@ -44,7 +46,7 @@ describe("EventForm (create mode)", () => {
   });
 
   it("disables submit button while submitting", async () => {
-    mockCreateEvent.mockReturnValue(new Promise(() => {})); // never resolves
+    mockCreateEvent.mockReturnValue(new Promise(() => {}));
     render(<EventForm mode="create" />);
 
     await waitForVenuesToLoad();
@@ -83,6 +85,7 @@ describe("EventForm (create mode)", () => {
 describe("EventForm (edit mode)", () => {
   beforeEach(() => {
     mockUpdateEvent.mockReset();
+    mockGetLocations.mockResolvedValue({ data: [{ id: 1, name: "Trieste" }, { id: 2, name: "Online" }] });
     mockGetVenues.mockResolvedValue({ data: [] });
   });
 
@@ -106,7 +109,7 @@ describe("EventForm (edit mode)", () => {
   });
 
   it("disables submit button and shows loading placeholder while venues are loading", () => {
-    mockGetVenues.mockReturnValue(new Promise(() => {})); // never resolves
+    mockGetVenues.mockReturnValue(new Promise(() => {}));
     render(<EventForm mode="edit" initialData={sampleInitialData} />);
 
     expect(screen.getByText("Loading venues…")).toBeInTheDocument();
@@ -151,8 +154,8 @@ describe("EventForm (edit mode)", () => {
 
   it("pre-selects the venue matching initialData.venueId", async () => {
     const venues = [
-      { id: 5, name: "The Philosophy Bar", url: null, city: "Trieste" },
-      { id: 6, name: "Another Venue", url: null, city: "Trieste" },
+      { id: 5, name: "The Philosophy Bar", url: null, location_id: 1 },
+      { id: 6, name: "Another Venue", url: null, location_id: 1 },
     ];
     mockGetVenues.mockResolvedValue({ data: venues });
     render(<EventForm mode="edit" initialData={{ ...sampleInitialData, venueId: 5 }} />);
@@ -163,7 +166,7 @@ describe("EventForm (edit mode)", () => {
   });
 
   it("does not pre-select a venue when no venueId is provided", async () => {
-    const venues = [{ id: 5, name: "The Philosophy Bar", url: null, city: "Trieste" }];
+    const venues = [{ id: 5, name: "The Philosophy Bar", url: null, location_id: 1 }];
     mockGetVenues.mockResolvedValue({ data: venues });
     render(<EventForm mode="edit" initialData={sampleInitialData} />);
 
