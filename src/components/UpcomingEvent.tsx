@@ -1,12 +1,13 @@
-import { isEventExpired } from "../utils/script";
-import { type Event } from "../types/types";
 import "../styles/event.css";
 import EventCard from "../layouts/EventCard";
+import type { Event } from "../types/types";
 
 export default function UpcomingEvent(props: UpcomingEventProps) {
-  const isExpired = isEventExpired(props.event ?? null);
+  const currentEvent = props.events.find(
+    (e) => new Date(e.date) > new Date()
+  );
 
-  if (!props.event || isExpired) {
+  if (!currentEvent) {
     return (
       <p style={{ margin: 0 }}>
         No upcoming events at the moment. Stay tuned for further updates!
@@ -14,10 +15,10 @@ export default function UpcomingEvent(props: UpcomingEventProps) {
     );
   }
 
-  return <EventCard event={props.event} responsive={props.responsive} />;
+  return <EventCard event={currentEvent} responsive={props.responsive} />;
 }
 
 type UpcomingEventProps = {
-  event?: Event;
+  events: Event[];
   responsive?: boolean;
 };
