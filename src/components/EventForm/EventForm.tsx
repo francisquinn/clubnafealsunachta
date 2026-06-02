@@ -1,20 +1,21 @@
 import { useState, useEffect } from "react";
 import { actions } from "astro:actions";
-import { CITY } from "../../types/types";
-import type { City } from "../../types/types";
 
-type Venue = { id: number; name: string; url: string | null; city: string };
+type Location = { id: number; name: string };
+type Venue = { id: number; name: string; url: string | null; location_id: number };
 
 const NEW_VENUE = "__new__";
+const DEFAULT_MEETING_URL = import.meta.env.PUBLIC_DEFAULT_MEETING_URL || '';
 
 export type EventFormInitialData = {
   name: string;
-  date: string; // datetime-local format e.g. "2025-06-01T19:00"
-  city: string;
+  date: string;
+  locationId?: number;
   slug: string;
   venueId?: number;
   locationName?: string;
   locationUrl?: string;
+  meetingUrl?: string;
   instagram?: string;
   facebook?: string;
   meetup?: string;
@@ -28,12 +29,11 @@ type EventFormProps = {
 };
 
 export default function EventForm({ mode, initialData }: EventFormProps) {
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
-  const [city, setCity] = useState<City>(
-    (initialData?.city as City) ?? CITY.TRIESTE
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [selectedLocationId, setSelectedLocationId] = useState<number | "">(
+    initialData?.locationId ?? ""
   );
   const [venues, setVenues] = useState<Venue[]>([]);
   const [venuesLoading, setVenuesLoading] = useState(true);
@@ -42,13 +42,17 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
   );
 
   useEffect(() => {
+    actions.getLocations().then(({ data }) => {
+      if (data) setLocations(data);
+    });
     actions.getVenues().then(({ data }) => {
       if (data) setVenues(data);
       setVenuesLoading(false);
     });
   }, []);
 
-  const cityVenues = venues.filter((v) => v.city === city);
+  const isOnline = locations.find((l) => l.id === selectedLocationId)?.name === "Online";
+  const locationVenues = venues.filter((v) => v.location_id === selectedLocationId);
   const isNewVenue = selectedVenueId === NEW_VENUE;
   const selectedVenue = venues.find((v) => String(v.id) === selectedVenueId);
 
@@ -65,8 +69,7 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
     }
 
     try {
-      const action =
-        mode === "edit" ? actions.updateEvent : actions.createEvent;
+      const action = mode === "edit" ? actions.updateEvent : actions.createEvent;
       const { error, data } = await action(formData);
 
       if (error) {
@@ -78,7 +81,7 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
       if (data?.success) {
         setStatus("success");
         if (mode === "create") {
-          setCity(CITY.TRIESTE);
+          setSelectedLocationId("");
           setSelectedVenueId("");
           const form = e.currentTarget as HTMLFormElement;
           if (form) form.reset();
@@ -109,7 +112,6 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="cnf-form">
-      {/* Hidden slug input for edit mode — carries the identifier for the action */}
       {mode === "edit" && (
         <input type="hidden" name="slug" value={initialData?.slug ?? ""} />
       )}
@@ -143,52 +145,68 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
       </div>
 
       <div className="cnf-form__group">
-        <label className="cnf-form__label" htmlFor="city">
-          City
+        <label className="cnf-form__label" htmlFor="location">
+          Location
         </label>
         <select
           className="cnf-form__input"
-          id="city"
-          name="city"
-          value={city}
+          id="location"
+          name="location_id"
+          value={selectedLocationId}
           onChange={(e) => {
-            setCity(e.target.value as City);
+            setSelectedLocationId(e.target.value ? Number(e.target.value) : "");
             setSelectedVenueId("");
           }}
         >
-          {Object.values(CITY).map((c) => (
-            <option key={c} value={c}>
-              {c}
+          <option value="">— select —</option>
+          {locations.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.name}
             </option>
           ))}
         </select>
       </div>
 
-      <div className="cnf-form__group">
-        <label className="cnf-form__label" htmlFor="venue_select">
-          Venue
-        </label>
-        {venuesLoading ? (
-          <select className="cnf-form__input" id="venue_select" disabled>
-            <option>Loading venues…</option>
-          </select>
-        ) : (
-          <select
+      {isOnline ? (
+        <div className="cnf-form__group">
+          <label className="cnf-form__label" htmlFor="meeting_url">
+            Meeting URL
+          </label>
+          <input
             className="cnf-form__input"
-            id="venue_select"
-            value={selectedVenueId}
-            onChange={(e) => setSelectedVenueId(e.target.value)}
-          >
-            <option value="">— none —</option>
-            {cityVenues.map((v) => (
-              <option key={v.id} value={String(v.id)}>
-                {v.name}
-              </option>
-            ))}
-            <option value={NEW_VENUE}>New venue...</option>
-          </select>
-        )}
-      </div>
+            type="url"
+            id="meeting_url"
+            name="meeting_url"
+            defaultValue={initialData?.meetingUrl ?? DEFAULT_MEETING_URL}
+          />
+        </div>
+      ) : selectedLocationId ? (
+        <div className="cnf-form__group">
+          <label className="cnf-form__label" htmlFor="venue_select">
+            Venue
+          </label>
+          {venuesLoading ? (
+            <select className="cnf-form__input" id="venue_select" disabled>
+              <option>Loading venues…</option>
+            </select>
+          ) : (
+            <select
+              className="cnf-form__input"
+              id="venue_select"
+              value={selectedVenueId}
+              onChange={(e) => setSelectedVenueId(e.target.value)}
+            >
+              <option value="">— none —</option>
+              {locationVenues.map((v) => (
+                <option key={v.id} value={String(v.id)}>
+                  {v.name}
+                </option>
+              ))}
+              <option value={NEW_VENUE}>New venue...</option>
+            </select>
+          )}
+        </div>
+      ) : null}
 
       {isNewVenue && (
         <>

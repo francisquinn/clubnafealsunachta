@@ -2,7 +2,6 @@ import { defineAction, ActionError } from 'astro:actions';
 import { supabase, supabaseAdmin } from '../lib/supabase';
 import { sendMailchimpEmail } from '../lib/mailchimp';
 import { verifySessionToken } from '../lib/auth';
-import { CITY } from '../types/types';
 
 const createEvent = defineAction({
   accept: 'form',
@@ -20,7 +19,10 @@ const createEvent = defineAction({
     const name = formData.get('name') as string;
     const date = formData.get('date') as string;
     const slug = formData.get('slug') as string;
-    const city = (formData.get('city') as string) || CITY.TRIESTE;
+    const location_id = formData.get('location_id')
+      ? Number(formData.get('location_id'))
+      : null;
+    const meeting_url = (formData.get('meeting_url') as string) || null;
     const location_name = (formData.get('location_name') as string) || null;
     const location_url = (formData.get('location_url') as string) || null;
 
@@ -33,10 +35,10 @@ const createEvent = defineAction({
     }
 
     let venue_id: number | null = null;
-    if (location_name) {
+    if (location_id && location_name) {
       const { data: venue, error: venueError } = await supabaseAdmin
         .from('venues')
-        .upsert({ name: location_name, url: location_url, city }, { onConflict: 'name,city' })
+        .upsert({ name: location_name, url: location_url, location_id }, { onConflict: 'name,location_id' })
         .select('id')
         .single();
 
@@ -50,7 +52,9 @@ const createEvent = defineAction({
         name,
         date,
         slug,
+        location_id,
         venue_id,
+        meeting_url,
         instagram: (formData.get('instagram') as string) || null,
         facebook: (formData.get('facebook') as string) || null,
         meetup: (formData.get('meetup') as string) || null,
@@ -75,6 +79,7 @@ const createEvent = defineAction({
       name,
       date,
       slug,
+      meeting_url,
       venue_name: location_name,
       venue_url: location_url,
     }).catch((e) => console.error('Mailchimp draft creation failed:', e));
@@ -99,7 +104,10 @@ const updateEvent = defineAction({
     const slug = formData.get('slug') as string;
     const name = formData.get('name') as string;
     const date = formData.get('date') as string;
-    const city = (formData.get('city') as string) || CITY.TRIESTE;
+    const location_id = formData.get('location_id')
+      ? Number(formData.get('location_id'))
+      : null;
+    const meeting_url = (formData.get('meeting_url') as string) || null;
     const location_name = (formData.get('location_name') as string) || null;
     const location_url = (formData.get('location_url') as string) || null;
 
@@ -108,10 +116,10 @@ const updateEvent = defineAction({
     }
 
     let venue_id: number | null = null;
-    if (location_name) {
+    if (location_id && location_name) {
       const { data: venue, error: venueError } = await supabaseAdmin
         .from('venues')
-        .upsert({ name: location_name, url: location_url, city }, { onConflict: 'name,city' })
+        .upsert({ name: location_name, url: location_url, location_id }, { onConflict: 'name,location_id' })
         .select('id')
         .single();
 
@@ -124,7 +132,9 @@ const updateEvent = defineAction({
       .update({
         name,
         date,
+        location_id,
         venue_id,
+        meeting_url,
         instagram: (formData.get('instagram') as string) || null,
         facebook: (formData.get('facebook') as string) || null,
         meetup: (formData.get('meetup') as string) || null,
@@ -148,6 +158,22 @@ const updateEvent = defineAction({
   }
 });
 
+const getLocations = defineAction({
+  handler: async () => {
+    if (!supabase) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Supabase not configured' });
+    }
+
+    const { data, error } = await supabase
+      .from('locations')
+      .select('id, name')
+      .order('name');
+
+    if (error) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
+    return data ?? [];
+  }
+});
+
 const getVenues = defineAction({
   handler: async (_, context) => {
     const token = context.cookies.get('session')?.value;
@@ -162,7 +188,7 @@ const getVenues = defineAction({
 
     const { data, error } = await supabase
       .from('venues')
-      .select('id, name, url, city')
+      .select('id, name, url, location_id')
       .order('name');
 
     if (error) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
@@ -173,5 +199,6 @@ const getVenues = defineAction({
 export const server = {
   createEvent,
   updateEvent,
+  getLocations,
   getVenues,
 };

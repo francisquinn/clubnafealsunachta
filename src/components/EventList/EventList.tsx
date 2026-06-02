@@ -5,30 +5,32 @@ import EventCard from "../../layouts/EventCard";
 import { formatBlogDate } from "../../utils/script";
 import Selector from "../Selector/Selector";
 import type { EventCollection } from "../../types/types";
-import { CITY } from "../../types/types";
 
 export default function EventList(props: EventListProps) {
-  const cities = [...new Set(props.events.map((e) => e.data.city).filter(Boolean))] as string[];
-
+  const locationNames = [...new Set(
+    props.events.map((e) => e.data.location?.name).filter(Boolean) as string[]
+  )];
   const [showUpcoming, setShowUpcoming] = useState<boolean>(true);
-  const [selectedCity, setSelectedCity] = useState<string>(cities[0] ?? CITY.TRIESTE);
+  const [selectedLocation, setSelectedLocation] = useState<string>(locationNames[0] ?? "");
 
-  const filteredEvents = props.events.filter(
-    (event) => event.data.city === selectedCity
-  );
-  const upcomingEvents = filteredEvents.filter(
+  const onlineEvents = props.events.filter((e) => e.data.meetingUrl);
+  const locationEvents = selectedLocation === "Online"
+    ? onlineEvents
+    : props.events.filter((e) => e.data.location?.name === selectedLocation);
+
+  const upcomingEvents = locationEvents.filter(
     (event) => !isEventExpired(event.data)
   );
-  const pastEvents = filteredEvents
+  const pastEvents = locationEvents
     .filter((event) => isEventExpired(event.data))
     .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 
-  function renderCitySelector(): JSX.Element {
+  function renderLocationSelector(): JSX.Element {
     return (
       <Selector
-        options={cities}
-        value={selectedCity}
-        onChange={setSelectedCity}
+        options={locationNames}
+        value={selectedLocation}
+        onChange={setSelectedLocation}
       />
     );
   }
@@ -63,7 +65,7 @@ export default function EventList(props: EventListProps) {
       </div>;
     }
     return <div className="cnf-events--grid">
-      {pastEvents.length > 0 ? renderPastEvents() : <p>No past events in {selectedCity}.</p>}
+      {pastEvents.length > 0 ? renderPastEvents() : <p>No past events in {selectedLocation}.</p>}
     </div>;
   }
 
@@ -80,7 +82,7 @@ export default function EventList(props: EventListProps) {
 
   return (
     <>
-      {renderCitySelector()}
+      {renderLocationSelector()}
       {renderNavigation()}
       {renderEvents()}
     </>

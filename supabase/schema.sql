@@ -7,18 +7,26 @@ CREATE TABLE users (
 
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
-CREATE TABLE venues (
+CREATE TABLE locations (
   id   SERIAL PRIMARY KEY,
-  name TEXT NOT NULL,
-  url  TEXT,
-  city TEXT NOT NULL,
-  UNIQUE(name, city)
+  name TEXT NOT NULL UNIQUE
+);
+
+INSERT INTO locations (name) VALUES ('Trieste'), ('Online');
+
+CREATE TABLE venues (
+  id          SERIAL PRIMARY KEY,
+  name        TEXT NOT NULL,
+  url         TEXT,
+  location_id INTEGER REFERENCES locations(id),
+  UNIQUE(name, location_id)
 );
 
 CREATE TABLE events (
   id          SERIAL PRIMARY KEY,
   name        TEXT NOT NULL,
   date        TIMESTAMP WITH TIME ZONE NOT NULL,
+  location_id INTEGER REFERENCES locations(id),
   venue_id    INTEGER REFERENCES venues(id),
   slug        TEXT UNIQUE NOT NULL,
   instagram   TEXT,
@@ -26,5 +34,6 @@ CREATE TABLE events (
   meetup      TEXT,
   description TEXT,
   summary     TEXT,
+  meeting_url TEXT,
   created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

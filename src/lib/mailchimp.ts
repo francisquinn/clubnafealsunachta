@@ -11,6 +11,7 @@ export interface EventDraft {
   name: string;
   date: string;
   slug: string;
+  meeting_url?: string | null;
   venue_name?: string | null;
   venue_url?: string | null;
 }
@@ -32,11 +33,13 @@ function buildEmailHtml(event: EventDraft): string {
   const eventUrl = `${SITE_URL}/events/${event.slug}`;
   const formattedDate = formatEventDate(event.date);
 
-  const venueHtml = event.venue_name
-    ? event.venue_url
-      ? `<br><a href="${event.venue_url}" style="color:${GREEN};text-decoration:underline;font-family:'Noto Sans',Arial,sans-serif;font-size:15px;">${event.venue_name}</a>`
-      : `<br><span style="color:${GREEN};">${event.venue_name}</span>`
-    : '';
+  const venueHtml = event.meeting_url
+    ? `<br><a href="${event.meeting_url}" style="color:${GREEN};text-decoration:underline;font-family:'Noto Sans',Arial,sans-serif;font-size:15px;">Join online</a>`
+    : event.venue_name
+      ? event.venue_url
+        ? `<br><a href="${event.venue_url}" style="color:${GREEN};text-decoration:underline;font-family:'Noto Sans',Arial,sans-serif;font-size:15px;">${event.venue_name}</a>`
+        : `<br><span style="color:${GREEN};">${event.venue_name}</span>`
+      : '';
 
   const igImg = `<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDQ5IiBoZWlnaHQ9IjQ0OSIgdmlld0JveD0iMCAwIDQ0OSA0NDkiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0yMjQuMyAxMTBDMTYwLjggMTA5LjggMTA5LjIgMTYxLjIgMTA5IDIyNC43QzEwOC44IDI4OC4yIDE2MC4yIDMzOS44IDIyMy43IDM0MEMyODcuMiAzNDAuMiAzMzguOCAyODguOCAzMzkgMjI1LjNDMzM5LjIgMTYxLjggMjg3LjggMTEwLjIgMjI0LjMgMTEwWk0yMjMuNyAxNTAuNEMyNjQuOSAxNTAuMiAyOTguNCAxODMuNSAyOTguNiAyMjQuN0MyOTguOCAyNjUuOSAyNjUuNSAyOTkuNCAyMjQuMyAyOTkuNkMxODMuMSAyOTkuOCAxNDkuNiAyNjYuNSAxNDkuNCAyMjUuM0MxNDkuMiAxODQuMSAxODIuNSAxNTAuNiAyMjMuNyAxNTAuNFpNMzE3LjEgMTA1LjNDMzE3LjEgOTAuNDk5OSAzMjkuMSA3OC40OTk5IDM0My45IDc4LjQ5OTlDMzU4LjcgNzguNDk5OSAzNzAuNyA5MC40OTk5IDM3MC43IDEwNS4zQzM3MC43IDEyMC4xIDM1OC43IDEzMi4xIDM0My45IDEzMi4xQzMyOS4xIDEzMi4xIDMxNy4xIDEyMC4xIDMxNy4xIDEwNS4zWk00NDYuOCAxMzIuNUM0NDUuMSA5Ni42IDQzNi45IDY0LjggNDEwLjYgMzguNkMzODQuNCAxMi40IDM1Mi42IDQuMTk5OTUgMzE2LjcgMi4zOTk5NUMyNzkuNyAwLjI5OTk1MSAxNjguOCAwLjI5OTk1MSAxMzEuOCAyLjM5OTk1Qzk2IDQuMDk5OTUgNjQuMiAxMi4yOTk5IDM3LjkgMzguNUMxMS42IDY0LjcgMy41IDk2LjQ5OTkgMS43IDEzMi40Qy0wLjQgMTY5LjQgLTAuNCAyODAuMyAxLjcgMzE3LjNDMy40IDM1My4yIDExLjYgMzg1IDM3LjkgNDExLjJDNjQuMiA0MzcuNCA5NS45IDQ0NS42IDEzMS44IDQ0Ny40QzE2OC44IDQ0OS41IDI3OS43IDQ0OS41IDMxNi43IDQ0Ny40QzM1Mi42IDQ0NS43IDM4NC40IDQzNy41IDQxMC42IDQxMS4yQzQzNi44IDM4NSA0NDUgMzUzLjIgNDQ2LjggMzE3LjNDNDQ4LjkgMjgwLjMgNDQ4LjkgMTY5LjUgNDQ2LjggMTMyLjVaTTM5OSAzNTdDMzkxLjIgMzc2LjYgMzc2LjEgMzkxLjcgMzU2LjQgMzk5LjZDMzI2LjkgNDExLjMgMjU2LjkgNDA4LjYgMjI0LjMgNDA4LjZDMTkxLjcgNDA4LjYgMTIxLjYgNDExLjIgOTIuMiAzOTkuNkM3Mi42IDM5MS44IDU3LjUgMzc2LjcgNDkuNiAzNTdDMzcuOSAzMjcuNSA0MC42IDI1Ny41IDQwLjYgMjI0LjlDNDAuNiAxOTIuMyAzOCAxMjIuMiA0OS42IDkyLjc5OTlDNTcuNCA3My4xOTk5IDcyLjUgNTguMDk5OSA5Mi4yIDUwLjE5OTlDMTIxLjcgMzguNDk5OSAxOTEuNyA0MS4xOTk5IDIyNC4zIDQxLjE5OTlDMjU2LjkgNDEuMTk5OSAzMjcgMzguNTk5OSAzNTYuNCA1MC4xOTk5QzM3NiA1Ny45OTk5IDM5MS4xIDczLjA5OTkgMzk5IDkyLjc5OTlDNDEwLjcgMTIyLjMgNDA4IDE5Mi4zIDQwOCAyMjQuOUM0MDggMjU3LjUgNDEwLjcgMzI3LjYgMzk5IDM1N1oiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=" width="20" height="20" alt="Instagram" style="display:block;border:0;">`;
   const fbImg = `<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMSIgdmlld0JveD0iMCAwIDUxMiA1MTEiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik01MTIgMjU2QzUxMiAxMTQuNiAzOTcuNCAwIDI1NiAwQzExNC42IDAgMCAxMTQuNiAwIDI1NkMwIDM3NiA4Mi43IDQ3Ni44IDE5NC4yIDUwNC41VjMzNC4ySDE0MS40VjI1NkgxOTQuMlYyMjIuM0MxOTQuMiAxMzUuMiAyMzMuNiA5NC44IDMxOS4yIDk0LjhDMzM1LjQgOTQuOCAzNjMuNCA5OCAzNzQuOSAxMDEuMlYxNzJDMzY4LjkgMTcxLjQgMzU4LjQgMTcxIDM0NS4zIDE3MUMzMDMuMyAxNzEgMjg3LjEgMTg2LjkgMjg3LjEgMjI4LjJWMjU2SDM3MC43TDM1Ni4zIDMzNC4ySDI4N1Y1MTAuMUM0MTMuOCA0OTQuOCA1MTIgMzg2LjkgNTEyIDI1NloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=" width="20" height="20" alt="Facebook" style="display:block;border:0;">`;

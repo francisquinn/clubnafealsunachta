@@ -24,21 +24,21 @@ const { event } = Astro.props;
       <span class="cnf-event-page__details-info"
         >{formatEventDate(new Date(event.data.date))}</span
       >
-      <a
-        href={event.data.location.url}
-        class="cnf-event-page__details-link"
-        target="_blank"
-      >
-        <img src="/map-pin.svg" />
-        {event.data.location.name}
-      </a>
       {
-        event.data.debate ? (
-          <span class="cnf-event-page__details-info">Debate</span>
-        ) : (
-          <span class="cnf-event-page__details-info">Discussion</span>
-        )
+        event.data.meetingUrl
+          ? <a href={event.data.meetingUrl} class="cnf-event-page__details-link" target="_blank">
+              Online
+            </a>
+          : event.data.venue?.url
+            ? <a href={event.data.venue.url} class="cnf-event-page__details-link" target="_blank">
+                <img src="/map-pin.svg" />
+                {event.data.venue.name}
+              </a>
+            : event.data.venue?.name
+              ? <span class="cnf-event-page__details-info">{event.data.venue.name}</span>
+              : null
       }
+      <span class="cnf-event-page__details-info">Discussion</span>
     </div>
     {event.data.description && (
       <div class="cnf-event-page__description">

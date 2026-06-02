@@ -1,25 +1,6 @@
 import type { Loader } from 'astro/loaders';
 import { supabase } from '../lib/supabase';
 
-interface SupabaseEvent {
-  id: number;
-  name: string;
-  date: string;
-  venue_id: number | null;
-  venues: {
-    name: string;
-    url: string | null;
-    city: string;
-  } | null;
-  slug: string;
-  instagram: string | null;
-  facebook: string | null;
-  meetup: string | null;
-  description: string | null;
-  summary: string | null;
-  created_at: string | null;
-}
-
 export function eventsLoader(): Loader {
   return {
     name: 'events',
@@ -30,27 +11,37 @@ export function eventsLoader(): Loader {
 
       store.clear();
 
-      const { data, error } = await supabase
-        .from('events')
-        .select('*, venues(name, url, city)')
-        .order('date', { ascending: true })
-        .returns<SupabaseEvent[]>();
+      const [eventsResult, locationsResult] = await Promise.all([
+        supabase
+          .from('events')
+          .select('*, venues(name, url)')
+          .order('date', { ascending: true }),
+        supabase
+          .from('locations')
+          .select('id, name'),
+      ]);
 
-      if (error) {
-        throw new Error(`Failed to fetch events from Supabase: ${error.message}`);
+      if (eventsResult.error) {
+        throw new Error(`Failed to fetch events from Supabase: ${eventsResult.error.message}`);
       }
 
-      for (const event of data || []) {
+      if (locationsResult.error) {
+        throw new Error(`Failed to fetch locations from Supabase: ${locationsResult.error.message}`);
+      }
+
+      const locationsMap = new Map(locationsResult.data?.map((l) => [l.id, l]) ?? []);
+
+      for (const event of eventsResult.data || []) {
+        const venue = Array.isArray(event.venues) ? event.venues[0] ?? null : event.venues ?? null;
+        const location = event.location_id ? locationsMap.get(event.location_id) ?? null : null;
+
         store.set({
           id: event.id.toString(),
           data: {
             name: event.name,
             date: new Date(event.date),
-            city: event.venues?.city ?? null,
-            location: {
-              name: event.venues?.name ?? null,
-              url: event.venues?.url ?? null,
-            },
+            location,
+            venue: venue ? { name: venue.name, url: venue.url } : null,
             slug: event.slug,
             description: event.description,
             summary: event.summary,
@@ -59,6 +50,7 @@ export function eventsLoader(): Loader {
               facebook: event.facebook,
               meetup: event.meetup,
             },
+            meetingUrl: event.meeting_url,
           },
         });
       }
