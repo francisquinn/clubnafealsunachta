@@ -1,5 +1,6 @@
 ---
-import Header from "../components/Header.astro";
+import AdminHeader from "../components/AdminHeader.astro";
+import AdminSidebar from "../components/AdminSidebar.astro";
 import "../styles/global.css";
 const { pageTitle } = Astro.props;
 ---
@@ -16,12 +17,43 @@ const { pageTitle } = Astro.props;
       href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Uncial+Antiqua&display=swap"
       rel="stylesheet"
     />
-    <title>{pageTitle} | Admin</title>
+    <title>Admin | Club na Fealsúnachta</title>
   </head>
-  <body>
-    <Header showNav={false} />
-    <main class="content">
-      <slot />
-    </main>
+  <body class="cnf-admin-body">
+    <AdminHeader />
+    <div class="cnf-admin-shell">
+      <AdminSidebar />
+      <main class="cnf-admin-content">
+        <slot />
+      </main>
+    </div>
   </body>
 </html>
+
+<style>
+  .cnf-admin-body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cnf-admin-shell {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  @media (max-width: 768px) {
+    .cnf-admin-shell {
+      flex-direction: column;
+    }
+  }
+
+  .cnf-admin-content {
+    flex: 1;
+    overflow-y: auto;
+  }
+</style>

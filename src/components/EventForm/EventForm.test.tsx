@@ -69,7 +69,7 @@ describe("EventForm (create mode)", () => {
     });
   });
 
-  it("shows success state when event is created", async () => {
+  it("shows success message when event is created", async () => {
     mockCreateEvent.mockResolvedValue({ data: { success: true } });
     render(<EventForm mode="create" />);
 
@@ -136,7 +136,7 @@ describe("EventForm (edit mode)", () => {
     });
   });
 
-  it("shows success state with back link after update", async () => {
+  it("shows success message after update", async () => {
     mockUpdateEvent.mockResolvedValue({ data: { success: true } });
     render(<EventForm mode="edit" initialData={sampleInitialData} />);
 
@@ -145,10 +145,6 @@ describe("EventForm (edit mode)", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/event updated successfully/i)).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /back to events/i })).toHaveAttribute(
-        "href",
-        "/admin/events"
-      );
     });
   });
 

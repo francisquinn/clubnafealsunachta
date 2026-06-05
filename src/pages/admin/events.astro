@@ -13,7 +13,7 @@ const sorted = [...events].sort(
 
 <AdminLayout pageTitle="Events">
   <section class="cnf-section">
-    <div class="cnf-admin-events__header">
+    <div class="cnf-admin-header">
       <h1>Events</h1>
       <a href="/admin/create-event" class="cnf-button cnf-button__gold">
         <span class="cnf-button__text">Create event</span>
@@ -44,13 +44,6 @@ const sorted = [...events].sort(
 </AdminLayout>
 
 <style>
-  .cnf-admin-events__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.5rem;
-  }
-
   .cnf-admin-events__table {
     width: 100%;
     border-collapse: collapse;

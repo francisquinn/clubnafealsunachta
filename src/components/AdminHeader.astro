@@ -1,5 +1,4 @@
 ---
-const { pathname } = Astro.url;
 ---
 
 <style>
@@ -29,28 +28,27 @@ const { pathname } = Astro.url;
     width: 45px;
     height: 50px;
   }
+
+  .cnf-nav__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .cnf-nav__admin-label {
+  }
 </style>
 
 <header>
   <nav class="cnf-nav">
-    <div>
-      <a class="cnf-nav__link" href="/">
+    <div class="cnf-nav__brand">
+      <a class="cnf-nav__link" href="/admin/">
         <img class="cnf-nav__link--svg" src="/cnf-logo.svg" />
       </a>
+      <a class="cnf-nav__link cnf-nav__admin-label" href="/admin/">Admin</a>
     </div>
     <div>
-      <a
-        class={`cnf-nav__link ${pathname.startsWith("/about") ? "tab-active" : ""}`}
-        href="/about/">About</a
-      >
-      <a
-        class={`cnf-nav__link ${pathname.startsWith("/events") ? "tab-active" : ""}`}
-        href="/events/">Events</a
-      >
-      <a
-        class={`cnf-nav__link ${pathname.startsWith("/blog") || pathname.startsWith("/post") ? "tab-active" : ""}`}
-        href="/blog/">Blog</a
-      >
+      <a class="cnf-nav__link" href="/api/logout">Log out</a>
     </div>
   </nav>
 </header>

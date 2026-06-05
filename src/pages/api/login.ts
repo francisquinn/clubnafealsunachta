@@ -25,7 +25,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { data: user } = await supabaseAdmin
     .from("users")
-    .select("password_hash")
+    .select("password_hash, is_admin")
     .eq("email", email)
     .single();
 
@@ -38,7 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: "Invalid email or password" }, 401);
   }
 
-  const token = createSessionToken(email);
+  const token = createSessionToken(email, user.is_admin);
   const cookie = `session=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=2592000`;
 
   return new Response(JSON.stringify({ success: true }), {

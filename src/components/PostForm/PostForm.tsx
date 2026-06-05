@@ -45,12 +45,7 @@ export default function PostForm({ mode, initialData }: PostFormProps) {
   };
 
   if (status === "success") {
-    return (
-      <>
-        <p>{mode === "edit" ? "Post updated" : "Post created"} successfully!</p>
-        <a href="/admin/posts">Back to posts</a>
-      </>
-    );
+    return <p>{mode === "edit" ? "Post updated" : "Post created"} successfully!</p>;
   }
 
   return (
