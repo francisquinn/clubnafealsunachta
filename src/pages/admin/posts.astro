@@ -1,0 +1,64 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getCollection } from "astro:content";
+import { formatBlogDate } from "../../utils/script";
+import "../../styles/form.css";
+
+const posts = (await getCollection("blog")).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime()
+);
+---
+
+<AdminLayout pageTitle="Posts">
+  <section class="cnf-section">
+    <div class="cnf-admin-header">
+      <h1>Posts</h1>
+      <a href="/admin/create-post" class="cnf-button cnf-button__gold">
+        <span class="cnf-button__text">Create post</span>
+      </a>
+    </div>
+    <table class="cnf-admin-posts__table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Date</th>
+          <th>Author</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {posts.map((post) => (
+          <tr>
+            <td>{post.data.title}</td>
+            <td>{formatBlogDate(post.data.date)}</td>
+            <td>{post.data.author}</td>
+            <td><a href={`/admin/posts/${post.id}/edit`}>Edit</a></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+</AdminLayout>
+
+<style>
+  .cnf-admin-posts__table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .cnf-admin-posts__table th,
+  .cnf-admin-posts__table td {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid hsl(var(--color-grey) / 0.2);
+  }
+
+  .cnf-admin-posts__table th {
+    font-weight: 600;
+    color: hsl(var(--color-grey));
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+</style>

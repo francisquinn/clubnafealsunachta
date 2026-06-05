@@ -1,0 +1,44 @@
+---
+export const prerender = false;
+import AdminLayout from "../../../../layouts/AdminLayout.astro";
+import PostForm from "../../../../components/PostForm/PostForm";
+import type { PostFormInitialData } from "../../../../components/PostForm/PostForm";
+import { supabaseAdmin } from "../../../../lib/supabase";
+import "../../../../styles/form.css";
+
+const { slug } = Astro.params;
+
+if (!supabaseAdmin) {
+  return Astro.redirect("/admin/posts");
+}
+
+const { data: post, error } = await supabaseAdmin
+  .from("posts")
+  .select("id, title, slug, author, date, body")
+  .eq("slug", slug!)
+  .single();
+
+if (error || !post) {
+  return Astro.redirect("/admin/posts");
+}
+
+const dateStr = new Date(post.date).toISOString().slice(0, 10);
+
+const initialData: PostFormInitialData = {
+  title: post.title,
+  slug: post.slug,
+  author: post.author,
+  date: dateStr,
+  body: post.body,
+};
+---
+
+<AdminLayout pageTitle={`Edit: ${post.title}`}>
+  <section class="cnf-section">
+    <div class="cnf-admin-header">
+      <h1>Edit post</h1>
+      <a href="/admin/posts">Back to posts</a>
+    </div>
+    <PostForm mode="edit" initialData={initialData} client:load />
+  </section>
+</AdminLayout>

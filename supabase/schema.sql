@@ -22,6 +22,16 @@ CREATE TABLE venues (
   UNIQUE(name, location_id)
 );
 
+CREATE TABLE posts (
+  id         SERIAL PRIMARY KEY,
+  title      TEXT NOT NULL,
+  slug       TEXT UNIQUE NOT NULL,
+  author     TEXT NOT NULL,
+  date       TIMESTAMP WITH TIME ZONE NOT NULL,
+  body       TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 CREATE TABLE events (
   id          SERIAL PRIMARY KEY,
   name        TEXT NOT NULL,
