@@ -95,19 +95,9 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
 
   if (status === "success") {
     if (mode === "edit") {
-      return (
-        <>
-          <p>Event updated successfully!</p>
-          <a href="/admin/events">Back to events</a>
-        </>
-      );
+      return <p>Event updated successfully!</p>;
     }
-    return (
-      <>
-        <p>Event created successfully!</p>
-        <a href="/events">See all events</a>
-      </>
-    );
+    return <p>Event created successfully!</p>;
   }
 
   return (

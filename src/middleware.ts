@@ -10,7 +10,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   if (token) {
     const payload = verifySessionToken(token);
-    if (payload) return next();
+    if (payload?.isAdmin) return next();
   }
 
   return context.redirect("/login");

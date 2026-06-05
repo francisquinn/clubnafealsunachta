@@ -7,7 +7,10 @@ import "../../styles/form.css";
 
 <AdminLayout pageTitle="Create Event">
   <section class="cnf-section">
-    <h1>Create event</h1>
+    <div class="cnf-admin-header">
+      <h1>Create event</h1>
+      <a href="/admin/events">Back to events</a>
+    </div>
     <EventForm mode="create" client:load />
   </section>
 </AdminLayout>

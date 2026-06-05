@@ -7,7 +7,10 @@ import "../../styles/form.css";
 
 <AdminLayout pageTitle="Create Post">
   <section class="cnf-section">
-    <h1>Create post</h1>
+    <div class="cnf-admin-header">
+      <h1>Create post</h1>
+      <a href="/admin/posts">Back to posts</a>
+    </div>
     <PostForm mode="create" client:load />
   </section>
 </AdminLayout>

@@ -1,25 +1,61 @@
 ---
 export const prerender = false;
 import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getCollection } from "astro:content";
+import type { EventCollection } from "../../types/types";
+
+const events = (await getCollection("event")) as EventCollection[];
+const now = new Date();
+const upcomingEvents = events.filter((e) => e.data.date >= now);
+const posts = await getCollection("blog");
 ---
 
 <AdminLayout pageTitle="Admin">
   <section class="cnf-section">
-    <h1>Admin</h1>
-    <nav class="cnf-admin-nav">
-      <a href="/admin/events">View events</a>
-      <a href="/admin/posts">View posts</a>
-    </nav>
-    <a href="/">Home</a>
-    <a href="/api/logout">Log out</a>
+    <h1>Dashboard</h1>
+    <div class="cnf-dashboard-stats">
+      <div class="cnf-stat-card">
+        <span class="cnf-stat-card__number">{events.length}</span>
+        <span class="cnf-stat-card__label">Total events</span>
+      </div>
+      <div class="cnf-stat-card">
+        <span class="cnf-stat-card__number">{upcomingEvents.length}</span>
+        <span class="cnf-stat-card__label">Upcoming events</span>
+      </div>
+      <div class="cnf-stat-card">
+        <span class="cnf-stat-card__number">{posts.length}</span>
+        <span class="cnf-stat-card__label">Total posts</span>
+      </div>
+    </div>
+    <a href="/">View site</a>
   </section>
 </AdminLayout>
 
 <style>
-  .cnf-admin-nav {
+  .cnf-dashboard-stats {
     display: flex;
-    gap: 1rem;
+    gap: 1.5rem;
     flex-wrap: wrap;
+    margin: 1.5rem 0;
   }
 
+  .cnf-stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .cnf-stat-card__number {
+    font-family: "Playfair Display", serif;
+    font-size: 2rem;
+    color: hsl(var(--color-green));
+  }
+
+  .cnf-stat-card__label {
+    font-size: 0.85rem;
+    color: hsl(var(--color-grey));
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
 </style>

@@ -2,6 +2,7 @@ CREATE TABLE users (
   id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   email         TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
+  is_admin      BOOLEAN DEFAULT FALSE NOT NULL,
   created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

@@ -20,10 +20,10 @@ export async function verifyPassword(password: string, stored: string): Promise<
   return hash.length === storedBuffer.length && timingSafeEqual(hash, storedBuffer);
 }
 
-export function createSessionToken(email: string): string {
+export function createSessionToken(email: string, isAdmin: boolean): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error("JWT_SECRET is not set");
-  return jwt.sign({ email }, secret, { expiresIn: "30d" });
+  return jwt.sign({ email, isAdmin }, secret, { expiresIn: "30d" });
 }
 
 export function getSessionToken(request: Request): string | undefined {
@@ -31,11 +31,11 @@ export function getSessionToken(request: Request): string | undefined {
   return cookie.match(/(?:^|;\s*)session=([^;]+)/)?.[1];
 }
 
-export function verifySessionToken(token: string): { email: string } | null {
+export function verifySessionToken(token: string): { email: string; isAdmin: boolean } | null {
   const secret = process.env.JWT_SECRET;
   if (!secret) return null;
   try {
-    const payload = jwt.verify(token, secret) as { email: string };
+    const payload = jwt.verify(token, secret) as { email: string; isAdmin: boolean };
     return payload;
   } catch {
     return null;

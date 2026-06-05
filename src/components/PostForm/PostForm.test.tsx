@@ -58,7 +58,7 @@ describe("PostForm (create mode)", () => {
     });
   });
 
-  it("shows success state when post is created", async () => {
+  it("shows success message when post is created", async () => {
     mockCreatePost.mockResolvedValue({ data: { success: true } });
     render(<PostForm mode="create" />);
 
@@ -66,10 +66,6 @@ describe("PostForm (create mode)", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/post created successfully/i)).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /back to posts/i })).toHaveAttribute(
-        "href",
-        "/admin/posts"
-      );
     });
   });
 });
@@ -111,7 +107,7 @@ describe("PostForm (edit mode)", () => {
     });
   });
 
-  it("shows success state with back link after update", async () => {
+  it("shows success message after update", async () => {
     mockUpdatePost.mockResolvedValue({ data: { success: true } });
     render(<PostForm mode="edit" initialData={sampleInitialData} />);
 
@@ -119,10 +115,6 @@ describe("PostForm (edit mode)", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/post updated successfully/i)).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /back to posts/i })).toHaveAttribute(
-        "href",
-        "/admin/posts"
-      );
     });
   });
 });

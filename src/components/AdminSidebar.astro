@@ -1,0 +1,63 @@
+---
+const { pathname } = Astro.url;
+---
+
+<style>
+  .cnf-admin-sidebar {
+    width: 220px;
+    min-height: 100%;
+    padding: 0 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    border-right: 1px solid hsl(var(--color-grey) / 0.2);
+  }
+
+  @media (max-width: 768px) {
+    .cnf-admin-sidebar {
+      width: 100%;
+      min-height: unset;
+      flex-direction: row;
+      padding: 0.5rem 1rem;
+      border-right: none;
+      border-bottom: 1px solid hsl(var(--color-grey) / 0.2);
+      gap: 0.5rem;
+    }
+  }
+
+  .cnf-admin-sidebar__link {
+    display: block;
+    text-decoration: none;
+    color: hsl(var(--color-grey));
+    font-family: "Playfair Display", serif;
+    padding: 0.6rem 0.75rem;
+    transition: background-color 0.15s, color 0.15s;
+  }
+
+  .cnf-admin-sidebar__link:hover {
+    color: hsl(var(--color-green));
+  }
+
+  .cnf-admin-sidebar__link--active {
+    color: hsl(var(--color-green));
+    text-decoration: underline;
+    text-decoration-color: hsl(var(--color-green));
+    text-decoration-thickness: 1px;
+    text-underline-offset: 6px;
+  }
+</style>
+
+<aside class="cnf-admin-sidebar">
+  <a
+    class={`cnf-admin-sidebar__link ${pathname === "/admin" || pathname === "/admin/" ? "cnf-admin-sidebar__link--active" : ""}`}
+    href="/admin/">Dashboard</a
+  >
+  <a
+    class={`cnf-admin-sidebar__link ${pathname.startsWith("/admin/events") || pathname === "/admin/create-event" ? "cnf-admin-sidebar__link--active" : ""}`}
+    href="/admin/events">Events</a
+  >
+  <a
+    class={`cnf-admin-sidebar__link ${pathname.startsWith("/admin/posts") || pathname === "/admin/create-post" ? "cnf-admin-sidebar__link--active" : ""}`}
+    href="/admin/posts">Posts</a
+  >
+</aside>

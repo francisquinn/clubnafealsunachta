@@ -42,19 +42,10 @@ const initialData: EventFormInitialData = {
 
 <AdminLayout pageTitle={`Edit: ${event.name}`}>
   <section class="cnf-section">
-    <div class="cnf-admin-events__header">
+    <div class="cnf-admin-header">
       <h1>Edit event</h1>
       <a href="/admin/events">Back to events</a>
     </div>
     <EventForm mode="edit" initialData={initialData} client:load />
   </section>
 </AdminLayout>
-
-<style>
-  .cnf-admin-events__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.5rem;
-  }
-</style>
