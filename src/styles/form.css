@@ -87,3 +87,10 @@ select.cnf-form__input {
     width: fit-content;
   }
 }
+
+.cnf-admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}

@@ -1,0 +1,13 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import PostForm from "../../components/PostForm/PostForm";
+import "../../styles/form.css";
+---
+
+<AdminLayout pageTitle="Create Post">
+  <section class="cnf-section">
+    <h1>Create post</h1>
+    <PostForm mode="create" client:load />
+  </section>
+</AdminLayout>
