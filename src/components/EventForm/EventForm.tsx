@@ -56,7 +56,7 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
   const isNewVenue = selectedVenueId === NEW_VENUE;
   const selectedVenue = venues.find((v) => String(v.id) === selectedVenueId);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus("loading");
     setErrorMessage("");

@@ -13,10 +13,9 @@ vi.mock("../Selector/Selector", () => ({
 }));
 
 vi.mock("../UpcomingEvent", () => ({
-  default: ({ events }: { events: { name: string }[] }) => {
-    const current = events.find(() => true);
-    return <div data-testid="upcoming-event">{current?.name}</div>;
-  },
+  default: ({ event }: { event: { name: string } }) => (
+    <div data-testid="upcoming-event">{event?.name}</div>
+  ),
 }));
 
 vi.mock("../../layouts/EventCard", () => ({

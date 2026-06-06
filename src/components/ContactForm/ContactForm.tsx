@@ -14,7 +14,7 @@ export default function ContactForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.SyntheticEvent) {
     e.preventDefault();
 
     if (!isValidEmail(email)) {
