@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import "../styles/form.css";
 
 export default function NewsletterForm() {
@@ -11,7 +11,7 @@ export default function NewsletterForm() {
 
   useEffect(() => localStorage.removeItem("newsletter_subscribed"), []);
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
+  async function onSubmit(e: React.SyntheticEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
     setIsLoading(true);
     const email = emailRef.current?.value.trim();

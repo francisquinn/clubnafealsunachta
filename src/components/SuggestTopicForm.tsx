@@ -8,7 +8,6 @@ export default function TopicSuggestForm() {
   const [isFormSubmitted, setIsFormSubmitted] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [topics, setTopics] = useState<string[]>([]);
-  const formRef = useRef<HTMLFormElement>(null);
   const topicRef = useRef<HTMLInputElement>(null);
 
   async function onSubmit(): Promise<void> {
