@@ -1,4 +1,4 @@
-  h1 {
+  .cnf-hero__content--heading {
     color: hsl(var(--color-green));
     font-family: "Uncial Antiqua";
     font-size: 1.75rem;

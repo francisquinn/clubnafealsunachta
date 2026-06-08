@@ -18,7 +18,7 @@ const posts = (await getCollection("blog")).sort(
         <span class="cnf-button__text">Create post</span>
       </a>
     </div>
-    <table class="cnf-admin-posts__table">
+    <table class="cnf-admin-table">
       <thead>
         <tr>
           <th>Title</th>
@@ -41,24 +41,3 @@ const posts = (await getCollection("blog")).sort(
   </section>
 </AdminLayout>
 
-<style>
-  .cnf-admin-posts__table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .cnf-admin-posts__table th,
-  .cnf-admin-posts__table td {
-    text-align: left;
-    padding: 0.6rem 0.75rem;
-    border-bottom: 1px solid hsl(var(--color-grey) / 0.2);
-  }
-
-  .cnf-admin-posts__table th {
-    font-weight: 600;
-    color: hsl(var(--color-grey));
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-</style>

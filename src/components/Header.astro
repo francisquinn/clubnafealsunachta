@@ -2,35 +2,6 @@
 const { pathname } = Astro.url;
 ---
 
-<style>
-  .cnf-nav {
-    display: flex;
-    justify-content: space-between;
-    font-family: "Playfair Display", serif;
-    padding: 1rem;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .cnf-nav__link {
-    display: inline-block;
-    text-decoration: none;
-    color: hsl(var(--color-green));
-    font-size: 1.25rem;
-    padding: 0.5rem;
-  }
-
-  .cnf-nav__link:has(img) {
-    padding: 0;
-  }
-
-  .cnf-nav__link--svg {
-    pointer-events: none;
-    width: 45px;
-    height: 50px;
-  }
-</style>
-
 <header>
   <nav class="cnf-nav">
     <div>

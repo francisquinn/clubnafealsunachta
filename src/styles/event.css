@@ -1,3 +1,7 @@
+.cnf-event__empty {
+  margin: 0;
+}
+
 .cnf-event {
   display: grid;
   grid-template-columns: 1fr;

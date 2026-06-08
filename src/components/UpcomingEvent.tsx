@@ -5,7 +5,7 @@ import type { Event } from "../types/types";
 export default function UpcomingEvent(props: UpcomingEventProps) {
   if (!props.event) {
     return (
-      <p style={{ margin: 0 }}>
+      <p className="cnf-event__empty">
         No upcoming events at the moment. Stay tuned for further updates!
       </p>
     );
