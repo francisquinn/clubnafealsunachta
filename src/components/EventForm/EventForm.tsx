@@ -251,12 +251,11 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
         ) : (
           <>
             <input
-              className="cnf-form__input"
+              className="cnf-form__input cnf-form__input--readonly"
               type="text"
               id="slug-display"
               defaultValue={initialData?.slug ?? ""}
               readOnly
-              style={{ opacity: 0.5, cursor: "not-allowed" }}
             />
             <small className="cnf-form__hint">
               Slug cannot be changed after creation.
