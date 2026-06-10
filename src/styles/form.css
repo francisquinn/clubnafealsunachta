@@ -77,6 +77,12 @@ select.cnf-form__input {
   overflow: hidden;
 }
 
+.cnf-form__group--inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .cnf-form__message--error:empty {
   display: none;
 }
@@ -86,6 +92,7 @@ select.cnf-form__input {
   background: hsl(var(--color-red) / 0.1);
   border-radius: var(--border-radius);
 }
+
 
 @media (min-width: 576px) {
   .cnf-form__submit {

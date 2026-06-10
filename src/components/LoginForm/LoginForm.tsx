@@ -59,8 +59,8 @@ export default function LoginForm() {
         />
       </div>
 
-      <button type="submit" className="cnf-form__submit cnf-button cnf-button__gold" disabled={loading}>
-        <span className="cnf-button__text">{loading ? "Logging in…" : "Log in"}</span>
+      <button type="submit" disabled={loading} aria-busy={loading} className={`cnf-form__submit cnf-button cnf-button__gold${loading ? " cnf-button--loading" : ""}`}>
+        <span className="cnf-button__text">Log in</span>
       </button>
     </form>
   );

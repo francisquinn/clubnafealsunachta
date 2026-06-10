@@ -1,0 +1,16 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import SignupForm from "../../components/SignupForm/SignupForm";
+import "../../styles/form.css";
+---
+
+<AdminLayout pageTitle="Create User">
+  <section class="cnf-section">
+    <div class="cnf-admin-header">
+      <h1>Create user</h1>
+      <a href="/admin/users">Back to users</a>
+    </div>
+    <SignupForm client:load />
+  </section>
+</AdminLayout>
