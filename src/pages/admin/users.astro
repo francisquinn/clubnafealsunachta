@@ -1,0 +1,38 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { supabaseAdmin } from "../../lib/supabase";
+
+const { data: users } = supabaseAdmin
+  ? await supabaseAdmin.from("users").select("id, email, is_admin, created_at").order("created_at", { ascending: false })
+  : { data: [] };
+---
+
+<AdminLayout pageTitle="Users">
+  <section class="cnf-section">
+    <div class="cnf-admin-header">
+      <h1>Users</h1>
+      <a href="/admin/create-user" class="cnf-button cnf-button__gold">
+        <span class="cnf-button__text">Create user</span>
+      </a>
+    </div>
+    <table class="cnf-admin-table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        {(users ?? []).map((user) => (
+          <tr>
+            <td>{user.email}</td>
+            <td>{user.is_admin ? "Admin" : "Member"}</td>
+            <td>{new Date(user.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+</AdminLayout>

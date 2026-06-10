@@ -12,7 +12,7 @@ const json = (body: object, status = 200) =>
 
 export const POST: APIRoute = async ({ request }) => {
   const form = await request.formData();
-  const email = form.get("email")?.toString() ?? "";
+  const email = form.get("email")?.toString().toLowerCase() ?? "";
   const password = form.get("password")?.toString() ?? "";
 
   if (!email || !password) {
