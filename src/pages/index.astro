@@ -5,12 +5,11 @@ import UpcomingEvent from "../components/UpcomingEvent";
 import LatestPost from "../components/LatestPost.astro";
 import { getCollection } from "astro:content";
 import type { EventCollection } from "../types/types";
-import { isEventExpired } from "../utils/script";
 
 const events = await getCollection("event") as EventCollection[];
-const nextEvent = events
-  .filter((e) => !isEventExpired(e.data))
-  .sort((a, b) => a.data.date.getTime() - b.data.date.getTime())[0]?.data;
+const sorted = events.sort((a, b) => a.data.date.getTime() - b.data.date.getTime());
+const lastPastIndex = sorted.findLastIndex((e) => e.data.date <= new Date());
+const allEvents = sorted.slice(Math.max(0, lastPastIndex), lastPastIndex + 3).map((e) => e.data);
 
 const pageTitle = "Home";
 ---
@@ -18,8 +17,11 @@ const pageTitle = "Home";
 <BaseLayout pageTitle={pageTitle}>
   <Hero />
   <section class="cnf-section">
-    <h2>Upcoming events</h2>
-    <UpcomingEvent event={nextEvent} responsive={true} client:load />
+    <div class="cnf-section__header">
+      <h2>Upcoming events</h2>
+      <a href="/events">See all events</a>
+    </div>
+    <UpcomingEvent events={allEvents} responsive={true} client:load />
   </section>
   <LatestPost />
 </BaseLayout>

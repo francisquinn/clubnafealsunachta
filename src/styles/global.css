@@ -63,6 +63,12 @@ select {
   margin: 0 auto 4rem auto;
 }
 
+.cnf-section__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
 .cnf-section--narrow {
   max-width: 480px;
 }
