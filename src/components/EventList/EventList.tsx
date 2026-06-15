@@ -11,7 +11,13 @@ export default function EventList(props: EventListProps) {
     props.events.map((e) => e.data.location?.name).filter(Boolean) as string[]
   )];
   const [showUpcoming, setShowUpcoming] = useState<boolean>(true);
-  const [selectedLocation, setSelectedLocation] = useState<string>(locationNames[0] ?? "");
+  const nextUpcoming = props.events
+    .filter((e) => !isEventExpired(e.data))
+    .sort((a, b) => a.data.date.getTime() - b.data.date.getTime())[0];
+  const defaultLocation = nextUpcoming?.data.meetingUrl
+    ? "Online"
+    : (nextUpcoming?.data.location?.name ?? locationNames[0] ?? "");
+  const [selectedLocation, setSelectedLocation] = useState<string>(defaultLocation);
 
   const onlineEvents = props.events.filter((e) => e.data.meetingUrl);
   const locationEvents = selectedLocation === "Online"
@@ -60,7 +66,7 @@ export default function EventList(props: EventListProps) {
     if (showUpcoming) {
       return <div className="cnf-events--grid">
         {upcomingEvents.length > 0
-          ? upcomingEvents.map((event) => <UpcomingEvent event={event.data} key={event.data.slug} />)
+          ? upcomingEvents.map((event) => <UpcomingEvent events={[event.data]} key={event.data.slug} />)
           : <p>No upcoming events at the moment. Stay tuned for further updates!</p>}
       </div>;
     }
