@@ -7,6 +7,9 @@ export const GET: APIRoute = ({ request }) => {
   const payload = token ? verifySessionToken(token) : null;
 
   return new Response(JSON.stringify({ isAdmin: !!payload }), {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    },
   });
 };

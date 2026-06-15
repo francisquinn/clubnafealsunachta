@@ -4,6 +4,9 @@ import jwt from "jsonwebtoken";
 
 const scryptAsync = promisify(scrypt);
 
+export const SESSION_DURATION_MS = 2_592_000_000;
+export const SESSION_DURATION_STR = "30d";
+
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString("hex");
   const hash = (await scryptAsync(password, salt, 64)) as Buffer;
@@ -23,7 +26,7 @@ export async function verifyPassword(password: string, stored: string): Promise<
 export function createSessionToken(email: string, isAdmin: boolean): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error("JWT_SECRET is not set");
-  return jwt.sign({ email, isAdmin }, secret, { expiresIn: "30d" });
+  return jwt.sign({ email, isAdmin }, secret, { expiresIn: SESSION_DURATION_STR });
 }
 
 export function getSessionToken(request: Request): string | undefined {

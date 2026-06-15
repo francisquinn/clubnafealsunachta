@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { supabaseAdmin } from "../../lib/supabase";
-import { verifyPassword, createSessionToken } from "../../lib/auth";
+import { verifyPassword, createSessionToken, SESSION_DURATION_MS } from "../../lib/auth";
 
 export const prerender = false;
 
@@ -39,7 +39,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const token = createSessionToken(email, user.is_admin);
-  const cookie = `session=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=2592000`;
+  const cookie = `session=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${Math.floor(SESSION_DURATION_MS / 1000)}`;
 
   return new Response(JSON.stringify({ success: true }), {
     status: 200,
