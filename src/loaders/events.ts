@@ -1,22 +1,22 @@
 import type { Loader } from 'astro/loaders';
-import { supabase } from '../lib/supabase';
+import { supabaseAdmin } from '../lib/supabase';
 
 export function eventsLoader(): Loader {
   return {
     name: 'events',
     load: async ({ store }) => {
-      if (!supabase) {
-        throw new Error('Supabase is not configured — set SUPABASE_PROJECT_URL and SUPABASE_API_KEY');
+      if (!supabaseAdmin) {
+        throw new Error('Supabase is not configured — set SUPABASE_PROJECT_URL and SUPABASE_SECRET_KEY');
       }
 
       store.clear();
 
       const [eventsResult, locationsResult] = await Promise.all([
-        supabase
+        supabaseAdmin
           .from('events')
           .select('*, venues(name, url)')
           .order('date', { ascending: true }),
-        supabase
+        supabaseAdmin
           .from('locations')
           .select('id, name'),
       ]);
