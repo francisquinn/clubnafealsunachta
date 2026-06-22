@@ -2,7 +2,17 @@
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import "../styles/global.css";
-const { pageTitle } = Astro.props;
+
+const {
+  pageTitle,
+  description = "Club na Fealsúnachta is a philosophy discussion club meeting in Trieste, Italy.",
+  ogImage = "/og-default.png",
+  ogType = "website",
+} = Astro.props;
+
+const siteUrl = "https://clubnafealsunachta.com";
+const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
+const ogImageUrl = new URL(ogImage, siteUrl).href;
 ---
 
 <html lang="en">
@@ -18,6 +28,20 @@ const { pageTitle } = Astro.props;
       rel="stylesheet"
     />
     <title>{pageTitle} | Club na Fealsúnachta</title>
+    <link rel="canonical" href={canonicalUrl} />
+    <meta name="description" content={description} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Club na Fealsúnachta" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
     <slot name="head" />
   </head>
   <body>
