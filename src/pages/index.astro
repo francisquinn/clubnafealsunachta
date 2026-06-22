@@ -6,15 +6,20 @@ import LatestPost from "../components/LatestPost.astro";
 import { getCollection } from "astro:content";
 import type { EventCollection } from "../types/types";
 
-const events = await getCollection("event") as EventCollection[];
-const sorted = events.sort((a, b) => a.data.date.getTime() - b.data.date.getTime());
+const events = (await getCollection("event")) as EventCollection[];
+const sorted = events.sort(
+  (a, b) => a.data.date.getTime() - b.data.date.getTime(),
+);
 const lastPastIndex = sorted.findLastIndex((e) => e.data.date <= new Date());
-const allEvents = sorted.slice(Math.max(0, lastPastIndex), lastPastIndex + 3).map((e) => e.data);
+const allEvents = sorted
+  .slice(Math.max(0, lastPastIndex), lastPastIndex + 3)
+  .map((e) => e.data);
 
 const pageTitle = "Home";
+const description = "A philosophy discussion club meeting in Trieste, Italy.";
 ---
 
-<BaseLayout pageTitle={pageTitle}>
+<BaseLayout pageTitle={pageTitle} description={description}>
   <Hero />
   <section class="cnf-section">
     <div class="cnf-section__header">
