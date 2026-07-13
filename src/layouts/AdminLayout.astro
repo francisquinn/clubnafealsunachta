@@ -2,6 +2,7 @@
 import AdminHeader from "../components/AdminHeader.astro";
 import AdminSidebar from "../components/AdminSidebar.astro";
 import "../styles/global.css";
+import "../styles/admin.css";
 const { pageTitle } = Astro.props;
 ---
 
@@ -29,31 +30,3 @@ const { pageTitle } = Astro.props;
     </div>
   </body>
 </html>
-
-<style>
-  .cnf-admin-body {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .cnf-admin-shell {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  @media (max-width: 768px) {
-    .cnf-admin-shell {
-      flex-direction: column;
-    }
-  }
-
-  .cnf-admin-content {
-    flex: 1;
-    overflow-y: auto;
-  }
-</style>

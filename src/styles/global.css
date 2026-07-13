@@ -73,13 +73,6 @@ select {
   max-width: 480px;
 }
 
-.cnf-admin-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-
 .cnf-nav {
   display: flex;
   justify-content: space-between;
@@ -105,26 +98,6 @@ select {
   pointer-events: none;
   width: 45px;
   height: 50px;
-}
-
-.cnf-admin-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.cnf-admin-table th,
-.cnf-admin-table td {
-  text-align: left;
-  padding: 0.6rem 0.75rem;
-  border-bottom: 1px solid hsl(var(--color-grey) / 0.2);
-}
-
-.cnf-admin-table th {
-  font-weight: 600;
-  color: hsl(var(--color-grey));
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 a {
@@ -194,9 +167,11 @@ blockquote {
 }
 
 .cnf-button__gold {
-  background: linear-gradient(to bottom,
-      color-mix(in hsl, hsl(var(--color-gold)) 80%, white),
-      hsl(var(--color-gold)));
+  background: linear-gradient(
+    to bottom,
+    color-mix(in hsl, hsl(var(--color-gold)) 80%, white),
+    hsl(var(--color-gold))
+  );
 }
 
 .cnf-button__gold {

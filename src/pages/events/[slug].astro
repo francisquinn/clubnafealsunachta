@@ -55,53 +55,55 @@ const { event } = Astro.props;
         <p>{event.data.summary}</p>
       </div>
     )}
-    <div class="cnf-event-page__social">
-      <h2>Social links</h2>
-      <ul>
-        {
-          event.data.social.instagram && (
-            <li>
-              <a
-                href={event.data.social.instagram}
-                class="cnf-event-page__social-link"
-                target="_blank"
-              >
-                <img class="cnf-event__social-svg" src="/instagram.svg" />
-                Instagram
-              </a>
-            </li>
-          )
-        }
-        {
-          event.data.social.facebook && (
-            <li>
-              <a
-                href={event.data.social.facebook}
-                class="cnf-event-page__social-link"
-                target="_blank"
-              >
-                <img class="cnf-event__social-svg" src="/facebook.svg" />
-                Facebook
-              </a>
-            </li>
-          )
-        }
-        {
-          event.data.social.meetup && (
-            <li>
-              <a
-                href={event.data.social.meetup}
-                class="cnf-event-page__social-link"
-                target="_blank"
-              >
-                <img class="cnf-event__social-svg" src="/meetup.svg" />
-                Meetup
-              </a>
-            </li>
-          )
-        }
-      </ul>
-    </div>
+    {(event.data.social.instagram || event.data.social.facebook || event.data.social.meetup) && (
+      <div class="cnf-event-page__social">
+        <h2>Social links</h2>
+        <ul>
+          {
+            event.data.social.instagram && (
+              <li>
+                <a
+                  href={event.data.social.instagram}
+                  class="cnf-event-page__social-link"
+                  target="_blank"
+                >
+                  <img class="cnf-event__social-svg" src="/instagram.svg" />
+                  Instagram
+                </a>
+              </li>
+            )
+          }
+          {
+            event.data.social.facebook && (
+              <li>
+                <a
+                  href={event.data.social.facebook}
+                  class="cnf-event-page__social-link"
+                  target="_blank"
+                >
+                  <img class="cnf-event__social-svg" src="/facebook.svg" />
+                  Facebook
+                </a>
+              </li>
+            )
+          }
+          {
+            event.data.social.meetup && (
+              <li>
+                <a
+                  href={event.data.social.meetup}
+                  class="cnf-event-page__social-link"
+                  target="_blank"
+                >
+                  <img class="cnf-event__social-svg" src="/meetup.svg" />
+                  Meetup
+                </a>
+              </li>
+            )
+          }
+        </ul>
+      </div>
+    )}
   </section>
   <Banner
     title="Like to suggest a topic?"

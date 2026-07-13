@@ -1,0 +1,91 @@
+.cnf-admin-body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.cnf-admin-shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.cnf-admin-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.cnf-admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.cnf-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cnf-admin-table th,
+.cnf-admin-table td {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid hsl(var(--color-grey) / 0.2);
+}
+
+.cnf-admin-table th {
+  font-weight: 600;
+  color: hsl(var(--color-grey));
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 640px) {
+  .cnf-admin-table thead {
+    display: none;
+  }
+
+  .cnf-admin-table,
+  .cnf-admin-table tbody,
+  .cnf-admin-table tr,
+  .cnf-admin-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .cnf-admin-table tr {
+    margin-bottom: 1rem;
+    border: 1px solid hsl(var(--color-grey) / 0.2);
+    border-radius: 6px;
+    padding: 0.75rem;
+  }
+
+  .cnf-admin-table td {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    border-bottom: none;
+  }
+
+  .cnf-admin-table td::before {
+    content: attr(data-label);
+    flex: 0 0 5.5rem;
+    font-weight: 600;
+    color: hsl(var(--color-grey));
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+@media (max-width: 768px) {
+  .cnf-admin-shell {
+    flex-direction: column;
+  }
+}

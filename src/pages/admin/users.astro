@@ -27,9 +27,9 @@ const { data: users } = supabaseAdmin
       <tbody>
         {(users ?? []).map((user) => (
           <tr>
-            <td>{user.email}</td>
-            <td>{user.is_admin ? "Admin" : "Member"}</td>
-            <td>{new Date(user.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })}</td>
+            <td data-label="Email">{user.email}</td>
+            <td data-label="Role">{user.is_admin ? "Admin" : "Member"}</td>
+            <td data-label="Created">{new Date(user.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })}</td>
           </tr>
         ))}
       </tbody>
