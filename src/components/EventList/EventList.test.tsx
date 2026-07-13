@@ -13,8 +13,8 @@ vi.mock("../Selector/Selector", () => ({
 }));
 
 vi.mock("../UpcomingEvent", () => ({
-  default: ({ event }: { event: { name: string } }) => (
-    <div data-testid="upcoming-event">{event?.name}</div>
+  default: ({ events }: { events: { name: string }[] }) => (
+    <div data-testid="upcoming-event">{events?.[0]?.name}</div>
   ),
 }));
 
