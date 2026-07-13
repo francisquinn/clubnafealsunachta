@@ -30,9 +30,9 @@ const posts = (await getCollection("blog")).sort(
       <tbody>
         {posts.map((post) => (
           <tr>
-            <td>{post.data.title}</td>
-            <td>{formatBlogDate(post.data.date)}</td>
-            <td>{post.data.author}</td>
+            <td data-label="Title">{post.data.title}</td>
+            <td data-label="Date">{formatBlogDate(post.data.date)}</td>
+            <td data-label="Author">{post.data.author}</td>
             <td><a href={`/admin/posts/${post.id}/edit`}>Edit</a></td>
           </tr>
         ))}
