@@ -1,3 +1,5 @@
+@import "./fonts.css";
+
 :root {
   --color-beige: 45.88, 62.96%, 94.71%;
   --color-gold: 47.54, 53.72%, 47.45%;
@@ -8,6 +10,7 @@
   --color-light-green: 120, 75%, 31.37%;
   --border-radius: 1rem;
   --box-shadow-inset: inset rgba(0, 0, 0, 0.15) 2px 2px 3px;
+  --box-shadow-card: rgba(0, 0, 0, 0.15) 0px 5px 15px 0px;
   --dropdown-arrow-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
 }
 
@@ -23,6 +26,7 @@ html {
   background-color: hsl(var(--color-beige));
   font-family: "Noto Sans", sans-serif;
   font-weight: 300;
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -75,11 +79,88 @@ select {
 
 .cnf-nav {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
   font-family: "Playfair Display", serif;
   padding: 1rem;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.cnf-nav__brand {
+  margin-right: auto;
+}
+
+.cnf-nav__group {
+  position: relative;
+}
+
+.cnf-nav__toggle {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.cnf-nav__toggle-bar {
+  display: block;
+  height: 2px;
+  background: hsl(var(--color-green));
+  border-radius: 1px;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  transform-origin: center;
+}
+
+.cnf-nav__toggle[aria-expanded="true"] .cnf-nav__toggle-bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.cnf-nav__toggle[aria-expanded="true"] .cnf-nav__toggle-bar:nth-child(2) {
+  opacity: 0;
+}
+
+.cnf-nav__toggle[aria-expanded="true"] .cnf-nav__toggle-bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Single source of layout for every dropdown panel (Dropdown component): position,
+   offset, sizing, spacing, background, shadow, radius, and open/close animation.
+   Nav and account panels share this exactly - no per-consumer overrides for now. */
+.cnf-dropdown__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  min-width: 90px;
+  padding: 0.5rem;
+  background: hsl(var(--color-white));
+  box-shadow: var(--box-shadow-card);
+  border-radius: var(--border-radius);
+  z-index: 10;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-0.5rem);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+}
+
+button[aria-expanded="true"] + .cnf-dropdown__panel {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .cnf-nav__link {
@@ -88,6 +169,7 @@ select {
   color: hsl(var(--color-green));
   font-size: 1.25rem;
   padding: 0.5rem;
+  white-space: nowrap;
 }
 
 .cnf-nav__link:has(img) {
@@ -98,6 +180,52 @@ select {
   pointer-events: none;
   width: 45px;
   height: 50px;
+}
+
+.cnf-nav__link--button {
+  background: none;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.cnf-nav__link--danger {
+  color: hsl(var(--color-red));
+}
+
+/* Login/Logout visibility is decided by a synchronous inline script (see BaseLayout's
+   <head>) that reads a cookie hint and sets cnf-logged-in/cnf-logged-out on <html>
+   before first paint - this must not depend on JS hydration timing, or it flashes. */
+.cnf-auth__logout {
+  display: none;
+  position: relative;
+}
+
+:root.cnf-logged-in .cnf-auth__logout {
+  display: inline-block;
+}
+
+:root.cnf-logged-in .cnf-auth__login {
+  display: none;
+}
+
+.cnf-account__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid hsl(var(--color-green));
+  background: hsl(var(--color-beige));
+  color: hsl(var(--color-green));
+  cursor: pointer;
+}
+
+.cnf-account__icon {
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
 a {
@@ -128,6 +256,13 @@ blockquote {
 }
 
 .tab-active {
+  background: color-mix(in srgb, hsl(var(--color-green)) 15%, transparent);
+  border-radius: var(--border-radius);
+}
+
+.cnf-events__tab.tab-active {
+  background: none;
+  border-radius: 0;
   border-bottom: 1.5px solid hsl(var(--color-green));
 }
 
@@ -246,6 +381,38 @@ blockquote {
     gap: 1rem;
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .cnf-nav__toggle {
+    display: none;
+  }
+
+  .cnf-nav__link {
+    padding: 0.3rem 0.75rem;
+  }
+
+  .cnf-dropdown__panel--collapsible {
+    position: static;
+    width: auto;
+    min-width: auto;
+    margin-top: 0;
+    flex-direction: row;
+    background: none;
+    box-shadow: none;
+    padding: 0;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+    transition: none;
+  }
+
+  .cnf-nav__group {
+    order: 1;
+  }
+
+  .cnf-auth {
+    order: 2;
+  }
 }
 
 @media (min-width: 768px) {
@@ -255,6 +422,7 @@ blockquote {
 
   .cnf-latest-blogs {
     grid-template-columns: repeat(3, 1fr);
+    padding: 0;
   }
 }
 

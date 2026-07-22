@@ -9,7 +9,7 @@ const token = getSessionToken(Astro.request);
 if (token) {
   const payload = verifySessionToken(token);
   if (payload) {
-    return Astro.redirect("/admin");
+    return Astro.redirect("/profile");
   }
 }
 

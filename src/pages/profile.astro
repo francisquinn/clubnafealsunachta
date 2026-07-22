@@ -1,0 +1,22 @@
+---
+export const prerender = false;
+import { getSessionToken, verifySessionToken } from "../lib/auth";
+import { supabaseAdmin } from "../lib/supabase";
+
+const token = getSessionToken(Astro.request);
+const payload = token ? verifySessionToken(token) : null;
+
+if (!payload) {
+  return Astro.redirect("/");
+}
+
+const { data: user } = supabaseAdmin
+  ? await supabaseAdmin.from("members").select("username").eq("email", payload.email).single()
+  : { data: null };
+
+if (!user?.username) {
+  return Astro.redirect(payload.isAdmin ? "/admin" : "/");
+}
+
+return Astro.redirect(`/profile/${user.username}`);
+---

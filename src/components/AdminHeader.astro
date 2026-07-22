@@ -1,4 +1,6 @@
 ---
+import AccountMenu from "./AccountMenu/AccountMenu";
+const { pathname } = Astro.url;
 ---
 
 <style>
@@ -6,6 +8,10 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+  }
+
+  .cnf-admin-account {
+    position: relative;
   }
 </style>
 
@@ -17,8 +23,8 @@
       </a>
       <a class="cnf-nav__link cnf-nav__admin-label" href="/admin/">Admin</a>
     </div>
-    <div>
-      <a class="cnf-nav__link" href="/api/logout">Log out</a>
+    <div class="cnf-admin-account">
+      <AccountMenu client:load pathname={pathname} />
     </div>
   </nav>
 </header>

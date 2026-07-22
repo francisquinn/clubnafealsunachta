@@ -1,0 +1,85 @@
+body.cnf-modal-open {
+  overflow: hidden;
+}
+
+.cnf-modal {
+  position: relative;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  max-width: 420px;
+  width: 90%;
+  background-color: hsl(var(--color-beige));
+  box-shadow: var(--box-shadow-card);
+  font-family: "Noto Sans", sans-serif;
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+}
+
+.cnf-modal::backdrop {
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  opacity: 1;
+  transition: opacity 200ms ease;
+}
+
+@starting-style {
+  .cnf-modal[open] {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  .cnf-modal[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+.cnf-modal--closing {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.cnf-modal--closing::backdrop {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cnf-modal,
+  .cnf-modal::backdrop {
+    transition-duration: 0.01ms;
+  }
+}
+
+.cnf-modal__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: hsl(var(--color-green));
+}
+
+.cnf-modal__footer {
+  margin: 1rem 0 0 0;
+  font-size: 0.875rem;
+  text-align: center;
+  color: hsl(var(--color-grey));
+}
+
+.cnf-modal__link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  color: hsl(var(--color-green));
+  text-decoration: underline;
+  cursor: pointer;
+}

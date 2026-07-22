@@ -7,7 +7,7 @@
   grid-template-columns: 1fr;
   grid-template-rows: 150px 1fr;
   border-radius: 20px;
-  box-shadow: rgba(0, 0, 0, 0.15) 0px 5px 15px 0px;
+  box-shadow: var(--box-shadow-card);
   position: relative;
   transition: transform ease-in-out 0.2s;
 }
