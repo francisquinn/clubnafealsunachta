@@ -45,6 +45,7 @@ select.cnf-form__input {
 }
 
 .cnf-form__hint {
+  margin: 0;
   color: hsl(var(--color-grey));
   font-size: 0.875rem;
 }

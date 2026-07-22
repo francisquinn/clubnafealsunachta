@@ -1,27 +1,30 @@
 ---
+import LoginButton from "./LoginButton/LoginButton";
+import NavMenu from "./NavMenu/NavMenu";
+import AccountMenu from "./AccountMenu/AccountMenu";
 const { pathname } = Astro.url;
 ---
 
 <header>
   <nav class="cnf-nav">
-    <div>
+    <div class="cnf-nav__brand">
       <a class="cnf-nav__link" href="/">
         <img class="cnf-nav__link--svg" src="/cnf-logo.svg" />
       </a>
     </div>
-    <div>
-      <a
-        class={`cnf-nav__link ${pathname.startsWith("/about") ? "tab-active" : ""}`}
-        href="/about/">About</a
+    <div class="cnf-auth">
+      <div class="cnf-auth__logout">
+        <AccountMenu client:load pathname={pathname} />
+      </div>
+      <button
+        type="button"
+        id="cnf-login-trigger"
+        class="cnf-button cnf-button__secondary cnf-button--compact cnf-auth__login"
       >
-      <a
-        class={`cnf-nav__link ${pathname.startsWith("/events") ? "tab-active" : ""}`}
-        href="/events/">Events</a
-      >
-      <a
-        class={`cnf-nav__link ${pathname.startsWith("/blog") || pathname.startsWith("/post") ? "tab-active" : ""}`}
-        href="/blog/">Blog</a
-      >
+        <span class="cnf-button__text">Login</span>
+      </button>
     </div>
+    <LoginButton client:load />
+    <NavMenu client:load pathname={pathname} />
   </nav>
 </header>

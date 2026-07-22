@@ -1,9 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "../../styles/form.css";
 
-export default function LoginForm() {
+interface LoginFormProps {
+  defaultIdentifier?: string;
+  onSuccess?: () => void;
+}
+
+export default function LoginForm({ defaultIdentifier = "", onSuccess = () => { window.location.href = "/profile"; } }: LoginFormProps) {
+  const [identifier, setIdentifier] = useState(defaultIdentifier);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setIdentifier(defaultIdentifier);
+  }, [defaultIdentifier]);
 
   async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -20,7 +30,7 @@ export default function LoginForm() {
       if (!res.ok) {
         setError(data.error ?? "Something went wrong");
       } else {
-        window.location.href = "/admin";
+        onSuccess?.();
       }
     } catch {
       setError("Something went wrong");
@@ -36,14 +46,16 @@ export default function LoginForm() {
       )}
 
       <div className="cnf-form__group">
-        <label className="cnf-form__label" htmlFor="email">Email</label>
+        <label className="cnf-form__label" htmlFor="identifier">Email or username</label>
         <input
-          id="email"
-          type="email"
-          name="email"
+          id="identifier"
+          type="text"
+          name="identifier"
           className="cnf-form__input"
           required
-          autoComplete="email"
+          autoComplete="username"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
         />
       </div>
 

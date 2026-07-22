@@ -5,12 +5,12 @@ import SignupForm from "../../components/SignupForm/SignupForm";
 import "../../styles/form.css";
 ---
 
-<AdminLayout pageTitle="Create User">
+<AdminLayout pageTitle="Add Member">
   <section class="cnf-section">
     <div class="cnf-admin-header">
-      <h1>Create user</h1>
-      <a href="/admin/users">Back to users</a>
+      <h1>Add member</h1>
+      <a href="/admin/members">Back to members</a>
     </div>
-    <SignupForm client:load />
+    <SignupForm client:load isAdmin />
   </section>
 </AdminLayout>

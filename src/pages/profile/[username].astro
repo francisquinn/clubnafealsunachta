@@ -1,0 +1,35 @@
+---
+export const prerender = false;
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { supabaseAdmin } from "../../lib/supabase";
+
+const { username } = Astro.params;
+
+const { data: profileUser } = supabaseAdmin
+  ? await supabaseAdmin.from("members").select("username, created_at").eq("username", username).single()
+  : { data: null };
+
+if (!profileUser) {
+  Astro.response.status = 404;
+}
+
+const memberSince = profileUser
+  ? new Date(profileUser.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })
+  : null;
+---
+
+<BaseLayout pageTitle={profileUser ? profileUser.username : "Profile not found"}>
+  <section class="cnf-section cnf-section--narrow">
+    {profileUser ? (
+      <>
+        <h1>{profileUser.username}</h1>
+        <p>Member since: {memberSince}</p>
+      </>
+    ) : (
+      <>
+        <h1>Profile not found</h1>
+        <p>No account exists with that username.</p>
+      </>
+    )}
+  </section>
+</BaseLayout>

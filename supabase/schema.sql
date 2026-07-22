@@ -1,12 +1,18 @@
-CREATE TABLE users (
-  id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  email         TEXT UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL,
-  is_admin      BOOLEAN DEFAULT FALSE NOT NULL,
-  created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE members (
+  id                UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  username          TEXT NOT NULL,
+  email             TEXT UNIQUE NOT NULL,
+  password_hash     TEXT NOT NULL,
+  is_admin          BOOLEAN DEFAULT FALSE NOT NULL,
+  email_verified_at TIMESTAMP WITH TIME ZONE,
+  created_at        TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+-- Case-insensitive uniqueness: display keeps the typed casing, but
+-- "JohnDoe" and "johndoe" can't both be registered.
+CREATE UNIQUE INDEX members_username_lower_idx ON members (lower(username));
+
+ALTER TABLE members ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE locations (
   id   SERIAL PRIMARY KEY,
