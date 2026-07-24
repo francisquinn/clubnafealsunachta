@@ -270,6 +270,10 @@ blockquote {
   font-size: 1rem;
 }
 
+.text-sm a {
+  font-size: inherit;
+}
+
 .text-center {
   text-align: center;
 }

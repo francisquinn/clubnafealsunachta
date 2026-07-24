@@ -109,6 +109,10 @@ export default function ContactForm() {
 
       {errorMessage && <p className="cnf-form__message--error">{errorMessage}</p>}
 
+      <p className="cnf-form__hint">
+        See our <a href="/privacy">Privacy Policy</a> for how we handle your message.
+      </p>
+
       <button
         type="submit"
         disabled={isLoading}

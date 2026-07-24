@@ -1,0 +1,120 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+const pageTitle = "Privacy Policy";
+const lastUpdated = "23 July 2026";
+---
+
+<BaseLayout pageTitle={pageTitle}>
+  <section class="cnf-section">
+    <div class="cnf-privacy">
+      <h1>{pageTitle}</h1>
+      <p><em>Last updated: {lastUpdated}</em></p>
+
+      <p>
+        This policy explains what personal data Club na Fealsúnachta
+        ("we", "us") collects through clubnafealsunachta.com, why we
+        collect it, and what rights you have over it.
+      </p>
+
+      <h2>Who we are</h2>
+      <p>
+        Club na Fealsúnachta is run by
+        Francis Quinn, based in Trieste, Italy. For any
+        question about this policy or your data, contact
+        <a href="mailto:info@clubnafealsunachta.com">info@clubnafealsunachta.com</a>.
+      </p>
+
+      <h2>What we collect</h2>
+      <ul>
+        <li>
+          <strong>Member account:</strong> if you join the club through the
+          site, we store your username, email address, and a hashed
+          (never plain-text) password.
+        </li>
+        <li>
+          <strong>Contact form:</strong> if you message us, your name, email,
+          and message are sent to our inbox by email. We do not store this
+          in a database.
+        </li>
+        <li>
+          <strong>Newsletter:</strong> if you subscribe, your email address
+          is sent to our mailing list provider, Mailchimp, who handles
+          delivery and unsubscribes.
+        </li>
+        <li>
+          <strong>Login session:</strong> when you log in, a strictly
+          necessary session cookie is set in your browser so you stay
+          signed in. It is not used for tracking or advertising.
+        </li>
+      </ul>
+
+      <h2>Why we collect it</h2>
+      <p>
+        We use this data only to run the club: to create and secure your
+        member account, to reply to messages sent through the contact
+        form, and to send the newsletter to people who asked for it. We do
+        not sell or share your data for advertising purposes.
+      </p>
+
+      <h2>Who we share it with</h2>
+      <p>
+        We use a small number of external services to run the site, each
+        of which processes data on our behalf:
+      </p>
+      <ul>
+        <li>
+          <strong>Supabase</strong> — hosts our database, including member
+          accounts (data region: West EU (Ireland)).
+        </li>
+        <li>
+          <strong>Mailchimp</strong> (United States) — manages newsletter
+          delivery and subscriptions.
+        </li>
+        <li>
+          <strong>Google / Gmail</strong> (United States) — relays contact
+          form messages to our inbox.
+        </li>
+        <li>
+          <strong>Netlify</strong> (United States) — hosts the site and
+          processes server logs, which include IP addresses, for every
+          request.
+        </li>
+      </ul>
+
+      <h2>How long we keep it</h2>
+      <p>
+        Member accounts are kept until you ask us to delete them.
+        Newsletter addresses are kept until you unsubscribe. Contact form
+        and topic suggestion messages aren't stored in a database, but the
+        email itself remains in our inbox until we delete it.
+      </p>
+
+      <h2>Your rights</h2>
+      <p>
+        Under GDPR, you have the right to access, correct, delete, or
+        export your personal data, and to withdraw consent (e.g.
+        unsubscribe from the newsletter) at any time. To exercise any of
+        these rights, email
+        <a href="mailto:info@clubnafealsunachta.com">info@clubnafealsunachta.com</a>
+        and we'll handle your request directly — this isn't yet a
+        self-service feature on the site.
+      </p>
+      <p>
+        You also have the right to lodge a complaint with your local data
+        protection authority.
+      </p>
+
+      <h2>Cookies</h2>
+      <p>
+        We use one strictly necessary cookie to keep you logged in. We
+        don't use analytics or advertising cookies.
+      </p>
+
+      <h2>Changes to this policy</h2>
+      <p>
+        We may update this policy as the site changes. The "last updated"
+        date above will always reflect the latest version.
+      </p>
+    </div>
+  </section>
+</BaseLayout>

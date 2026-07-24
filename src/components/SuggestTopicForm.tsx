@@ -120,7 +120,8 @@ export default function TopicSuggestForm() {
             <span className="cnf-button__text">Send</span>
           </button>
           <p className="text-sm" id="anonymous-note">
-            Just so you know, the form is completely anonymous.
+            Just so you know, the form is completely anonymous. See our{" "}
+            <a href="/privacy">Privacy Policy</a>.
           </p>
         </div>
       </div>
