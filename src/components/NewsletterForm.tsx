@@ -62,6 +62,9 @@ export default function NewsletterForm() {
           />
         </div>
         {errorMessage && <div id="newsletter-error" className="cnf-form__message--error" role="alert" aria-live="polite">{errorMessage}</div>}
+        <p className="cnf-form__hint">
+          We'll only use your email to send this newsletter. See our <a href="/privacy">Privacy Policy</a>.
+        </p>
         <button
           type="submit"
           disabled={isLoading}

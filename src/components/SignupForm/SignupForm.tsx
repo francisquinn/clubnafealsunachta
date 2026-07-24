@@ -157,6 +157,12 @@ export default function SignupForm({ onSwitchToLogin, isAdmin = false }: SignupF
         </div>
       )}
 
+      {!isAdmin && (
+        <p className="cnf-form__hint">
+          By joining, you agree to our <a href="/privacy">Privacy Policy</a>.
+        </p>
+      )}
+
       <button type="submit" disabled={status === "loading"} aria-busy={status === "loading"} className={`cnf-form__submit cnf-button cnf-button__gold${status === "loading" ? " cnf-button--loading" : ""}`}>
         <span className="cnf-button__text">{isAdmin ? "Add member" : "Join"}</span>
       </button>

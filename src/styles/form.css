@@ -50,6 +50,11 @@ select.cnf-form__input {
   font-size: 0.875rem;
 }
 
+.cnf-form__hint a {
+  color: inherit;
+  font-size: inherit;
+}
+
 .cnf-form__submit {
   width: 100%;
 }
