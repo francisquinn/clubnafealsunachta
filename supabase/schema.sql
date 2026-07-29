@@ -54,3 +54,25 @@ CREATE TABLE events (
   meeting_url TEXT,
   created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Data retention: an unverified signup never became a real member, so
+-- there's no ongoing purpose to justify keeping the email + password hash
+-- (GDPR storage limitation, Art. 5(1)(e)). Admin-created members are
+-- auto-verified on insert (see createAccount(..., autoVerify)), so this
+-- only ever touches abandoned public sign-ups.
+CREATE OR REPLACE FUNCTION delete_stale_unverified_members()
+RETURNS void
+LANGUAGE sql
+AS $$
+  DELETE FROM members
+  WHERE email_verified_at IS NULL
+    AND created_at < NOW() - INTERVAL '30 days';
+$$;
+
+CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA extensions;
+
+SELECT cron.schedule(
+  'delete-stale-unverified-members',
+  '0 3 * * *', -- daily at 03:00 UTC
+  $$SELECT delete_stale_unverified_members()$$
+);
