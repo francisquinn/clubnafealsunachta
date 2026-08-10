@@ -71,6 +71,8 @@ select {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
 }
 
 .cnf-section--narrow {

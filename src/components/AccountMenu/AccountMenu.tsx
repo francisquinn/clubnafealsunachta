@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Dropdown from "../Dropdown/Dropdown";
+import { fetchSessionInfo } from "../../utils/session";
 
 interface AccountMenuProps {
   pathname: string;
@@ -10,9 +11,7 @@ export default function AccountMenu({ pathname }: AccountMenuProps) {
   const toggleRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    fetch("/api/me")
-      .then((r) => r.json())
-      .then((data) => setIsAdmin(!!data.isAdmin));
+    fetchSessionInfo().then((data) => setIsAdmin(!!data.isAdmin));
   }, []);
 
   return (

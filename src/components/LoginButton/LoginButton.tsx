@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Modal from "../Modal/Modal";
 import LoginForm from "../LoginForm/LoginForm";
 import SignupForm from "../SignupForm/SignupForm";
+import { fetchSessionInfo, refreshSessionInfo } from "../../utils/session";
 
 type View = "login" | "signup";
 
@@ -27,7 +28,11 @@ export default function LoginButton() {
     const trigger = document.getElementById("cnf-login-trigger");
     trigger?.addEventListener("click", openModal);
 
-    reconcile();
+    applySessionInfo(fetchSessionInfo());
+
+    function reconcile() {
+      applySessionInfo(refreshSessionInfo());
+    }
     window.addEventListener("pageshow", reconcile);
 
     return () => {
@@ -36,13 +41,11 @@ export default function LoginButton() {
     };
   }, []);
 
-  function reconcile() {
-    fetch("/api/me")
-      .then((r) => r.json())
-      .then((data) => {
-        document.documentElement.classList.toggle("cnf-logged-in", data.loggedIn);
-        document.documentElement.classList.toggle("cnf-logged-out", !data.loggedIn);
-      });
+  function applySessionInfo(info: ReturnType<typeof fetchSessionInfo>) {
+    info.then((data) => {
+      document.documentElement.classList.toggle("cnf-logged-in", data.loggedIn);
+      document.documentElement.classList.toggle("cnf-logged-out", !data.loggedIn);
+    });
   }
 
   function handleSignupSuccess(email: string) {

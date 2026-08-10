@@ -1,29 +1,47 @@
 ---
 export const prerender = false;
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getSessionToken, verifySessionToken } from "../../lib/auth";
 import { supabaseAdmin } from "../../lib/supabase";
+import { getDisplayName } from "../../lib/memberDisplay";
 
 const { username } = Astro.params;
 
 const { data: profileUser } = supabaseAdmin
-  ? await supabaseAdmin.from("members").select("username, created_at").eq("username", username).single()
+  ? await supabaseAdmin.from("members").select("username, full_name, display_full_name, created_at").eq("username", username).single()
   : { data: null };
 
 if (!profileUser) {
   Astro.response.status = 404;
 }
 
+const displayName = profileUser ? getDisplayName(profileUser) : null;
+
 const memberSince = profileUser
   ? new Date(profileUser.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })
   : null;
+
+const token = getSessionToken(Astro.request);
+const payload = token ? verifySessionToken(token) : null;
+
+let isOwnProfile = false;
+if (payload && profileUser) {
+  const { data: currentMember } = supabaseAdmin
+    ? await supabaseAdmin.from("members").select("username").eq("email", payload.email).single()
+    : { data: null };
+  isOwnProfile = currentMember?.username.toLowerCase() === profileUser.username.toLowerCase();
+}
 ---
 
-<BaseLayout pageTitle={profileUser ? profileUser.username : "Profile not found"}>
+<BaseLayout pageTitle={profileUser ? displayName : "Profile not found"}>
   <section class="cnf-section">
     {profileUser ? (
       <>
-        <h1>{profileUser.username}</h1>
+        <h1>{displayName}</h1>
         <p>Member since: {memberSince}</p>
+        {isOwnProfile && (
+          <p><a href="/profile/edit">Edit your info</a></p>
+        )}
       </>
     ) : (
       <>

@@ -1,0 +1,69 @@
+.cnf-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.cnf-checkbox__control {
+  position: relative;
+  display: inline-flex;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+}
+
+/* Real checkbox stays in place and in the a11y tree - it's just made invisible
+   (not display:none) so keyboard focus, click target and FormData reads all
+   keep working exactly as a native checkbox. The box below is purely visual. */
+.cnf-checkbox__input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.cnf-checkbox__box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: hsl(var(--color-white));
+  border: 2px solid hsl(var(--color-green));
+  /* Scaled down from the site's card/button radius token - at full size it'd
+     round this small a box into a circle rather than a rounded square. */
+  border-radius: calc(var(--border-radius) * 0.3);
+  color: hsl(var(--color-white));
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.cnf-checkbox__check {
+  width: 70%;
+  height: 70%;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.cnf-checkbox__input:checked + .cnf-checkbox__box {
+  background-color: hsl(var(--color-green));
+  border-color: hsl(var(--color-green));
+}
+
+.cnf-checkbox__input:checked + .cnf-checkbox__box .cnf-checkbox__check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Opacity:0 on the input hides its own outline too, so the focus ring is
+   drawn on the visible box instead via the sibling selector. */
+.cnf-checkbox__input:focus-visible + .cnf-checkbox__box {
+  outline: 2px solid hsl(var(--color-green));
+  outline-offset: 2px;
+}
+
+.cnf-checkbox__label {
+  font-size: 1.125rem;
+}

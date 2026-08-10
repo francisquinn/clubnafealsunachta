@@ -2,6 +2,7 @@ import { useState } from "react";
 import { actions } from "astro:actions";
 import { validateUsername, validatePassword } from "../../utils/validation";
 import { isValidEmail } from "../../utils/script";
+import Checkbox from "../Checkbox/Checkbox";
 import "../../styles/form.css";
 
 interface SignupFormProps {
@@ -151,9 +152,8 @@ export default function SignupForm({ onSwitchToLogin, isAdmin = false }: SignupF
       </div>
 
       {isAdmin && (
-        <div className="cnf-form__group cnf-form__group--inline">
-          <input id="signup-is-admin" type="checkbox" name="is_admin" value="true" />
-          <label className="cnf-form__label" htmlFor="signup-is-admin">Admin</label>
+        <div className="cnf-form__group">
+          <Checkbox id="signup-is-admin" name="is_admin" value="true" label="Admin" />
         </div>
       )}
 

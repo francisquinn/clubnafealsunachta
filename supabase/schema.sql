@@ -1,6 +1,8 @@
 CREATE TABLE members (
   id                UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   username          TEXT NOT NULL,
+  full_name         TEXT,
+  display_full_name BOOLEAN DEFAULT FALSE NOT NULL,
   email             TEXT UNIQUE NOT NULL,
   password_hash     TEXT NOT NULL,
   is_admin          BOOLEAN DEFAULT FALSE NOT NULL,
