@@ -9,8 +9,10 @@ Built with [Astro](https://astro.build), [React](https://react.dev), and [Supaba
 - Events listing and detail pages
 - Blog
 - Newsletter signup (Mailchimp)
+- Member accounts (registration, email verification, profile editing, password change)
 - Admin console for managing posts and events
 - Contact and topic suggestion forms
+- Privacy policy page
 
 ## Local Development
 
@@ -19,11 +21,18 @@ Built with [Astro](https://astro.build), [React](https://react.dev), and [Supaba
 - Node.js 18+
 - A Supabase project (see `supabase/schema.sql` for the schema)
 - A Mailchimp account (for newsletter functionality)
+- A Netlify site (for `npm run sync-env`, see below)
 
 ### Setup
 
 ```bash
 npm install
+```
+
+Pull environment variables from Netlify into a local `.env` (requires the Netlify CLI logged into an account with access to this site):
+
+```bash
+npm run sync-env
 ```
 
 ### Run
@@ -42,15 +51,18 @@ npm test
 
 ```
 src/
-  actions/     # Astro server actions
-  components/  # Astro and React components
-  layouts/     # Page layouts
-  lib/         # Supabase client, auth, email helpers
-  loaders/     # Astro content loaders (events, posts)
-  pages/       # File-based routes
-  styles/      # Global CSS
-  types/       # TypeScript types
-  utils/       # Shared utilities
+  actions/       # Astro server actions
+  components/    # Astro and React components
+  layouts/       # Page layouts
+  lib/           # Supabase client, auth, email helpers
+  loaders/       # Astro content loaders (events, posts)
+  pages/         # File-based routes
+  styles/        # Global CSS
+  types/         # TypeScript types
+  utils/         # Shared utilities
+  middleware.ts  # Session-token auth, CSRF trusted-origin checks, admin-route gating
 supabase/
-  schema.sql   # Database schema
+  schema.sql     # Database schema
+scripts/
+  sync-env.mjs   # Pulls env vars from Netlify into .env
 ```
