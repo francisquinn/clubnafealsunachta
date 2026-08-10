@@ -4,7 +4,7 @@ import AdminLayout from "../../layouts/AdminLayout.astro";
 import { supabaseAdmin } from "../../lib/supabase";
 
 const { data: members } = supabaseAdmin
-  ? await supabaseAdmin.from("members").select("id, username, email, is_admin, created_at").order("created_at", { ascending: false })
+  ? await supabaseAdmin.from("members").select("id, username, full_name, email, is_admin, created_at").order("created_at", { ascending: false })
   : { data: [] };
 ---
 
@@ -20,6 +20,7 @@ const { data: members } = supabaseAdmin
       <thead>
         <tr>
           <th>Username</th>
+          <th>Full name</th>
           <th>Email</th>
           <th>Role</th>
           <th>Created</th>
@@ -29,6 +30,7 @@ const { data: members } = supabaseAdmin
         {(members ?? []).map((member) => (
           <tr>
             <td data-label="Username">{member.username ?? "—"}</td>
+            <td data-label="Full name">{member.full_name ?? "—"}</td>
             <td data-label="Email">{member.email}</td>
             <td data-label="Role">{member.is_admin ? "Admin" : "Member"}</td>
             <td data-label="Created">{new Date(member.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })}</td>
