@@ -1,10 +1,10 @@
 import type { APIRoute } from "astro";
-import nodemailer from "nodemailer";
+import { createTransport, CLUB_FROM, isEmailConfigured } from "../../lib/email";
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
-  if (!import.meta.env.EMAIL_TO || !import.meta.env.GMAIL_APP_PASSWORD) {
+  if (!import.meta.env.EMAIL_INFO || !isEmailConfigured()) {
     console.error("Missing email configuration");
     return new Response(
       JSON.stringify({ message: "Server configuration error." }),
@@ -23,17 +23,11 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: import.meta.env.EMAIL_TO,
-        pass: import.meta.env.GMAIL_APP_PASSWORD,
-      },
-    });
+    const transporter = createTransport();
 
     await transporter.sendMail({
-      from: `"Club na Fealsúnachta" <${import.meta.env.EMAIL_TO}>`,
-      to: import.meta.env.EMAIL_TO,
+      from: CLUB_FROM,
+      to: import.meta.env.EMAIL_INFO,
       subject: "New topic suggestion(s)",
       text: `Suggested topics: ${topics.join(', ')}`,
     });
