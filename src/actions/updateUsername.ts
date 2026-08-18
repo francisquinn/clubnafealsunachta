@@ -39,7 +39,7 @@ export const updateUsername = defineAction({
       .from('members')
       .select('id')
       .ilike('username', escapeLikePattern(username))
-      .neq('email', payload.email)
+      .neq('id', payload.memberId)
       .single();
 
     if (existingUsername) {
@@ -49,7 +49,7 @@ export const updateUsername = defineAction({
     const { error } = await supabaseAdmin
       .from('members')
       .update({ username, full_name: fullName || null, display_full_name: displayFullName })
-      .eq('email', payload.email);
+      .eq('id', payload.memberId);
 
     if (error) {
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to update info' });

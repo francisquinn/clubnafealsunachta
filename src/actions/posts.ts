@@ -1,14 +1,12 @@
 import { defineAction, ActionError } from 'astro:actions';
 import { supabaseAdmin } from '../lib/supabase';
 import { sendMailchimpPostEmail } from '../lib/mailchimp';
-import { verifySessionToken } from '../lib/auth';
+import { requireAdmin } from '../lib/auth';
 
 export const createPost = defineAction({
   accept: 'form',
   handler: async (formData, context) => {
-    const token = context.cookies.get('session')?.value;
-    const payload = token ? verifySessionToken(token) : null;
-    if (!payload) {
+    if (!(await requireAdmin(context.request))) {
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }
 
@@ -59,9 +57,7 @@ export const createPost = defineAction({
 export const updatePost = defineAction({
   accept: 'form',
   handler: async (formData, context) => {
-    const token = context.cookies.get('session')?.value;
-    const payload = token ? verifySessionToken(token) : null;
-    if (!payload) {
+    if (!(await requireAdmin(context.request))) {
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }
 

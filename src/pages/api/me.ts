@@ -15,5 +15,9 @@ export const GET: APIRoute = ({ request }) => {
   // instead of flashing the wrong logged-in state on every future page load.
   headers.append("Set-Cookie", payload ? loggedInHintCookie() : clearedLoggedInHintCookie());
 
+  // isAdmin here is straight from the token, not a live lookup — it only drives
+  // showing/hiding the "Admin console" link, and middleware re-checks live before
+  // actually granting access, so a stale claim here is at most a dead link, never
+  // a privilege leak. See middleware.ts / createMember for the live-checked gates.
   return new Response(JSON.stringify({ loggedIn: !!payload, isAdmin: !!payload?.isAdmin }), { headers });
 };

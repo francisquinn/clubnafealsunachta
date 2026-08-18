@@ -27,7 +27,7 @@ const payload = token ? verifySessionToken(token) : null;
 let isOwnProfile = false;
 if (payload && profileUser) {
   const { data: currentMember } = supabaseAdmin
-    ? await supabaseAdmin.from("members").select("username").eq("email", payload.email).single()
+    ? await supabaseAdmin.from("members").select("username").eq("id", payload.memberId).single()
     : { data: null };
   isOwnProfile = currentMember?.username.toLowerCase() === profileUser.username.toLowerCase();
 }

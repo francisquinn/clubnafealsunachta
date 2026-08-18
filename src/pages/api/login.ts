@@ -26,7 +26,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { data: byEmail } = await supabaseAdmin
     .from("members")
-    .select("email, password_hash, is_admin, email_verified_at")
+    .select("id, email, password_hash, is_admin, email_verified_at")
     .eq("email", identifier.toLowerCase())
     .single();
 
@@ -35,7 +35,7 @@ export const POST: APIRoute = async ({ request }) => {
     (
       await supabaseAdmin
         .from("members")
-        .select("email, password_hash, is_admin, email_verified_at")
+        .select("id, email, password_hash, is_admin, email_verified_at")
         .ilike("username", escapeLikePattern(identifier))
         .single()
     ).data;
@@ -53,7 +53,7 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: "Please confirm your email before logging in — check your inbox for the confirmation link." }, 403);
   }
 
-  const token = createSessionToken(user.email, user.is_admin);
+  const token = createSessionToken(user.id, user.is_admin);
   const maxAge = Math.floor(SESSION_DURATION_MS / 1000);
   const cookie = `session=${token}; HttpOnly; ${SECURE_COOKIE}SameSite=Strict; Path=/; Max-Age=${maxAge}`;
 

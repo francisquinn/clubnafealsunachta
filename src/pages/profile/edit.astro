@@ -13,7 +13,7 @@ if (!payload) {
 }
 
 const { data: member } = supabaseAdmin
-  ? await supabaseAdmin.from("members").select("username, email, full_name, display_full_name").eq("email", payload.email).single()
+  ? await supabaseAdmin.from("members").select("username, email, full_name, display_full_name").eq("id", payload.memberId).single()
   : { data: null };
 
 if (!member) {
