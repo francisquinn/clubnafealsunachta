@@ -29,3 +29,6 @@ pnpm-debug.log*
 # opencode configuration
 .opencode/
 opencode.json
+
+# Claude Code configuration
+.claude/

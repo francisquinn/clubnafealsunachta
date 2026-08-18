@@ -3,6 +3,7 @@ export const prerender = true;
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { formatBlogDate } from "../../utils/script";
+import { getDisplayName } from "../../lib/memberDisplay";
 import Banner from "../../layouts/Banner.astro";
 
 export async function getStaticPaths() {
@@ -32,7 +33,7 @@ const { Content } = await render(post);
   <section class="cnf-section">
     <h1>{post.data.title}</h1>
     <div class="cnf-post__details">
-      {post.data.author} &#8226; {formatBlogDate(post.data.date)}
+      <a href={`/profile/${post.data.author.username}`}>{getDisplayName(post.data.author)}</a> &#8226; {formatBlogDate(post.data.date)}
     </div>
     <Content />
   </section>

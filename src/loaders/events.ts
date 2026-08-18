@@ -1,5 +1,6 @@
 import type { Loader } from 'astro/loaders';
 import { supabaseAdmin } from '../lib/supabase';
+import { unwrapRelation } from '../lib/supabaseRelations';
 
 export function eventsLoader(): Loader {
   return {
@@ -14,7 +15,7 @@ export function eventsLoader(): Loader {
       const [eventsResult, locationsResult] = await Promise.all([
         supabaseAdmin
           .from('events')
-          .select('*, venues(name, url)')
+          .select('*, venues(name, url), members(username, full_name, display_full_name)')
           .order('date', { ascending: true }),
         supabaseAdmin
           .from('locations')
@@ -32,8 +33,14 @@ export function eventsLoader(): Loader {
       const locationsMap = new Map(locationsResult.data?.map((l) => [l.id, l]) ?? []);
 
       for (const event of eventsResult.data || []) {
-        const venue = Array.isArray(event.venues) ? event.venues[0] ?? null : event.venues ?? null;
+        const venue = unwrapRelation(event.venues);
         const location = event.location_id ? locationsMap.get(event.location_id) ?? null : null;
+        const creator = unwrapRelation(event.members);
+
+        if (!creator) {
+          console.error(`Skipping event "${event.slug}": no matching member for created_by ${event.created_by}`);
+          continue;
+        }
 
         store.set({
           id: event.id.toString(),
@@ -51,6 +58,7 @@ export function eventsLoader(): Loader {
               meetup: event.meetup,
             },
             meetingUrl: event.meeting_url,
+            creator,
           },
         });
       }

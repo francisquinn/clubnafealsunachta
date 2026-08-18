@@ -5,6 +5,7 @@ import { formatEventDate } from "../../utils/script";
 import "../../styles/event.css";
 import { getCollection } from "astro:content";
 import Banner from "../../layouts/Banner.astro";
+import { getDisplayName } from "../../lib/memberDisplay";
 
 export async function getStaticPaths() {
   const events = await getCollection("event");
@@ -104,6 +105,11 @@ const { event } = Astro.props;
         </ul>
       </div>
     )}
+    <div class="cnf-event-page__details">
+      <span class="cnf-event-page__details-info"
+        >Hosted by <a href={`/profile/${event.data.creator.username}`}>{getDisplayName(event.data.creator)}</a></span
+      >
+    </div>
   </section>
   <Banner
     title="Like to suggest a topic?"

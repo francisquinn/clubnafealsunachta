@@ -4,12 +4,24 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getSessionToken, verifySessionToken } from "../../lib/auth";
 import { supabaseAdmin } from "../../lib/supabase";
 import { getDisplayName } from "../../lib/memberDisplay";
+import { getCollection } from "astro:content";
+import BlogEntry from "../../components/BlogEntry.astro";
 
 const { username } = Astro.params;
 
-const { data: profileUser } = supabaseAdmin
-  ? await supabaseAdmin.from("members").select("username, full_name, display_full_name, created_at").eq("username", username).single()
-  : { data: null };
+const token = getSessionToken(Astro.request);
+const payload = token ? verifySessionToken(token) : null;
+
+// Independent lookups (profile being viewed vs. the logged-in viewer, if
+// any) — run in parallel rather than one after another.
+const [{ data: profileUser }, { data: currentMember }] = await Promise.all([
+  supabaseAdmin
+    ? supabaseAdmin.from("members").select("username, full_name, display_full_name, created_at").eq("username", username).single()
+    : Promise.resolve({ data: null }),
+  payload && supabaseAdmin
+    ? supabaseAdmin.from("members").select("username").eq("id", payload.memberId).single()
+    : Promise.resolve({ data: null }),
+]);
 
 if (!profileUser) {
   Astro.response.status = 404;
@@ -21,16 +33,13 @@ const memberSince = profileUser
   ? new Date(profileUser.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })
   : null;
 
-const token = getSessionToken(Astro.request);
-const payload = token ? verifySessionToken(token) : null;
+const isOwnProfile = Boolean(payload && profileUser && currentMember?.username === profileUser.username);
 
-let isOwnProfile = false;
-if (payload && profileUser) {
-  const { data: currentMember } = supabaseAdmin
-    ? await supabaseAdmin.from("members").select("username").eq("id", payload.memberId).single()
-    : { data: null };
-  isOwnProfile = currentMember?.username.toLowerCase() === profileUser.username.toLowerCase();
-}
+const authoredPosts = profileUser
+  ? (await getCollection("blog"))
+      .filter((post) => post.data.author.username === profileUser.username)
+      .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  : [];
 ---
 
 <BaseLayout pageTitle={profileUser ? displayName : "Profile not found"}>
@@ -41,6 +50,16 @@ if (payload && profileUser) {
         <p>Member since: {memberSince}</p>
         {isOwnProfile && (
           <p><a href="/profile/edit">Edit your info</a></p>
+        )}
+        {authoredPosts.length > 0 && (
+          <>
+            <h2>Posts</h2>
+            <ul class="cnf-latest-blogs">
+              {authoredPosts.map((post) => (
+                <BlogEntry url={`/posts/${post.id}`} post={post.data} />
+              ))}
+            </ul>
+          </>
         )}
       </>
     ) : (

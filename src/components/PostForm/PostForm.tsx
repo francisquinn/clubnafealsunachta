@@ -4,7 +4,6 @@ import { actions } from "astro:actions";
 export type PostFormInitialData = {
   title: string;
   slug: string;
-  author: string;
   date: string;
   body: string;
 };
@@ -98,20 +97,6 @@ export default function PostForm({ mode, initialData }: PostFormProps) {
             <small className="cnf-form__hint">Slug cannot be changed after creation.</small>
           </>
         )}
-      </div>
-
-      <div className="cnf-form__group">
-        <label className="cnf-form__label" htmlFor="author">
-          Author *
-        </label>
-        <input
-          className="cnf-form__input"
-          type="text"
-          id="author"
-          name="author"
-          defaultValue={initialData?.author}
-          required
-        />
       </div>
 
       <div className="cnf-form__group">

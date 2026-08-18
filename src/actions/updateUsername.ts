@@ -3,6 +3,7 @@ import { verifySessionToken } from '../lib/auth';
 import { validateUsername, validateFullName } from '../utils/validation';
 import { escapeLikePattern } from '../lib/username';
 import { supabaseAdmin } from '../lib/supabase';
+import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
 
 export const updateUsername = defineAction({
   accept: 'form',
@@ -54,6 +55,8 @@ export const updateUsername = defineAction({
     if (error) {
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to update info' });
     }
+
+    triggerNetlifyBuild();
 
     return { success: true, username, full_name: fullName || null, display_full_name: displayFullName };
   },

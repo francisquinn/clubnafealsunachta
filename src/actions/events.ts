@@ -2,11 +2,13 @@ import { defineAction, ActionError } from 'astro:actions';
 import { supabase, supabaseAdmin } from '../lib/supabase';
 import { sendMailchimpEmail } from '../lib/mailchimp';
 import { requireAdmin } from '../lib/auth';
+import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
 
 export const createEvent = defineAction({
   accept: 'form',
   handler: async (formData, context) => {
-    if (!(await requireAdmin(context.request))) {
+    const admin = await requireAdmin(context.request);
+    if (!admin) {
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }
 
@@ -52,6 +54,7 @@ export const createEvent = defineAction({
         slug,
         location_id,
         venue_id,
+        created_by: admin.memberId,
         meeting_url,
         instagram: (formData.get('instagram') as string) || null,
         facebook: (formData.get('facebook') as string) || null,
@@ -66,12 +69,7 @@ export const createEvent = defineAction({
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
     }
 
-    const buildHookUrl = process.env.NETLIFY_BUILD_HOOK_URL;
-    if (buildHookUrl) {
-      await fetch(buildHookUrl, { method: 'POST' }).catch((e) =>
-        console.error('Netlify build hook failed:', e)
-      );
-    }
+    triggerNetlifyBuild();
 
     await sendMailchimpEmail({
       name,
@@ -143,12 +141,7 @@ export const updateEvent = defineAction({
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
     }
 
-    const buildHookUrl = process.env.NETLIFY_BUILD_HOOK_URL;
-    if (buildHookUrl) {
-      await fetch(buildHookUrl, { method: 'POST' }).catch((e) =>
-        console.error('Netlify build hook failed:', e)
-      );
-    }
+    triggerNetlifyBuild();
 
     return { success: true };
   }

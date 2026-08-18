@@ -1,5 +1,6 @@
 import type { Loader } from 'astro/loaders';
 import { supabaseAdmin } from '../lib/supabase';
+import { unwrapRelation } from '../lib/supabaseRelations';
 
 export function postsLoader(): Loader {
   return {
@@ -13,7 +14,7 @@ export function postsLoader(): Loader {
 
       const { data, error } = await supabaseAdmin
         .from('posts')
-        .select('*')
+        .select('*, members(username, full_name, display_full_name)')
         .order('date', { ascending: false });
 
       if (error) {
@@ -21,13 +22,19 @@ export function postsLoader(): Loader {
       }
 
       for (const post of data || []) {
+        const author = unwrapRelation(post.members);
+        if (!author) {
+          console.error(`Skipping post "${post.slug}": no matching member for author_id ${post.author_id}`);
+          continue;
+        }
+
         const rendered = await renderMarkdown(post.body);
         store.set({
           id: post.slug,
           data: {
             title: post.title,
             date: new Date(post.date),
-            author: post.author,
+            author,
           },
           body: post.body,
           rendered,

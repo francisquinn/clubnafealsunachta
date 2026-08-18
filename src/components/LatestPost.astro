@@ -1,40 +1,17 @@
 ---
 import { getCollection } from "astro:content";
-import { formatBlogDate } from "../utils/script";
+import BlogEntry from "./BlogEntry.astro";
 const latestBlogEntries = (await getCollection("blog"))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
   .slice(0, 3);
 ---
-
-<style>
-  .cnf-latest-blogs__post {
-    margin-bottom: 1.5rem;
-  }
-
-  .cnf-latest-blogs__post h3 {
-    margin: 0;
-    padding-bottom: 0.25rem;
-  }
-
-  .cnf-latest-blogs__date {
-    color: hsl(var(--color-grey));
-    font-size: 1rem;
-  }
-</style>
 
 <section class="cnf-section">
   <h2>Latest blog posts</h2>
   <ul class="cnf-latest-blogs">
     {
       latestBlogEntries.map((post) => (
-        <li class="cnf-latest-blogs__post">
-          <a href={`/posts/${post.id}`}>
-            <h3>{post.data.title}</h3>
-          </a>
-          <span class="cnf-latest-blogs__date">
-            {formatBlogDate(post.data.date)}
-          </span>
-        </li>
+        <BlogEntry url={`/posts/${post.id}`} post={post.data} />
       ))
     }
   </ul>

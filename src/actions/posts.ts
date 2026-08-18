@@ -2,11 +2,13 @@ import { defineAction, ActionError } from 'astro:actions';
 import { supabaseAdmin } from '../lib/supabase';
 import { sendMailchimpPostEmail } from '../lib/mailchimp';
 import { requireAdmin } from '../lib/auth';
+import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
 
 export const createPost = defineAction({
   accept: 'form',
   handler: async (formData, context) => {
-    if (!(await requireAdmin(context.request))) {
+    const admin = await requireAdmin(context.request);
+    if (!admin) {
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }
 
@@ -16,11 +18,10 @@ export const createPost = defineAction({
 
     const title = formData.get('title') as string;
     const slug = formData.get('slug') as string;
-    const author = formData.get('author') as string;
     const date = formData.get('date') as string;
     const body = formData.get('body') as string;
 
-    if (!title || !slug || !author || !date || !body) {
+    if (!title || !slug || !date || !body) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });
     }
 
@@ -30,7 +31,7 @@ export const createPost = defineAction({
 
     const { error } = await supabaseAdmin
       .from('posts')
-      .insert([{ title, slug, author, date, body }]);
+      .insert([{ title, slug, author_id: admin.memberId, date, body }]);
 
     if (error) {
       if (error.code === '23505') {
@@ -39,12 +40,7 @@ export const createPost = defineAction({
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
     }
 
-    const buildHookUrl = process.env.NETLIFY_BUILD_HOOK_URL;
-    if (buildHookUrl) {
-      await fetch(buildHookUrl, { method: 'POST' }).catch((e) =>
-        console.error('Netlify build hook failed:', e)
-      );
-    }
+    triggerNetlifyBuild();
 
     await sendMailchimpPostEmail({ title, slug, body }).catch((e) =>
       console.error('Mailchimp post email failed:', e)
@@ -67,17 +63,16 @@ export const updatePost = defineAction({
 
     const slug = formData.get('slug') as string;
     const title = formData.get('title') as string;
-    const author = formData.get('author') as string;
     const date = formData.get('date') as string;
     const body = formData.get('body') as string;
 
-    if (!title || !slug || !author || !date || !body) {
+    if (!title || !slug || !date || !body) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });
     }
 
     const { data: updated, error } = await supabaseAdmin
       .from('posts')
-      .update({ title, author, date, body })
+      .update({ title, date, body })
       .eq('slug', slug)
       .select('slug')
       .single();
@@ -90,12 +85,7 @@ export const updatePost = defineAction({
       throw new ActionError({ code: 'NOT_FOUND', message: 'Post not found' });
     }
 
-    const buildHookUrl = process.env.NETLIFY_BUILD_HOOK_URL;
-    if (buildHookUrl) {
-      await fetch(buildHookUrl, { method: 'POST' }).catch((e) =>
-        console.error('Netlify build hook failed:', e)
-      );
-    }
+    triggerNetlifyBuild();
 
     return { success: true };
   }
