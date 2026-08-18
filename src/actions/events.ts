@@ -1,14 +1,12 @@
 import { defineAction, ActionError } from 'astro:actions';
 import { supabase, supabaseAdmin } from '../lib/supabase';
 import { sendMailchimpEmail } from '../lib/mailchimp';
-import { verifySessionToken } from '../lib/auth';
+import { requireAdmin } from '../lib/auth';
 
 export const createEvent = defineAction({
   accept: 'form',
   handler: async (formData, context) => {
-    const token = context.cookies.get('session')?.value;
-    const payload = token ? verifySessionToken(token) : null;
-    if (!payload) {
+    if (!(await requireAdmin(context.request))) {
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }
 
@@ -91,9 +89,7 @@ export const createEvent = defineAction({
 export const updateEvent = defineAction({
   accept: 'form',
   handler: async (formData, context) => {
-    const token = context.cookies.get('session')?.value;
-    const payload = token ? verifySessionToken(token) : null;
-    if (!payload) {
+    if (!(await requireAdmin(context.request))) {
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }
 
@@ -176,9 +172,7 @@ export const getLocations = defineAction({
 
 export const getVenues = defineAction({
   handler: async (_, context) => {
-    const token = context.cookies.get('session')?.value;
-    const payload = token ? verifySessionToken(token) : null;
-    if (!payload) {
+    if (!(await requireAdmin(context.request))) {
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }
 

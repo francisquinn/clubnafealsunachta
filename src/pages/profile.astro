@@ -11,7 +11,7 @@ if (!payload) {
 }
 
 const { data: user } = supabaseAdmin
-  ? await supabaseAdmin.from("members").select("username").eq("email", payload.email).single()
+  ? await supabaseAdmin.from("members").select("username").eq("id", payload.memberId).single()
   : { data: null };
 
 if (!user?.username) {

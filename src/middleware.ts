@@ -1,5 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
-import { getSessionToken, verifySessionToken } from "./lib/auth";
+import { requireAdmin } from "./lib/auth";
 import { isTrustedOrigin } from "./lib/csrf";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
@@ -13,12 +13,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return next();
   }
 
-  const token = getSessionToken(context.request);
-
-  if (token) {
-    const payload = verifySessionToken(token);
-    if (payload?.isAdmin) return next();
-  }
+  if (await requireAdmin(context.request)) return next();
 
   return context.redirect("/login");
 });

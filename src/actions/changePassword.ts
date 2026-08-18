@@ -36,7 +36,7 @@ export const changePassword = defineAction({
     const { data: member } = await supabaseAdmin
       .from('members')
       .select('password_hash')
-      .eq('email', payload.email)
+      .eq('id', payload.memberId)
       .single();
 
     if (!member) {
@@ -53,7 +53,7 @@ export const changePassword = defineAction({
     const { error } = await supabaseAdmin
       .from('members')
       .update({ password_hash })
-      .eq('email', payload.email);
+      .eq('id', payload.memberId);
 
     if (error) {
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to update password' });

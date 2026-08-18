@@ -1,13 +1,11 @@
 import { defineAction, ActionError } from 'astro:actions';
-import { verifySessionToken } from '../lib/auth';
+import { requireAdmin } from '../lib/auth';
 import { createAccount } from '../lib/memberAccount';
 
 export const createMember = defineAction({
   accept: 'form',
   handler: async (formData, context) => {
-    const token = context.cookies.get('session')?.value;
-    const payload = token ? verifySessionToken(token) : null;
-    if (!payload?.isAdmin) {
+    if (!(await requireAdmin(context.request))) {
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }
 
