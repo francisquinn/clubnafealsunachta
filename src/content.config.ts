@@ -3,12 +3,18 @@ import { eventsLoader } from "./loaders/events";
 import { postsLoader } from "./loaders/posts";
 import 'dotenv/config';
 
+const memberRefSchema = z.object({
+  username: z.string(),
+  full_name: z.string().nullable(),
+  display_full_name: z.boolean(),
+});
+
 const blog = defineCollection({
   loader: postsLoader(),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
-    author: z.string(),
+    author: memberRefSchema,
   }),
 });
 
@@ -34,6 +40,7 @@ const event = defineCollection({
       meetup: z.string().nullable(),
     }),
     meetingUrl: z.string().nullable(),
+    creator: memberRefSchema,
   }),
 });
 

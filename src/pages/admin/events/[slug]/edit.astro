@@ -4,6 +4,7 @@ import AdminLayout from "../../../../layouts/AdminLayout.astro";
 import EventForm from "../../../../components/EventForm/EventForm";
 import type { EventFormInitialData } from "../../../../components/EventForm/EventForm";
 import { supabase } from "../../../../lib/supabase";
+import { unwrapRelation } from "../../../../lib/supabaseRelations";
 import "../../../../styles/form.css";
 
 const { slug } = Astro.params;
@@ -20,8 +21,8 @@ if (error || !event) {
 
 const dateStr = new Date(event.date).toISOString().slice(0, 16);
 
-const venue = Array.isArray(event.venues) ? event.venues[0] : event.venues;
-const location = Array.isArray(event.locations) ? event.locations[0] : event.locations;
+const venue = unwrapRelation(event.venues);
+const location = unwrapRelation(event.locations);
 
 const initialData: EventFormInitialData = {
   name: event.name,

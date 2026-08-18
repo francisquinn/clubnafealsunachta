@@ -1,0 +1,29 @@
+---
+import { formatBlogDate } from "../utils/script";
+const { url, post } = Astro.props;
+---
+
+<style>
+  .cnf-latest-blogs__post {
+    margin-bottom: 1.5rem;
+  }
+
+  .cnf-latest-blogs__post h3 {
+    margin: 0;
+    padding-bottom: 0.25rem;
+  }
+
+  .cnf-latest-blogs__date {
+    color: hsl(var(--color-grey));
+    font-size: 1rem;
+  }
+</style>
+
+<li class="cnf-latest-blogs__post">
+  <a href={url}>
+    <h3>{post.title}</h3>
+  </a>
+  <span class="cnf-latest-blogs__date">
+    {formatBlogDate(post.date)}
+  </span>
+</li>

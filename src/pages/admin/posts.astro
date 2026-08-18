@@ -3,6 +3,7 @@ export const prerender = false;
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { getCollection } from "astro:content";
 import { formatBlogDate } from "../../utils/script";
+import { getDisplayName } from "../../lib/memberDisplay";
 import "../../styles/form.css";
 
 const posts = (await getCollection("blog")).sort(
@@ -32,7 +33,7 @@ const posts = (await getCollection("blog")).sort(
           <tr>
             <td data-label="Title">{post.data.title}</td>
             <td data-label="Date">{formatBlogDate(post.data.date)}</td>
-            <td data-label="Author">{post.data.author}</td>
+            <td data-label="Author">{getDisplayName(post.data.author)}</td>
             <td><a href={`/admin/posts/${post.id}/edit`}>Edit</a></td>
           </tr>
         ))}

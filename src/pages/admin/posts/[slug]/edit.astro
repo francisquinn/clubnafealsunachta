@@ -14,7 +14,7 @@ if (!supabaseAdmin) {
 
 const { data: post, error } = await supabaseAdmin
   .from("posts")
-  .select("id, title, slug, author, date, body")
+  .select("id, title, slug, date, body")
   .eq("slug", slug!)
   .single();
 
@@ -27,7 +27,6 @@ const dateStr = new Date(post.date).toISOString().slice(0, 10);
 const initialData: PostFormInitialData = {
   title: post.title,
   slug: post.slug,
-  author: post.author,
   date: dateStr,
   body: post.body,
 };

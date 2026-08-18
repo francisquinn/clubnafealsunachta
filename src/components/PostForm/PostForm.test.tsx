@@ -16,7 +16,6 @@ vi.mock("astro:actions", () => ({
 const sampleInitialData = {
   title: "Test Post",
   slug: "test-post",
-  author: "Francis Quinn",
   date: "2026-01-01",
   body: "This is the body of the post.",
 };
@@ -30,7 +29,6 @@ describe("PostForm (create mode)", () => {
     render(<PostForm mode="create" />);
     expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/url slug/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/author/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/date/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/body/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^create$/i })).toBeInTheDocument();
@@ -84,7 +82,6 @@ describe("PostForm (edit mode)", () => {
   it("pre-populates all fields from initialData", () => {
     render(<PostForm mode="edit" initialData={sampleInitialData} />);
     expect(screen.getByLabelText(/title/i)).toHaveValue("Test Post");
-    expect(screen.getByLabelText(/author/i)).toHaveValue("Francis Quinn");
     expect(screen.getByLabelText(/date/i)).toHaveValue("2026-01-01");
     expect(screen.getByLabelText(/body/i)).toHaveValue("This is the body of the post.");
   });
