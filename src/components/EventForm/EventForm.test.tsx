@@ -5,14 +5,14 @@ import EventForm from "./EventForm";
 
 const mockCreateEvent = vi.fn();
 const mockUpdateEvent = vi.fn();
-const mockGetCities = vi.fn();
+const mockGetClubs = vi.fn();
 const mockGetVenues = vi.fn();
 
 vi.mock("astro:actions", () => ({
   actions: {
     createEvent: (...args: unknown[]) => mockCreateEvent(...args),
     updateEvent: (...args: unknown[]) => mockUpdateEvent(...args),
-    getCities: (...args: unknown[]) => mockGetCities(...args),
+    getClubs: (...args: unknown[]) => mockGetClubs(...args),
     getVenues: (...args: unknown[]) => mockGetVenues(...args),
   },
 }));
@@ -32,7 +32,7 @@ async function waitForVenuesToLoad() {
 describe("EventForm (create mode)", () => {
   beforeEach(() => {
     mockCreateEvent.mockReset();
-    mockGetCities.mockResolvedValue({ data: [{ id: 1, name: "Trieste" }] });
+    mockGetClubs.mockResolvedValue({ data: [{ id: 1, name: "Trieste" }] });
     mockGetVenues.mockResolvedValue({ data: [] });
   });
 
@@ -98,7 +98,7 @@ describe("EventForm (create mode)", () => {
 describe("EventForm (edit mode)", () => {
   beforeEach(() => {
     mockUpdateEvent.mockReset();
-    mockGetCities.mockResolvedValue({ data: [{ id: 1, name: "Trieste" }] });
+    mockGetClubs.mockResolvedValue({ data: [{ id: 1, name: "Trieste" }] });
     mockGetVenues.mockResolvedValue({ data: [] });
   });
 
@@ -169,8 +169,8 @@ describe("EventForm (edit mode)", () => {
 
   it("pre-selects the venue matching initialData.venueId", async () => {
     const venues = [
-      { id: 5, name: "The Philosophy Bar", url: null, city_id: 1 },
-      { id: 6, name: "Another Venue", url: null, city_id: 1 },
+      { id: 5, name: "The Philosophy Bar", url: null, club_id: 1 },
+      { id: 6, name: "Another Venue", url: null, club_id: 1 },
     ];
     mockGetVenues.mockResolvedValue({ data: venues });
     render(<EventForm mode="edit" initialData={{ ...sampleInitialData, venueId: 5 }} />);
@@ -181,7 +181,7 @@ describe("EventForm (edit mode)", () => {
   });
 
   it("does not pre-select a venue when no venueId is provided", async () => {
-    const venues = [{ id: 5, name: "The Philosophy Bar", url: null, city_id: 1 }];
+    const venues = [{ id: 5, name: "The Philosophy Bar", url: null, club_id: 1 }];
     mockGetVenues.mockResolvedValue({ data: venues });
     render(<EventForm mode="edit" initialData={sampleInitialData} />);
 

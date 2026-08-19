@@ -1,4 +1,4 @@
-import { createEvent, updateEvent, getCities, getVenues } from './events';
+import { createEvent, updateEvent, getClubs, getVenues } from './events';
 import { createPost, updatePost } from './posts';
 import { createMember } from './members';
 import { signup } from './signup';
@@ -8,7 +8,7 @@ import { updateUsername } from './updateUsername';
 export const server = {
   createEvent,
   updateEvent,
-  getCities,
+  getClubs,
   getVenues,
   createPost,
   updatePost,
