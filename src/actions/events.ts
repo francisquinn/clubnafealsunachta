@@ -7,7 +7,7 @@ import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
 type ResolvedVenue = { id: number; name: string; url: string | null };
 
 // Resolves the venue for a non-online event: an existing venue is looked up
-// by id as-is, a "New venue…" submission (name + city, no id yet) is
+// by id as-is, a "New venue…" submission (name + club, no id yet) is
 // upserted. Returns null when the event is online or no venue was picked.
 async function resolveVenue(formData: FormData, is_online: boolean): Promise<ResolvedVenue | null> {
   if (is_online) return null;
@@ -26,14 +26,14 @@ async function resolveVenue(formData: FormData, is_online: boolean): Promise<Res
     return venue;
   }
 
-  const city_id = formData.get('city_id') ? Number(formData.get('city_id')) : null;
+  const club_id = formData.get('club_id') ? Number(formData.get('club_id')) : null;
   const location_name = (formData.get('location_name') as string) || null;
-  if (!city_id || !location_name) return null;
+  if (!club_id || !location_name) return null;
 
   const location_url = (formData.get('location_url') as string) || null;
   const { data: venue, error } = await supabaseAdmin!
     .from('venues')
-    .upsert({ name: location_name, url: location_url, city_id }, { onConflict: 'name,city_id' })
+    .upsert({ name: location_name, url: location_url, club_id }, { onConflict: 'name,club_id' })
     .select('id, name, url')
     .single();
 
@@ -156,14 +156,14 @@ export const updateEvent = defineAction({
   }
 });
 
-export const getCities = defineAction({
+export const getClubs = defineAction({
   handler: async () => {
     if (!supabase) {
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Supabase not configured' });
     }
 
     const { data, error } = await supabase
-      .from('cities')
+      .from('clubs')
       .select('id, name')
       .order('name');
 
@@ -184,7 +184,7 @@ export const getVenues = defineAction({
 
     const { data, error } = await supabase
       .from('venues')
-      .select('id, name, url, city_id')
+      .select('id, name, url, club_id')
       .order('name');
 
     if (error) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });

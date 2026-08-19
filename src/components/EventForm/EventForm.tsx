@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { actions } from "astro:actions";
 import Checkbox from "../Checkbox/Checkbox";
 
-type City = { id: number; name: string };
+type Club = { id: number; name: string };
 type Venue = { id: number; name: string; url: string | null };
 
 const NEW_VENUE = "__new__";
@@ -31,7 +31,7 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [isOnline, setIsOnline] = useState(initialData?.isOnline ?? false);
-  const [cities, setCities] = useState<City[]>([]);
+  const [clubs, setClubs] = useState<Club[]>([]);
   const [venues, setVenues] = useState<Venue[]>([]);
   const [venuesLoading, setVenuesLoading] = useState(true);
   const [selectedVenueId, setSelectedVenueId] = useState<string>(
@@ -39,8 +39,8 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
   );
 
   useEffect(() => {
-    actions.getCities().then(({ data }) => {
-      if (data) setCities(data);
+    actions.getClubs().then(({ data }) => {
+      if (data) setClubs(data);
     });
     actions.getVenues().then(({ data }) => {
       if (data) setVenues(data);
@@ -192,12 +192,12 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
           </div>
 
           <div className="cnf-form__group">
-            <label className="cnf-form__label" htmlFor="city_id">
-              City *
+            <label className="cnf-form__label" htmlFor="club_id">
+              Club *
             </label>
-            <select className="cnf-form__input" id="city_id" name="city_id" required>
+            <select className="cnf-form__input" id="club_id" name="club_id" required>
               <option value="">— select —</option>
-              {cities.map((c) => (
+              {clubs.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
