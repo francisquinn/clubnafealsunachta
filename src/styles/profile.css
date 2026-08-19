@@ -1,0 +1,8 @@
+.cnf-profile__handle {
+  color: hsl(var(--color-grey));
+  margin-top: 0;
+}
+
+h1:has(+ .cnf-profile__handle) {
+  margin-bottom: 0;
+}

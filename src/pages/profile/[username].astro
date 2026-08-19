@@ -6,6 +6,7 @@ import { supabaseAdmin } from "../../lib/supabase";
 import { getDisplayName } from "../../lib/memberDisplay";
 import { getCollection } from "astro:content";
 import BlogEntry from "../../components/BlogEntry.astro";
+import "../../styles/profile.css";
 
 const { username } = Astro.params;
 
@@ -28,6 +29,7 @@ if (!profileUser) {
 }
 
 const displayName = profileUser ? getDisplayName(profileUser) : null;
+const showHandle = profileUser ? displayName !== profileUser.username : false;
 
 const memberSince = profileUser
   ? new Date(profileUser.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })
@@ -47,6 +49,7 @@ const authoredPosts = profileUser
     {profileUser ? (
       <>
         <h1>{displayName}</h1>
+        {showHandle && <p class="cnf-profile__handle">@{profileUser.username}</p>}
         <p>Member since: {memberSince}</p>
         {isOwnProfile && (
           <p><a href="/profile/edit">Edit your info</a></p>
