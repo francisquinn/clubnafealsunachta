@@ -20,8 +20,8 @@ export default function EventCard({
               {dateFormatter(new Date(event.date))}
             </li>
             <li className="cnf-event__location">
-              {event.meetingUrl
-                ? <a href={event.meetingUrl} target="_blank">Online</a>
+              {event.isOnline
+                ? <a href={event.meetingUrl ?? undefined} target="_blank">Online</a>
                 : event.venue?.url
                   ? <a href={event.venue.url} target="_blank">{event.venue.name}</a>
                   : event.venue?.name

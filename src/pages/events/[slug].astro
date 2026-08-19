@@ -29,7 +29,7 @@ const { event } = Astro.props;
         >{formatEventDate(new Date(event.data.date))}</span
       >
       {
-        event.data.meetingUrl
+        event.data.isOnline
           ? <a href={event.data.meetingUrl} class="cnf-event-page__details-link" target="_blank">
               Online
             </a>

@@ -27,6 +27,7 @@ const event = defineCollection({
       id: z.number(),
       name: z.string(),
     }).nullable(),
+    isOnline: z.boolean(),
     venue: z.object({
       name: z.string().nullable(),
       url: z.string().nullable(),

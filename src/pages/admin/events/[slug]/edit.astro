@@ -11,7 +11,7 @@ const { slug } = Astro.params;
 
 const { data: event, error } = await supabase!
   .from("events")
-  .select("id, name, date, slug, location_id, venue_id, meeting_url, instagram, facebook, meetup, description, summary, venues(id, name, url), locations(id, name)")
+  .select("id, name, date, slug, is_online, venue_id, meeting_url, instagram, facebook, meetup, description, summary, venues(id, name, url)")
   .eq("slug", slug!)
   .single();
 
@@ -22,16 +22,13 @@ if (error || !event) {
 const dateStr = new Date(event.date).toISOString().slice(0, 16);
 
 const venue = unwrapRelation(event.venues);
-const location = unwrapRelation(event.locations);
 
 const initialData: EventFormInitialData = {
   name: event.name,
   date: dateStr,
-  locationId: location?.id,
   slug: event.slug,
+  isOnline: event.is_online,
   venueId: venue?.id,
-  locationName: venue?.name,
-  locationUrl: venue?.url ?? undefined,
   meetingUrl: event.meeting_url ?? undefined,
   instagram: event.instagram ?? undefined,
   facebook: event.facebook ?? undefined,

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { actions } from "astro:actions";
+import Checkbox from "../Checkbox/Checkbox";
 
-type Location = { id: number; name: string };
-type Venue = { id: number; name: string; url: string | null; location_id: number };
+type City = { id: number; name: string };
+type Venue = { id: number; name: string; url: string | null };
 
 const NEW_VENUE = "__new__";
 const DEFAULT_MEETING_URL = import.meta.env.PUBLIC_DEFAULT_MEETING_URL || '';
@@ -10,11 +11,9 @@ const DEFAULT_MEETING_URL = import.meta.env.PUBLIC_DEFAULT_MEETING_URL || '';
 export type EventFormInitialData = {
   name: string;
   date: string;
-  locationId?: number;
   slug: string;
+  isOnline?: boolean;
   venueId?: number;
-  locationName?: string;
-  locationUrl?: string;
   meetingUrl?: string;
   instagram?: string;
   facebook?: string;
@@ -31,10 +30,8 @@ type EventFormProps = {
 export default function EventForm({ mode, initialData }: EventFormProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [selectedLocationId, setSelectedLocationId] = useState<number | "">(
-    initialData?.locationId ?? ""
-  );
+  const [isOnline, setIsOnline] = useState(initialData?.isOnline ?? false);
+  const [cities, setCities] = useState<City[]>([]);
   const [venues, setVenues] = useState<Venue[]>([]);
   const [venuesLoading, setVenuesLoading] = useState(true);
   const [selectedVenueId, setSelectedVenueId] = useState<string>(
@@ -42,8 +39,8 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
   );
 
   useEffect(() => {
-    actions.getLocations().then(({ data }) => {
-      if (data) setLocations(data);
+    actions.getCities().then(({ data }) => {
+      if (data) setCities(data);
     });
     actions.getVenues().then(({ data }) => {
       if (data) setVenues(data);
@@ -51,10 +48,7 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
     });
   }, []);
 
-  const isOnline = locations.find((l) => l.id === selectedLocationId)?.name === "Online";
-  const locationVenues = venues.filter((v) => v.location_id === selectedLocationId);
   const isNewVenue = selectedVenueId === NEW_VENUE;
-  const selectedVenue = venues.find((v) => String(v.id) === selectedVenueId);
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -62,11 +56,6 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
     setErrorMessage("");
 
     const formData = new FormData(e.currentTarget);
-
-    if (selectedVenue && !isNewVenue) {
-      formData.set("location_name", selectedVenue.name);
-      formData.set("location_url", selectedVenue.url ?? "");
-    }
 
     try {
       const action = mode === "edit" ? actions.updateEvent : actions.createEvent;
@@ -81,7 +70,6 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
       if (data?.success) {
         setStatus("success");
         if (mode === "create") {
-          setSelectedLocationId("");
           setSelectedVenueId("");
           const form = e.currentTarget as HTMLFormElement;
           if (form) form.reset();
@@ -135,26 +123,14 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
       </div>
 
       <div className="cnf-form__group">
-        <label className="cnf-form__label" htmlFor="location">
-          Location
-        </label>
-        <select
-          className="cnf-form__input"
-          id="location"
-          name="location_id"
-          value={selectedLocationId}
-          onChange={(e) => {
-            setSelectedLocationId(e.target.value ? Number(e.target.value) : "");
-            setSelectedVenueId("");
-          }}
-        >
-          <option value="">— select —</option>
-          {locations.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name}
-            </option>
-          ))}
-        </select>
+        <Checkbox
+          id="is_online"
+          name="is_online"
+          value="true"
+          label="This event is online"
+          defaultChecked={initialData?.isOnline}
+          onChange={(e) => setIsOnline(e.target.checked)}
+        />
       </div>
 
       {isOnline ? (
@@ -170,10 +146,10 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
             defaultValue={initialData?.meetingUrl ?? DEFAULT_MEETING_URL}
           />
         </div>
-      ) : selectedLocationId ? (
+      ) : (
         <div className="cnf-form__group">
           <label className="cnf-form__label" htmlFor="venue_select">
-            Venue
+            Venue *
           </label>
           {venuesLoading ? (
             <select className="cnf-form__input" id="venue_select" disabled>
@@ -183,46 +159,62 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
             <select
               className="cnf-form__input"
               id="venue_select"
+              name="venue_id"
               value={selectedVenueId}
               onChange={(e) => setSelectedVenueId(e.target.value)}
+              required
             >
-              <option value="">— none —</option>
-              {locationVenues.map((v) => (
+              <option value="">— select —</option>
+              {venues.map((v) => (
                 <option key={v.id} value={String(v.id)}>
                   {v.name}
                 </option>
               ))}
-              <option value={NEW_VENUE}>New venue...</option>
+              <option value={NEW_VENUE}>New venue</option>
             </select>
           )}
         </div>
-      ) : null}
+      )}
 
-      {isNewVenue && (
+      {!isOnline && isNewVenue && (
         <>
           <div className="cnf-form__group">
             <label className="cnf-form__label" htmlFor="location_name">
-              Name
+              Venue name *
             </label>
             <input
               className="cnf-form__input"
               type="text"
               id="location_name"
               name="location_name"
-              defaultValue={initialData?.locationName}
+              required
             />
           </div>
 
           <div className="cnf-form__group">
+            <label className="cnf-form__label" htmlFor="city_id">
+              City *
+            </label>
+            <select className="cnf-form__input" id="city_id" name="city_id" required>
+              <option value="">— select —</option>
+              {cities.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="cnf-form__group">
             <label className="cnf-form__label" htmlFor="location_url">
-              Location URL (Google Maps)
+              Location URL (Google Maps) *
             </label>
             <input
               className="cnf-form__input"
               type="url"
               id="location_url"
               name="location_url"
-              defaultValue={initialData?.locationUrl}
+              required
             />
           </div>
         </>

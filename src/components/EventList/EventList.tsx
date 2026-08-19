@@ -7,19 +7,22 @@ import Selector from "../Selector/Selector";
 import type { EventCollection } from "../../types/types";
 
 export default function EventList(props: EventListProps) {
-  const locationNames = [...new Set(
+  const cityNames = [...new Set(
     props.events.map((e) => e.data.location?.name).filter(Boolean) as string[]
   )];
+  const locationNames = props.events.some((e) => e.data.isOnline)
+    ? [...cityNames, "Online"]
+    : cityNames;
   const [showUpcoming, setShowUpcoming] = useState<boolean>(true);
   const nextUpcoming = props.events
     .filter((e) => !isEventExpired(e.data))
     .sort((a, b) => a.data.date.getTime() - b.data.date.getTime())[0];
-  const defaultLocation = nextUpcoming?.data.meetingUrl
+  const defaultLocation = nextUpcoming?.data.isOnline
     ? "Online"
     : (nextUpcoming?.data.location?.name ?? locationNames[0] ?? "");
   const [selectedLocation, setSelectedLocation] = useState<string>(defaultLocation);
 
-  const onlineEvents = props.events.filter((e) => e.data.meetingUrl);
+  const onlineEvents = props.events.filter((e) => e.data.isOnline);
   const locationEvents = selectedLocation === "Online"
     ? onlineEvents
     : props.events.filter((e) => e.data.location?.name === selectedLocation);

@@ -12,13 +12,13 @@ export function eventsLoader(): Loader {
 
       store.clear();
 
-      const [eventsResult, locationsResult] = await Promise.all([
+      const [eventsResult, citiesResult] = await Promise.all([
         supabaseAdmin
           .from('events')
-          .select('*, venues(name, url), members(username, full_name, display_full_name)')
+          .select('*, venues(name, url, city_id), members(username, full_name, display_full_name)')
           .order('date', { ascending: true }),
         supabaseAdmin
-          .from('locations')
+          .from('cities')
           .select('id, name'),
       ]);
 
@@ -26,15 +26,15 @@ export function eventsLoader(): Loader {
         throw new Error(`Failed to fetch events from Supabase: ${eventsResult.error.message}`);
       }
 
-      if (locationsResult.error) {
-        throw new Error(`Failed to fetch locations from Supabase: ${locationsResult.error.message}`);
+      if (citiesResult.error) {
+        throw new Error(`Failed to fetch cities from Supabase: ${citiesResult.error.message}`);
       }
 
-      const locationsMap = new Map(locationsResult.data?.map((l) => [l.id, l]) ?? []);
+      const citiesMap = new Map(citiesResult.data?.map((c) => [c.id, c]) ?? []);
 
       for (const event of eventsResult.data || []) {
         const venue = unwrapRelation(event.venues);
-        const location = event.location_id ? locationsMap.get(event.location_id) ?? null : null;
+        const location = venue?.city_id ? citiesMap.get(venue.city_id) ?? null : null;
         const creator = unwrapRelation(event.members);
 
         if (!creator) {
@@ -48,6 +48,7 @@ export function eventsLoader(): Loader {
             name: event.name,
             date: new Date(event.date),
             location,
+            isOnline: event.is_online,
             venue: venue ? { name: venue.name, url: venue.url } : null,
             slug: event.slug,
             description: event.description,
