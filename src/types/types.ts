@@ -9,6 +9,7 @@ export type Event = {
     id: number;
     name: string;
   } | null;
+  isOnline: boolean;
   venue: {
     name: string | null;
     url: string | null;

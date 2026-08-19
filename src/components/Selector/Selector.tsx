@@ -20,6 +20,7 @@ export default function Selector({ label, name, options, value, onChange }: Sele
         className="cnf-select__input"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        autoComplete="off"
       >
         <option value="" disabled>{placeholder}</option>
         {options.map((option) => (

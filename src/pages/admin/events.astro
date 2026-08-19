@@ -33,7 +33,7 @@ const sorted = [...events].sort(
           <tr>
             <td data-label="Name">{event.data.name}</td>
             <td data-label="Date">{formatBlogDate(event.data.date)}</td>
-            <td data-label="Location">{event.data.meetingUrl ? "Online" : event.data.location?.name ?? "—"}</td>
+            <td data-label="Location">{event.data.isOnline ? "Online" : event.data.location?.name ?? "—"}</td>
             <td><a href={`/admin/events/${event.data.slug}/edit`}>Edit</a></td>
           </tr>
         ))}

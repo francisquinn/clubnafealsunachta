@@ -31,10 +31,27 @@ function makeEvent(name: string, date: Date, locationName = "Trieste"): EventCol
       name,
       date,
       location: { id: 1, name: locationName },
+      isOnline: false,
       venue: { name: "Test Venue", url: "https://maps.google.com" },
       slug: name.toLowerCase().replace(/ /g, "-"),
       social: { instagram: "https://instagram.com/test" },
       meetingUrl: null,
+    },
+  } as unknown as EventCollection;
+}
+
+function makeOnlineEvent(name: string, date: Date): EventCollection {
+  return {
+    id: name,
+    data: {
+      name,
+      date,
+      location: null,
+      isOnline: true,
+      venue: null,
+      slug: name.toLowerCase().replace(/ /g, "-"),
+      social: { instagram: "https://instagram.com/test" },
+      meetingUrl: "https://meet.jit.si/test",
     },
   } as unknown as EventCollection;
 }
@@ -103,6 +120,17 @@ describe("EventList", () => {
       render(<EventList events={events} />);
       expect(screen.getAllByTestId("upcoming-event")).toHaveLength(1);
       expect(screen.getByText("Trieste Event")).toBeInTheDocument();
+    });
+
+    it("classifies events by isOnline, not by location name", () => {
+      const events = [
+        makeEvent("Trieste Event", futureDate1, "Trieste"),
+        makeOnlineEvent("Online Event", futureDate2),
+      ];
+      render(<EventList events={events} />);
+      fireEvent.change(screen.getByRole("combobox"), { target: { value: "Online" } });
+      expect(screen.getAllByTestId("upcoming-event")).toHaveLength(1);
+      expect(screen.getByText("Online Event")).toBeInTheDocument();
     });
   });
 });

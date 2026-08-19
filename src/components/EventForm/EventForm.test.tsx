@@ -5,14 +5,14 @@ import EventForm from "./EventForm";
 
 const mockCreateEvent = vi.fn();
 const mockUpdateEvent = vi.fn();
-const mockGetLocations = vi.fn();
+const mockGetCities = vi.fn();
 const mockGetVenues = vi.fn();
 
 vi.mock("astro:actions", () => ({
   actions: {
     createEvent: (...args: unknown[]) => mockCreateEvent(...args),
     updateEvent: (...args: unknown[]) => mockUpdateEvent(...args),
-    getLocations: (...args: unknown[]) => mockGetLocations(...args),
+    getCities: (...args: unknown[]) => mockGetCities(...args),
     getVenues: (...args: unknown[]) => mockGetVenues(...args),
   },
 }));
@@ -20,7 +20,6 @@ vi.mock("astro:actions", () => ({
 const sampleInitialData = {
   name: "Test Event",
   date: "2025-06-01T19:00",
-  locationId: 1,
   slug: "test-event",
 };
 
@@ -33,7 +32,7 @@ async function waitForVenuesToLoad() {
 describe("EventForm (create mode)", () => {
   beforeEach(() => {
     mockCreateEvent.mockReset();
-    mockGetLocations.mockResolvedValue({ data: [{ id: 1, name: "Trieste" }, { id: 2, name: "Online" }] });
+    mockGetCities.mockResolvedValue({ data: [{ id: 1, name: "Trieste" }] });
     mockGetVenues.mockResolvedValue({ data: [] });
   });
 
@@ -43,6 +42,20 @@ describe("EventForm (create mode)", () => {
     expect(screen.getByLabelText(/date & time/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/url slug/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^create$/i })).toBeInTheDocument();
+  });
+
+  it("shows the venue field, not a meeting URL field, by default", () => {
+    render(<EventForm mode="create" />);
+    expect(screen.getByRole("checkbox", { name: /this event is online/i })).not.toBeChecked();
+    expect(screen.getByLabelText(/^venue/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/meeting url/i)).not.toBeInTheDocument();
+  });
+
+  it("shows the meeting URL field, not the venue field, once online is checked", () => {
+    render(<EventForm mode="create" />);
+    fireEvent.click(screen.getByRole("checkbox", { name: /this event is online/i }));
+    expect(screen.getByLabelText(/meeting url/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^venue/i)).not.toBeInTheDocument();
   });
 
   it("disables submit button while submitting", async () => {
@@ -85,7 +98,7 @@ describe("EventForm (create mode)", () => {
 describe("EventForm (edit mode)", () => {
   beforeEach(() => {
     mockUpdateEvent.mockReset();
-    mockGetLocations.mockResolvedValue({ data: [{ id: 1, name: "Trieste" }, { id: 2, name: "Online" }] });
+    mockGetCities.mockResolvedValue({ data: [{ id: 1, name: "Trieste" }] });
     mockGetVenues.mockResolvedValue({ data: [] });
   });
 
@@ -99,6 +112,12 @@ describe("EventForm (edit mode)", () => {
     render(<EventForm mode="edit" initialData={sampleInitialData} />);
     expect(screen.getByLabelText(/title/i)).toHaveValue("Test Event");
     expect(screen.getByLabelText(/date & time/i)).toHaveValue("2025-06-01T19:00");
+  });
+
+  it("pre-checks the online checkbox from initialData.isOnline", () => {
+    render(<EventForm mode="edit" initialData={{ ...sampleInitialData, isOnline: true }} />);
+    expect(screen.getByRole("checkbox", { name: /this event is online/i })).toBeChecked();
+    expect(screen.getByLabelText(/meeting url/i)).toBeInTheDocument();
   });
 
   it("displays slug as read-only", () => {
@@ -150,8 +169,8 @@ describe("EventForm (edit mode)", () => {
 
   it("pre-selects the venue matching initialData.venueId", async () => {
     const venues = [
-      { id: 5, name: "The Philosophy Bar", url: null, location_id: 1 },
-      { id: 6, name: "Another Venue", url: null, location_id: 1 },
+      { id: 5, name: "The Philosophy Bar", url: null, city_id: 1 },
+      { id: 6, name: "Another Venue", url: null, city_id: 1 },
     ];
     mockGetVenues.mockResolvedValue({ data: venues });
     render(<EventForm mode="edit" initialData={{ ...sampleInitialData, venueId: 5 }} />);
@@ -162,7 +181,7 @@ describe("EventForm (edit mode)", () => {
   });
 
   it("does not pre-select a venue when no venueId is provided", async () => {
-    const venues = [{ id: 5, name: "The Philosophy Bar", url: null, location_id: 1 }];
+    const venues = [{ id: 5, name: "The Philosophy Bar", url: null, city_id: 1 }];
     mockGetVenues.mockResolvedValue({ data: venues });
     render(<EventForm mode="edit" initialData={sampleInitialData} />);
 
