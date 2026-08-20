@@ -14,6 +14,7 @@ export type EventFormInitialData = {
   slug: string;
   isOnline?: boolean;
   venueId?: number;
+  eventClubId?: number;
   meetingUrl?: string;
   instagram?: string;
   facebook?: string;
@@ -134,18 +135,42 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
       </div>
 
       {isOnline ? (
-        <div className="cnf-form__group">
-          <label className="cnf-form__label" htmlFor="meeting_url">
-            Meeting URL
-          </label>
-          <input
-            className="cnf-form__input"
-            type="url"
-            id="meeting_url"
-            name="meeting_url"
-            defaultValue={initialData?.meetingUrl ?? DEFAULT_MEETING_URL}
-          />
-        </div>
+        <>
+          <div className="cnf-form__group">
+            <label className="cnf-form__label" htmlFor="event_club_id">
+              Hosting club
+            </label>
+            <select
+              className="cnf-form__input"
+              id="event_club_id"
+              name="event_club_id"
+              defaultValue={initialData?.eventClubId ? String(initialData.eventClubId) : ""}
+            >
+              <option value="">No specific chapter</option>
+              {clubs.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <small className="cnf-form__hint">
+              Which chapter is organizing this event.
+            </small>
+          </div>
+
+          <div className="cnf-form__group">
+            <label className="cnf-form__label" htmlFor="meeting_url">
+              Meeting URL
+            </label>
+            <input
+              className="cnf-form__input"
+              type="url"
+              id="meeting_url"
+              name="meeting_url"
+              defaultValue={initialData?.meetingUrl ?? DEFAULT_MEETING_URL}
+            />
+          </div>
+        </>
       ) : (
         <div className="cnf-form__group">
           <label className="cnf-form__label" htmlFor="venue_select">
@@ -164,7 +189,7 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
               onChange={(e) => setSelectedVenueId(e.target.value)}
               required
             >
-              <option value="">— select —</option>
+              <option value="">Select a venue</option>
               {venues.map((v) => (
                 <option key={v.id} value={String(v.id)}>
                   {v.name}
@@ -196,7 +221,7 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
               Club *
             </label>
             <select className="cnf-form__input" id="club_id" name="club_id" required>
-              <option value="">— select —</option>
+              <option value="">Select a club</option>
               {clubs.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
