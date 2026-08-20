@@ -229,6 +229,16 @@ async function sendCampaign({ subjectLine, previewText, html }: {
   previewText: string;
   html: string;
 }): Promise<void> {
+  // Never hit the real Mailchimp account from a local dev server, even if
+  // a real API key is present in .env (e.g. pulled down via sync-env) —
+  // creating draft campaigns while testing locally would clutter the live
+  // account. Astro sets DEV based on how the app is actually running, not
+  // on env-var presence, so there's nothing to remember to unset.
+  if (import.meta.env.DEV) {
+    console.warn(`Mailchimp campaign skipped in local dev: "${subjectLine}"`);
+    return;
+  }
+
   const authHeader = `Basic ${Buffer.from(`any:${MAILCHIMP_API_KEY}`).toString('base64')}`;
   const baseUrl = `https://${DC}.api.mailchimp.com/3.0`;
 

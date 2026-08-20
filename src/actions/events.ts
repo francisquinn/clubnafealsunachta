@@ -4,11 +4,13 @@ import { sendMailchimpEmail } from '../lib/mailchimp';
 import { requireAdmin } from '../lib/auth';
 import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
 
-type ResolvedVenue = { id: number; name: string; url: string | null };
+type ResolvedVenue = { id: number; name: string; url: string | null; club_id: number };
 
 // Resolves the venue for a non-online event: an existing venue is looked up
 // by id as-is, a "New venue…" submission (name + club, no id yet) is
 // upserted. Returns null when the event is online or no venue was picked.
+// `club_id` comes back on the venue itself — a venue always belongs to
+// exactly one club, so that's also the event's hosting club (see #36).
 async function resolveVenue(formData: FormData, is_online: boolean): Promise<ResolvedVenue | null> {
   if (is_online) return null;
 
@@ -18,7 +20,7 @@ async function resolveVenue(formData: FormData, is_online: boolean): Promise<Res
   if (selected_venue_id) {
     const { data: venue, error } = await supabaseAdmin!
       .from('venues')
-      .select('id, name, url')
+      .select('id, name, url, club_id')
       .eq('id', selected_venue_id)
       .single();
 
@@ -34,11 +36,23 @@ async function resolveVenue(formData: FormData, is_online: boolean): Promise<Res
   const { data: venue, error } = await supabaseAdmin!
     .from('venues')
     .upsert({ name: location_name, url: location_url, club_id }, { onConflict: 'name,club_id' })
-    .select('id, name, url')
+    .select('id, name, url, club_id')
     .single();
 
   if (error) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
   return venue;
+}
+
+// In-person: the hosting club is the venue's own club, not a separate
+// choice — a venue always belongs to exactly one club. Online: no venue to
+// derive it from, so it's an explicit form field, left null for a
+// genuinely cross-chapter/global event (see #36).
+function resolveEventClubId(formData: FormData, is_online: boolean, venue: ResolvedVenue | null): number | null {
+  if (is_online) {
+    const submitted = formData.get('event_club_id');
+    return submitted ? Number(submitted) : null;
+  }
+  return venue?.club_id ?? null;
 }
 
 export const createEvent = defineAction({
@@ -68,6 +82,7 @@ export const createEvent = defineAction({
     }
 
     const venue = await resolveVenue(formData, is_online);
+    const event_club_id = resolveEventClubId(formData, is_online, venue);
 
     const { error } = await supabaseAdmin
       .from('events')
@@ -77,6 +92,7 @@ export const createEvent = defineAction({
         slug,
         is_online,
         venue_id: venue?.id ?? null,
+        club_id: event_club_id,
         created_by: admin.memberId,
         meeting_url,
         instagram: (formData.get('instagram') as string) || null,
@@ -129,6 +145,7 @@ export const updateEvent = defineAction({
     }
 
     const venue = await resolveVenue(formData, is_online);
+    const event_club_id = resolveEventClubId(formData, is_online, venue);
 
     const { error } = await supabaseAdmin
       .from('events')
@@ -137,6 +154,7 @@ export const updateEvent = defineAction({
         date,
         is_online,
         venue_id: venue?.id ?? null,
+        club_id: event_club_id,
         meeting_url,
         instagram: (formData.get('instagram') as string) || null,
         facebook: (formData.get('facebook') as string) || null,
