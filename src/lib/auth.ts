@@ -72,28 +72,76 @@ export function verifySessionToken(token: string): { memberId: string; isAdmin: 
   }
 }
 
-// The token's own isAdmin claim is fine for cosmetic reads (e.g. showing/hiding
-// a nav link) but anything that actually GATES access should call this instead:
-// it checks the members table live, so revoking admin rights takes effect on
-// the very next request instead of waiting out the token's 30-day expiry.
-// Fails closed - a missing Supabase client, a query error, or no matching row
-// (payload.memberId always comes from a verified token, but data can still be
-// deleted or misconfigured) all resolve to "not admin".
-export async function isMemberAdmin(memberId: string): Promise<boolean> {
-  if (!supabaseAdmin) return false;
-  const { data } = await supabaseAdmin.from("members").select("is_admin").eq("id", memberId).single();
-  return !!data?.is_admin;
+// A member's admin scope: a super admin (members.is_admin) manages every
+// club, so clubIds is meaningless for them and left empty - callers must
+// check isSuperAdmin first. A non-super admin's scope is exactly the clubs
+// in club_admins; empty means they hold no admin rights over any club (e.g.
+// admin status was fully revoked, or - shouldn't happen once #37 ships with
+// no self-serve grant path - a member row with no super-admin flag and no
+// club_admins rows at all).
+export type AdminScope = { memberId: string; isSuperAdmin: boolean; clubIds: number[] };
+
+// Resolves a member's full admin scope: super-admin status plus, if not a
+// super admin, the specific clubs they administer via club_admins. The
+// token's own isAdmin claim is fine for cosmetic reads (e.g. showing/hiding
+// a nav link) but anything that actually GATES access should call this
+// instead: it checks live, so revoking rights takes effect on the very next
+// request instead of waiting out the token's 30-day expiry. Fails closed - a
+// missing Supabase client, a query error, or no matching row (memberId
+// always comes from a verified token, but data can still be deleted or
+// misconfigured) all resolve to no rights at all.
+export async function getAdminScope(memberId: string): Promise<AdminScope> {
+  const none = { memberId, isSuperAdmin: false, clubIds: [] };
+  if (!supabaseAdmin) return none;
+
+  const { data: member } = await supabaseAdmin.from("members").select("is_admin").eq("id", memberId).single();
+  if (!member) return none;
+  if (member.is_admin) return { memberId, isSuperAdmin: true, clubIds: [] };
+
+  const { data: clubAdmins } = await supabaseAdmin.from("club_admins").select("club_id").eq("member_id", memberId);
+  return { memberId, isSuperAdmin: false, clubIds: (clubAdmins ?? []).map((row) => row.club_id) };
 }
 
 // Single admin-gate check shared by middleware and every admin-only action.
-// Extracts and verifies the session cookie, then confirms admin status live
-// via isMemberAdmin. Returns the payload when authorized, null otherwise -
-// callers decide how to respond (redirect vs. throw ActionError).
-export async function requireAdmin(request: Request): Promise<{ memberId: string; isAdmin: boolean } | null> {
+// Extracts and verifies the session cookie, then resolves the caller's full
+// admin scope (super admin, or the specific clubs they administer) live via
+// getAdminScope. Returns the scope when authorized (super admin, or admin of
+// at least one club), null otherwise - callers decide how to respond
+// (redirect vs. throw ActionError). Actions that need to enforce per-club
+// scoping (not just "is this member an admin at all") should read
+// isSuperAdmin/clubIds off the returned scope directly.
+export async function requireAdmin(request: Request): Promise<AdminScope | null> {
   const token = getSessionToken(request);
   const payload = token ? verifySessionToken(token) : null;
-  if (!payload || !(await isMemberAdmin(payload.memberId))) return null;
-  return payload;
+  if (!payload) return null;
+
+  const scope = await getAdminScope(payload.memberId);
+  if (!scope.isSuperAdmin && scope.clubIds.length === 0) return null;
+  return scope;
+}
+
+// A non-super admin may only touch clubs they administer - a null club_id
+// (genuinely cross-chapter/global, see #36) is out of scope for them too,
+// since it isn't any specific club they administer. Shared by every place
+// that gates access to one specific club (an existing venue/event's club, a
+// submitted event_club_id/new-venue club_id, an event about to be viewed or
+// edited) so the rule can't drift between call sites. A plain predicate
+// rather than a throw - callers fail however fits their context (an
+// ActionError in a server action, a redirect on an Astro page).
+export function isClubInScope(admin: AdminScope, club_id: number | null): boolean {
+  return admin.isSuperAdmin || (club_id !== null && admin.clubIds.includes(club_id));
+}
+
+// Narrows any Supabase query builder to a super admin's full access, or a
+// club-scoped admin's own clubs via the given column - the one "scope this
+// list to the caller's clubs" shape shared by getClubs/getVenues/the admin
+// events list, instead of each repeating the isSuperAdmin branch itself.
+// Q is left unconstrained (not `Q extends {in(...): Q}`) and the `.in` call
+// is asserted locally instead - constraining Q directly against Supabase's
+// real builder type sends TS's inference into an infinite loop (ts(2589)).
+export function scopeToAdminClubs<Q>(query: Q, admin: AdminScope, column: string): Q {
+  if (admin.isSuperAdmin) return query;
+  return (query as unknown as { in(column: string, values: number[]): Q }).in(column, admin.clubIds);
 }
 
 // Safari (unlike Chrome) refuses to store cookies marked Secure over plain HTTP,

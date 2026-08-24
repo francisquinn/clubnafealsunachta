@@ -1,14 +1,32 @@
 ---
 export const prerender = false;
 import AdminLayout from "../../layouts/AdminLayout.astro";
-import { getCollection } from "astro:content";
-import type { EventCollection } from "../../types/types";
+import { supabaseAdmin } from "../../lib/supabase";
+import { requireAdmin, scopeToAdminClubs } from "../../lib/auth";
+import { unwrapRelation } from "../../lib/supabaseRelations";
 import { formatBlogDate } from "../../utils/script";
 
-const events = (await getCollection("event")) as EventCollection[];
-const sorted = [...events].sort(
-  (a, b) => b.data.date.getTime() - a.data.date.getTime()
+// #37: scoped to the caller's clubs, so this can no longer read from the
+// events content collection (its loader drops club_id) - queries Supabase
+// directly instead, same pattern as the edit page.
+const admin = (await requireAdmin(Astro.request))!;
+
+const query = scopeToAdminClubs(
+  supabaseAdmin!.from("events").select("name, date, slug, is_online, club_id, venues(name)").order("date", { ascending: false }),
+  admin,
+  "club_id"
 );
+const { data, error } = await query;
+// Fails to an empty list rather than crashing the whole admin dashboard on a
+// transient Supabase error - this is a read-only listing, not a single
+// record the page can't render without.
+if (error) console.error("Failed to load admin events list:", error.message);
+
+const sorted = (data ?? []).map((event) => ({
+  ...event,
+  date: new Date(event.date),
+  venue: unwrapRelation(event.venues),
+}));
 ---
 
 <AdminLayout pageTitle="Events">
@@ -31,10 +49,10 @@ const sorted = [...events].sort(
       <tbody>
         {sorted.map((event) => (
           <tr>
-            <td data-label="Name">{event.data.name}</td>
-            <td data-label="Date">{formatBlogDate(event.data.date)}</td>
-            <td data-label="Location">{event.data.isOnline ? "Online" : event.data.location?.name ?? "—"}</td>
-            <td><a href={`/admin/events/${event.data.slug}/edit`}>Edit</a></td>
+            <td data-label="Name">{event.name}</td>
+            <td data-label="Date">{formatBlogDate(event.date)}</td>
+            <td data-label="Location">{event.is_online ? "Online" : event.venue?.name ?? "—"}</td>
+            <td><a href={`/admin/events/${event.slug}/edit`}>Edit</a></td>
           </tr>
         ))}
       </tbody>

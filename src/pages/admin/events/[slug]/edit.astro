@@ -4,8 +4,13 @@ import AdminLayout from "../../../../layouts/AdminLayout.astro";
 import EventForm from "../../../../components/EventForm/EventForm";
 import type { EventFormInitialData } from "../../../../components/EventForm/EventForm";
 import { supabase } from "../../../../lib/supabase";
+import { requireAdmin, isClubInScope } from "../../../../lib/auth";
 import { unwrapRelation } from "../../../../lib/supabaseRelations";
 import "../../../../styles/form.css";
+
+// #37: only a super admin may leave an event unscoped ("No specific
+// chapter") - EventForm needs to know which to show that option.
+const admin = (await requireAdmin(Astro.request))!;
 
 const { slug } = Astro.params;
 
@@ -15,7 +20,11 @@ const { data: event, error } = await supabase!
   .eq("slug", slug!)
   .single();
 
-if (error || !event) {
+// A club-scoped admin has no standing to even view an event outside their
+// clubs, not just to save changes to it (updateEvent already enforces that
+// side) - same redirect as a genuinely missing event, no distinct "forbidden"
+// state to avoid confirming a slug's existence to an admin who can't see it.
+if (error || !event || !isClubInScope(admin, event.club_id)) {
   return Astro.redirect("/admin/events");
 }
 
@@ -45,6 +54,6 @@ const initialData: EventFormInitialData = {
       <h1>Edit event</h1>
       <a href="/admin/events">Back to events</a>
     </div>
-    <EventForm mode="edit" initialData={initialData} client:load />
+    <EventForm mode="edit" initialData={initialData} isSuperAdmin={admin.isSuperAdmin} client:load />
   </section>
 </AdminLayout>

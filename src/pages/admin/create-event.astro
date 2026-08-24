@@ -2,7 +2,12 @@
 export const prerender = false;
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import EventForm from "../../components/EventForm/EventForm";
+import { requireAdmin } from "../../lib/auth";
 import "../../styles/form.css";
+
+// #37: only a super admin may leave an event unscoped ("No specific
+// chapter") - EventForm needs to know which to show that option.
+const admin = (await requireAdmin(Astro.request))!;
 ---
 
 <AdminLayout pageTitle="Create Event">
@@ -11,6 +16,6 @@ import "../../styles/form.css";
       <h1>Create event</h1>
       <a href="/admin/events">Back to events</a>
     </div>
-    <EventForm mode="create" client:load />
+    <EventForm mode="create" isSuperAdmin={admin.isSuperAdmin} client:load />
   </section>
 </AdminLayout>

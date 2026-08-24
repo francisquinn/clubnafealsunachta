@@ -1,17 +1,27 @@
 import { defineAction, ActionError } from 'astro:actions';
 import { supabase, supabaseAdmin } from '../lib/supabase';
 import { sendMailchimpEmail } from '../lib/mailchimp';
-import { requireAdmin } from '../lib/auth';
+import { requireAdmin, isClubInScope, scopeToAdminClubs, type AdminScope } from '../lib/auth';
 import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
 
 type ResolvedVenue = { id: number; name: string; url: string | null; club_id: number };
+
+// #37: throwing wrapper around the shared isClubInScope predicate, for the
+// server-action call sites below (resolveVenue/resolveEventClubId/updateEvent).
+function assertClubInScope(admin: AdminScope, club_id: number | null) {
+  if (isClubInScope(admin, club_id)) return;
+  throw new ActionError({ code: 'FORBIDDEN', message: 'You are not an admin of that club' });
+}
 
 // Resolves the venue for a non-online event: an existing venue is looked up
 // by id as-is, a "New venue…" submission (name + club, no id yet) is
 // upserted. Returns null when the event is online or no venue was picked.
 // `club_id` comes back on the venue itself — a venue always belongs to
 // exactly one club, so that's also the event's hosting club (see #36).
-async function resolveVenue(formData: FormData, is_online: boolean): Promise<ResolvedVenue | null> {
+// Every path is checked against the caller's admin scope (#37) so a
+// club-scoped admin can't attach an event to, or create a venue under, a
+// club they don't administer.
+async function resolveVenue(formData: FormData, is_online: boolean, admin: AdminScope): Promise<ResolvedVenue | null> {
   if (is_online) return null;
 
   const selected_venue_id = formData.get('venue_id')
@@ -25,12 +35,14 @@ async function resolveVenue(formData: FormData, is_online: boolean): Promise<Res
       .single();
 
     if (error) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
+    assertClubInScope(admin, venue.club_id);
     return venue;
   }
 
   const club_id = formData.get('club_id') ? Number(formData.get('club_id')) : null;
   const location_name = (formData.get('location_name') as string) || null;
   if (!club_id || !location_name) return null;
+  assertClubInScope(admin, club_id);
 
   const location_url = (formData.get('location_url') as string) || null;
   const { data: venue, error } = await supabaseAdmin!
@@ -44,15 +56,28 @@ async function resolveVenue(formData: FormData, is_online: boolean): Promise<Res
 }
 
 // In-person: the hosting club is the venue's own club, not a separate
-// choice — a venue always belongs to exactly one club. Online: no venue to
-// derive it from, so it's an explicit form field, left null for a
-// genuinely cross-chapter/global event (see #36).
-function resolveEventClubId(formData: FormData, is_online: boolean, venue: ResolvedVenue | null): number | null {
+// choice — a venue always belongs to exactly one club, already scope-checked
+// in resolveVenue. Online: no venue to derive it from, so it's an explicit
+// form field. Either way, a null result (genuinely cross-chapter/global, see
+// #36 - no venue picked counts as the same thing) is only allowed for a
+// super admin, since a club-scoped admin has no standing to create an event
+// outside every club they administer.
+function resolveEventClubId(formData: FormData, is_online: boolean, venue: ResolvedVenue | null, admin: AdminScope): number | null {
   if (is_online) {
     const submitted = formData.get('event_club_id');
-    return submitted ? Number(submitted) : null;
+    if (!submitted) {
+      assertClubInScope(admin, null);
+      return null;
+    }
+    const club_id = Number(submitted);
+    assertClubInScope(admin, club_id);
+    return club_id;
   }
-  return venue?.club_id ?? null;
+  if (!venue) {
+    assertClubInScope(admin, null);
+    return null;
+  }
+  return venue.club_id;
 }
 
 export const createEvent = defineAction({
@@ -81,8 +106,8 @@ export const createEvent = defineAction({
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Slug must contain only lowercase letters, numbers and hyphens' });
     }
 
-    const venue = await resolveVenue(formData, is_online);
-    const event_club_id = resolveEventClubId(formData, is_online, venue);
+    const venue = await resolveVenue(formData, is_online, admin);
+    const event_club_id = resolveEventClubId(formData, is_online, venue, admin);
 
     const { error } = await supabaseAdmin
       .from('events')
@@ -126,7 +151,8 @@ export const createEvent = defineAction({
 export const updateEvent = defineAction({
   accept: 'form',
   handler: async (formData, context) => {
-    if (!(await requireAdmin(context.request))) {
+    const admin = await requireAdmin(context.request);
+    if (!admin) {
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }
 
@@ -144,8 +170,19 @@ export const updateEvent = defineAction({
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });
     }
 
-    const venue = await resolveVenue(formData, is_online);
-    const event_club_id = resolveEventClubId(formData, is_online, venue);
+    // A club-scoped admin also can't be allowed to edit an event they don't
+    // currently administer, even if their submitted new venue/club would
+    // otherwise pass scope - check the event's existing club before touching it.
+    const { data: existing, error: existingError } = await supabaseAdmin
+      .from('events')
+      .select('club_id')
+      .eq('slug', slug)
+      .single();
+    if (existingError) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: existingError.message });
+    assertClubInScope(admin, existing.club_id);
+
+    const venue = await resolveVenue(formData, is_online, admin);
+    const event_club_id = resolveEventClubId(formData, is_online, venue, admin);
 
     const { error } = await supabaseAdmin
       .from('events')
@@ -174,16 +211,22 @@ export const updateEvent = defineAction({
   }
 });
 
+// #37: only used by the admin-only EventForm, so now gated and scoped like
+// getVenues below - a club-scoped admin should only ever see the clubs they
+// administer in the hosting-club/new-venue-club dropdowns.
 export const getClubs = defineAction({
-  handler: async () => {
+  handler: async (_, context) => {
+    const admin = await requireAdmin(context.request);
+    if (!admin) {
+      throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
+    }
+
     if (!supabase) {
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Supabase not configured' });
     }
 
-    const { data, error } = await supabase
-      .from('clubs')
-      .select('id, name')
-      .order('name');
+    const query = scopeToAdminClubs(supabase.from('clubs').select('id, name').order('name'), admin, 'id');
+    const { data, error } = await query;
 
     if (error) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
     return data ?? [];
@@ -192,7 +235,8 @@ export const getClubs = defineAction({
 
 export const getVenues = defineAction({
   handler: async (_, context) => {
-    if (!(await requireAdmin(context.request))) {
+    const admin = await requireAdmin(context.request);
+    if (!admin) {
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }
 
@@ -200,10 +244,8 @@ export const getVenues = defineAction({
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Supabase not configured' });
     }
 
-    const { data, error } = await supabase
-      .from('venues')
-      .select('id, name, url, club_id')
-      .order('name');
+    const query = scopeToAdminClubs(supabase.from('venues').select('id, name, url, club_id').order('name'), admin, 'club_id');
+    const { data, error } = await query;
 
     if (error) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
     return data ?? [];

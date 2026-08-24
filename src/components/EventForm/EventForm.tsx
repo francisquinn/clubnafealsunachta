@@ -26,9 +26,10 @@ export type EventFormInitialData = {
 type EventFormProps = {
   mode: "create" | "edit";
   initialData?: EventFormInitialData;
+  isSuperAdmin: boolean;
 };
 
-export default function EventForm({ mode, initialData }: EventFormProps) {
+export default function EventForm({ mode, initialData, isSuperAdmin }: EventFormProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [isOnline, setIsOnline] = useState(initialData?.isOnline ?? false);
@@ -145,8 +146,9 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
               id="event_club_id"
               name="event_club_id"
               defaultValue={initialData?.eventClubId ? String(initialData.eventClubId) : ""}
+              required={!isSuperAdmin}
             >
-              <option value="">No specific chapter</option>
+              {isSuperAdmin && <option value="">No specific chapter</option>}
               {clubs.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
