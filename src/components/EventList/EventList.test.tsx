@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import "@testing-library/jest-dom";
 import { render, screen, fireEvent } from "@testing-library/react";
 import EventList from "./EventList";
-import type { EventCollection } from "../../types/types";
+import type { EventCollection, Event } from "../../types/types";
 
 vi.mock("../Selector/Selector", () => ({
   default: ({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) => (
@@ -24,36 +24,35 @@ vi.mock("../../layouts/EventCard", () => ({
 
 vi.mock("../../styles/event.css", () => ({}));
 
+// `data` is typed as the real `Event` shape (not the loosely-cast wrapper
+// below) so a future field added there — like the #39 `location.slug` — is
+// enforced here too, instead of being silently absent from these fixtures.
 function makeEvent(name: string, date: Date, locationName = "Trieste"): EventCollection {
-  return {
-    id: name,
-    data: {
-      name,
-      date,
-      location: { id: 1, name: locationName },
-      isOnline: false,
-      venue: { name: "Test Venue", url: "https://maps.google.com" },
-      slug: name.toLowerCase().replace(/ /g, "-"),
-      social: { instagram: "https://instagram.com/test" },
-      meetingUrl: null,
-    },
-  } as unknown as EventCollection;
+  const data: Event = {
+    name,
+    date,
+    location: { id: 1, name: locationName, slug: locationName.toLowerCase() },
+    isOnline: false,
+    venue: { name: "Test Venue", url: "https://maps.google.com" },
+    slug: name.toLowerCase().replace(/ /g, "-"),
+    social: { instagram: "https://instagram.com/test" },
+    meetingUrl: null,
+  };
+  return { id: name, data } as unknown as EventCollection;
 }
 
 function makeOnlineEvent(name: string, date: Date): EventCollection {
-  return {
-    id: name,
-    data: {
-      name,
-      date,
-      location: null,
-      isOnline: true,
-      venue: null,
-      slug: name.toLowerCase().replace(/ /g, "-"),
-      social: { instagram: "https://instagram.com/test" },
-      meetingUrl: "https://meet.jit.si/test",
-    },
-  } as unknown as EventCollection;
+  const data: Event = {
+    name,
+    date,
+    location: null,
+    isOnline: true,
+    venue: null,
+    slug: name.toLowerCase().replace(/ /g, "-"),
+    social: { instagram: "https://instagram.com/test" },
+    meetingUrl: "https://meet.jit.si/test",
+  };
+  return { id: name, data } as unknown as EventCollection;
 }
 
 const futureDate1 = new Date("2099-01-01");

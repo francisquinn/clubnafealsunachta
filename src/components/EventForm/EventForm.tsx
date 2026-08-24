@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { actions } from "astro:actions";
 import Checkbox from "../Checkbox/Checkbox";
+import { DEFAULT_CLUB_SLUG } from "../../lib/clubDefaults";
 
 type Club = { id: number; name: string };
 type Venue = { id: number; name: string; url: string | null };
@@ -264,7 +265,12 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
               required
             />
             <small className="cnf-form__hint">
-              Used in URL: /events/my-event-name
+              {/* #39: the form doesn't yet know which club's page this will land
+                  on (an existing venue's club isn't exposed to the client, and
+                  there's only one real club to preview anyway) — DEFAULT_CLUB_SLUG
+                  is a deliberate placeholder, not a guarantee, until a real
+                  club picker exists here. */}
+              Used in URL: /{DEFAULT_CLUB_SLUG}/events/my-event-name
             </small>
           </>
         ) : (

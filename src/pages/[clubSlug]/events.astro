@@ -1,0 +1,51 @@
+---
+export const prerender = true;
+import BaseLayout from "../../layouts/BaseLayout.astro";
+const pageTitle = "Events";
+import "../../styles/event.css";
+import "../../styles/select.css";
+import EventList from "../../components/EventList/EventList";
+import { getCollection } from "astro:content";
+import type { EventCollection } from "../../types/types";
+import Banner from "../../layouts/Banner.astro";
+import { getAllClubs, clubSlugsForEvent } from "../../lib/clubs";
+
+export async function getStaticPaths() {
+  // #39: resolve clubs + events once total (not once per generated club
+  // page — the collection filter used to live in the page body, so it
+  // re-ran on every club instance) and hand each club its own pre-filtered
+  // list via props.
+  const [clubs, allEvents] = await Promise.all([
+    getAllClubs(),
+    getCollection("event") as Promise<EventCollection[]>,
+  ]);
+  const clubSlugs = clubs.map((c) => c.slug);
+
+  return clubs.map((club) => ({
+    params: { clubSlug: club.slug },
+    props: {
+      events: allEvents.filter((event) =>
+        clubSlugsForEvent(event.data.location, clubSlugs).includes(club.slug)
+      ),
+    },
+  }));
+}
+
+const { clubSlug } = Astro.params;
+const { events: sortedEvents } = Astro.props;
+---
+
+<BaseLayout pageTitle={pageTitle}>
+  <section class="cnf-section">
+    <h1>{pageTitle}</h1>
+    <EventList events={sortedEvents} clubSlug={clubSlug} client:load />
+  </section>
+  <Banner
+    title="Like to suggest a topic?"
+    description="Why not help the never-ending list of topics grow even more!"
+    location={{
+      name: "Suggest topic",
+      url: "/suggest-topic",
+    }}
+  />
+</BaseLayout>
