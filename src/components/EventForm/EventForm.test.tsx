@@ -37,7 +37,7 @@ describe("EventForm (create mode)", () => {
   });
 
   it("renders all required form fields", () => {
-    render(<EventForm mode="create" />);
+    render(<EventForm mode="create" isSuperAdmin />);
     expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/date & time/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/url slug/i)).toBeInTheDocument();
@@ -45,22 +45,36 @@ describe("EventForm (create mode)", () => {
   });
 
   it("shows the venue field, not a meeting URL field, by default", () => {
-    render(<EventForm mode="create" />);
+    render(<EventForm mode="create" isSuperAdmin />);
     expect(screen.getByRole("checkbox", { name: /this event is online/i })).not.toBeChecked();
     expect(screen.getByLabelText(/^venue/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/meeting url/i)).not.toBeInTheDocument();
   });
 
   it("shows the meeting URL field, not the venue field, once online is checked", () => {
-    render(<EventForm mode="create" />);
+    render(<EventForm mode="create" isSuperAdmin />);
     fireEvent.click(screen.getByRole("checkbox", { name: /this event is online/i }));
     expect(screen.getByLabelText(/meeting url/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/^venue/i)).not.toBeInTheDocument();
   });
 
+  it("offers 'No specific chapter' for a super admin's online event", () => {
+    render(<EventForm mode="create" isSuperAdmin />);
+    fireEvent.click(screen.getByRole("checkbox", { name: /this event is online/i }));
+    expect(screen.getByLabelText(/hosting club/i)).not.toBeRequired();
+    expect(screen.getByText("No specific chapter")).toBeInTheDocument();
+  });
+
+  it("hides 'No specific chapter' and requires a hosting club for a club-scoped admin", () => {
+    render(<EventForm mode="create" isSuperAdmin={false} />);
+    fireEvent.click(screen.getByRole("checkbox", { name: /this event is online/i }));
+    expect(screen.getByLabelText(/hosting club/i)).toBeRequired();
+    expect(screen.queryByText("No specific chapter")).not.toBeInTheDocument();
+  });
+
   it("disables submit button while submitting", async () => {
     mockCreateEvent.mockReturnValue(new Promise(() => {}));
-    render(<EventForm mode="create" />);
+    render(<EventForm mode="create" isSuperAdmin />);
 
     await waitForVenuesToLoad();
     fireEvent.submit(document.querySelector("form")!);
@@ -72,7 +86,7 @@ describe("EventForm (create mode)", () => {
 
   it("shows error message when action returns an error", async () => {
     mockCreateEvent.mockResolvedValue({ error: { message: "Slug already exists" } });
-    render(<EventForm mode="create" />);
+    render(<EventForm mode="create" isSuperAdmin />);
 
     await waitForVenuesToLoad();
     fireEvent.submit(document.querySelector("form")!);
@@ -84,7 +98,7 @@ describe("EventForm (create mode)", () => {
 
   it("shows success message when event is created", async () => {
     mockCreateEvent.mockResolvedValue({ data: { success: true } });
-    render(<EventForm mode="create" />);
+    render(<EventForm mode="create" isSuperAdmin />);
 
     await waitForVenuesToLoad();
     fireEvent.submit(document.querySelector("form")!);
@@ -103,25 +117,25 @@ describe("EventForm (edit mode)", () => {
   });
 
   it("renders 'Save changes' button instead of 'Create'", () => {
-    render(<EventForm mode="edit" initialData={sampleInitialData} />);
+    render(<EventForm mode="edit" initialData={sampleInitialData} isSuperAdmin />);
     expect(screen.getByRole("button", { name: /save changes/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^create$/i })).not.toBeInTheDocument();
   });
 
   it("pre-populates name and date from initialData", () => {
-    render(<EventForm mode="edit" initialData={sampleInitialData} />);
+    render(<EventForm mode="edit" initialData={sampleInitialData} isSuperAdmin />);
     expect(screen.getByLabelText(/title/i)).toHaveValue("Test Event");
     expect(screen.getByLabelText(/date & time/i)).toHaveValue("2025-06-01T19:00");
   });
 
   it("pre-checks the online checkbox from initialData.isOnline", () => {
-    render(<EventForm mode="edit" initialData={{ ...sampleInitialData, isOnline: true }} />);
+    render(<EventForm mode="edit" initialData={{ ...sampleInitialData, isOnline: true }} isSuperAdmin />);
     expect(screen.getByRole("checkbox", { name: /this event is online/i })).toBeChecked();
     expect(screen.getByLabelText(/meeting url/i)).toBeInTheDocument();
   });
 
   it("displays slug as read-only", () => {
-    render(<EventForm mode="edit" initialData={sampleInitialData} />);
+    render(<EventForm mode="edit" initialData={sampleInitialData} isSuperAdmin />);
     const slugInput = screen.getByRole("textbox", { name: /url slug/i });
     expect(slugInput).toHaveAttribute("readOnly");
     expect(slugInput).toHaveValue("test-event");
@@ -129,14 +143,14 @@ describe("EventForm (edit mode)", () => {
 
   it("disables submit button and shows loading placeholder while venues are loading", () => {
     mockGetVenues.mockReturnValue(new Promise(() => {}));
-    render(<EventForm mode="edit" initialData={sampleInitialData} />);
+    render(<EventForm mode="edit" initialData={sampleInitialData} isSuperAdmin />);
 
     expect(screen.getByText("Loading venues…")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /save changes/i })).toBeDisabled();
   });
 
   it("enables submit button after venues load", async () => {
-    render(<EventForm mode="edit" initialData={sampleInitialData} />);
+    render(<EventForm mode="edit" initialData={sampleInitialData} isSuperAdmin />);
 
     await waitForVenuesToLoad();
 
@@ -145,7 +159,7 @@ describe("EventForm (edit mode)", () => {
 
   it("shows error message when updateEvent returns an error", async () => {
     mockUpdateEvent.mockResolvedValue({ error: { message: "Update failed" } });
-    render(<EventForm mode="edit" initialData={sampleInitialData} />);
+    render(<EventForm mode="edit" initialData={sampleInitialData} isSuperAdmin />);
 
     await waitForVenuesToLoad();
     fireEvent.submit(document.querySelector("form")!);
@@ -157,7 +171,7 @@ describe("EventForm (edit mode)", () => {
 
   it("shows success message after update", async () => {
     mockUpdateEvent.mockResolvedValue({ data: { success: true } });
-    render(<EventForm mode="edit" initialData={sampleInitialData} />);
+    render(<EventForm mode="edit" initialData={sampleInitialData} isSuperAdmin />);
 
     await waitForVenuesToLoad();
     fireEvent.submit(document.querySelector("form")!);
@@ -173,7 +187,7 @@ describe("EventForm (edit mode)", () => {
       { id: 6, name: "Another Venue", url: null, club_id: 1 },
     ];
     mockGetVenues.mockResolvedValue({ data: venues });
-    render(<EventForm mode="edit" initialData={{ ...sampleInitialData, venueId: 5 }} />);
+    render(<EventForm mode="edit" initialData={{ ...sampleInitialData, venueId: 5 }} isSuperAdmin />);
 
     await waitForVenuesToLoad();
 
@@ -183,7 +197,7 @@ describe("EventForm (edit mode)", () => {
   it("does not pre-select a venue when no venueId is provided", async () => {
     const venues = [{ id: 5, name: "The Philosophy Bar", url: null, club_id: 1 }];
     mockGetVenues.mockResolvedValue({ data: venues });
-    render(<EventForm mode="edit" initialData={sampleInitialData} />);
+    render(<EventForm mode="edit" initialData={sampleInitialData} isSuperAdmin />);
 
     await waitForVenuesToLoad();
 
