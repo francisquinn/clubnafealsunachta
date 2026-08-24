@@ -1,0 +1,6 @@
+# #39: legacy un-prefixed event URLs (existing bookmarks/social links) now
+# live under /trieste — the only club that existed before path-based club
+# routing. Forced (!) so these always redirect rather than falling through
+# to a same-path static file, since none should exist for /events* anymore.
+/events                /trieste/events                301!
+/events/:slug          /trieste/events/:slug          301!

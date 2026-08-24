@@ -1,26 +1,44 @@
 ---
 export const prerender = true;
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import { formatEventDate } from "../../utils/script";
-import "../../styles/event.css";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { formatEventDate } from "../../../utils/script";
+import "../../../styles/event.css";
 import { getCollection } from "astro:content";
-import Banner from "../../layouts/Banner.astro";
-import { getDisplayName } from "../../lib/memberDisplay";
+import Banner from "../../../layouts/Banner.astro";
+import { getDisplayName } from "../../../lib/memberDisplay";
+import { getAllClubs, clubSlugsForEvent } from "../../../lib/clubs";
+import { DEFAULT_CLUB_SLUG } from "../../../lib/clubDefaults";
 
 export async function getStaticPaths() {
-  const events = await getCollection("event");
-  return events.map((event) => ({
-    params: { slug: event.data.slug },
-    props: { event },
-  }));
+  const [events, clubs] = await Promise.all([getCollection("event"), getAllClubs()]);
+  const clubSlugs = clubs.map((c) => c.slug);
+
+  // #39: an event with a club gets exactly one URL, under that club's
+  // prefix. A genuinely cross-chapter event (location null) has no club of
+  // its own, so — matching the "visible everywhere" call on the list page —
+  // it gets one URL per existing club instead of a single fixed one.
+  return events.flatMap((event) =>
+    clubSlugsForEvent(event.data.location, clubSlugs).map((clubSlug) => ({
+      params: { clubSlug, eventSlug: event.data.slug },
+      props: { event },
+    }))
+  );
 }
 
 const { event } = Astro.props;
+// A cross-chapter event is duplicated across every club's URL space — give
+// them all ONE shared canonical (the default club's copy) instead of each
+// page self-referencing, which would otherwise be duplicate-content SEO-wise
+// the moment a second club exists.
+const canonicalPath = event.data.location
+  ? undefined
+  : `/${DEFAULT_CLUB_SLUG}/events/${event.data.slug}/`;
 ---
 
 <BaseLayout
   pageTitle={event.data.name}
   description={event.data.description ?? `Join Club na Fealsúnachta for ${event.data.name}.`}
+  canonicalPath={canonicalPath}
 >
   <section class="cnf-section">
     <h1>{event.data.name}</h1>

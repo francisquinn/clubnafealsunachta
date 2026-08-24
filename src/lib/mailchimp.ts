@@ -15,6 +15,7 @@ export interface EventDraft {
   name: string;
   date: string;
   slug: string;
+  club_slug: string;
   meeting_url?: string | null;
   venue_name?: string | null;
   venue_url?: string | null;
@@ -210,7 +211,7 @@ function buildEventEmailHtml(event: EventDraft): string {
     title: event.name,
     cardHtml: `<span style="display:block;text-align:center;">${formatEventDate(event.date)}</span>${venueHtml}`,
     ctaText: 'View event',
-    ctaUrl: `${SITE_URL}/events/${event.slug}`,
+    ctaUrl: `${SITE_URL}/${event.club_slug}/events/${event.slug}`,
   });
 }
 

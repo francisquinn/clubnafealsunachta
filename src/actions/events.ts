@@ -3,6 +3,7 @@ import { supabase, supabaseAdmin } from '../lib/supabase';
 import { sendMailchimpEmail } from '../lib/mailchimp';
 import { requireAdmin, isClubInScope, scopeToAdminClubs, type AdminScope } from '../lib/auth';
 import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
+import { DEFAULT_CLUB_SLUG } from '../lib/clubDefaults';
 
 type ResolvedVenue = { id: number; name: string; url: string | null; club_id: number };
 
@@ -135,10 +136,28 @@ export const createEvent = defineAction({
 
     triggerNetlifyBuild();
 
+    // #39: events are routed under /[clubSlug]/events — a cross-chapter
+    // event (event_club_id null) has no club of its own to link into, so
+    // the draft email falls back to the one club that exists today. A
+    // single-row lookup, not getAllClubs() — no need to fetch every club
+    // just to read one slug (and event_club_id null can never match a row
+    // anyway, so that path would always fetch and discard the whole table).
+    let club_slug: string = DEFAULT_CLUB_SLUG;
+    if (event_club_id !== null) {
+      const { data: club, error: clubError } = await supabaseAdmin
+        .from('clubs')
+        .select('slug')
+        .eq('id', event_club_id)
+        .single();
+      if (clubError) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: clubError.message });
+      club_slug = club.slug;
+    }
+
     await sendMailchimpEmail({
       name,
       date,
       slug,
+      club_slug,
       meeting_url,
       venue_name: venue?.name ?? null,
       venue_url: venue?.url ?? null,

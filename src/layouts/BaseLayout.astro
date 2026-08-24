@@ -8,10 +8,16 @@ const {
   description = "Club na Fealsúnachta is a philosophy discussion club meeting in Trieste, Italy.",
   ogImage = "/og-default.png",
   ogType = "website",
+  // #39: a page that's been statically duplicated across multiple URLs (a
+  // cross-chapter event, once built once per club) needs to declare ONE of
+  // those as canonical rather than each self-referencing — pass the
+  // preferred path here to override the default "this page is its own
+  // canonical" behavior.
+  canonicalPath,
 } = Astro.props;
 
 const siteUrl = "https://clubnafealsunachta.com";
-const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
+const canonicalUrl = new URL(canonicalPath ?? Astro.url.pathname, siteUrl).href;
 const ogImageUrl = new URL(ogImage, siteUrl).href;
 ---
 

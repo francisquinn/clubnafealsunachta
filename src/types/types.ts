@@ -8,6 +8,7 @@ export type Event = {
   location: {
     id: number;
     name: string;
+    slug: string;
   } | null;
   isOnline: boolean;
   venue: {
