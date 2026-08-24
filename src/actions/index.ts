@@ -4,6 +4,7 @@ import { createMember } from './members';
 import { signup } from './signup';
 import { changePassword } from './changePassword';
 import { updateUsername } from './updateUsername';
+import { updateClubMemberships } from './clubMembers';
 
 export const server = {
   createEvent,
@@ -16,4 +17,5 @@ export const server = {
   signup,
   changePassword,
   updateUsername,
+  updateClubMemberships,
 };
