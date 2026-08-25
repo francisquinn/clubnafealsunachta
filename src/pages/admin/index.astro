@@ -2,11 +2,30 @@
 export const prerender = false;
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { getCollection } from "astro:content";
-import type { EventCollection } from "../../types/types";
+import { supabaseAdmin } from "../../lib/supabase";
+import { requireAdmin, scopeToAdminClubs } from "../../lib/auth";
 
-const events = (await getCollection("event")) as EventCollection[];
-const now = new Date();
-const upcomingEvents = events.filter((e) => e.data.date >= now);
+// #40: the events content collection's loader drops club_id (same reason
+// admin/events.astro queries Supabase directly, see #37) - scope the
+// dashboard's event counts to the caller's own clubs the same way, instead
+// of counting every club's events via getCollection.
+const admin = (await requireAdmin(Astro.request))!;
+
+const query = scopeToAdminClubs(supabaseAdmin!.from("events").select("date"), admin, "club_id");
+const { data, error } = await query;
+// Fails to a zero count rather than crashing the whole dashboard on a
+// transient Supabase error - same tradeoff as admin/events.astro.
+if (error) console.error("Failed to load admin dashboard event counts:", error.message);
+
+// ISO-8601 strings sort identically to Date comparison, so comparing them
+// directly avoids allocating a Date per row just to filter and discard it.
+const nowIso = new Date().toISOString();
+const rows = data ?? [];
+const totalEvents = rows.length;
+const upcomingEvents = rows.filter((event) => event.date >= nowIso).length;
+
+// Posts have no club_id at all - they stay global, so this count is
+// deliberately unscoped for every admin, super or club-scoped alike.
 const posts = await getCollection("blog");
 ---
 
@@ -15,11 +34,11 @@ const posts = await getCollection("blog");
     <h1>Dashboard</h1>
     <div class="cnf-dashboard-stats">
       <div class="cnf-stat-card">
-        <span class="cnf-stat-card__number">{events.length}</span>
+        <span class="cnf-stat-card__number">{totalEvents}</span>
         <span class="cnf-stat-card__label">Total events</span>
       </div>
       <div class="cnf-stat-card">
-        <span class="cnf-stat-card__number">{upcomingEvents.length}</span>
+        <span class="cnf-stat-card__number">{upcomingEvents}</span>
         <span class="cnf-stat-card__label">Upcoming events</span>
       </div>
       <div class="cnf-stat-card">
