@@ -35,7 +35,22 @@ export function eventsLoader(): Loader {
         // resolveEventClubId in src/actions/events.ts), null meaning
         // genuinely cross-chapter/global. No need to derive it from the
         // venue relation separately.
-        const location = event.club_id ? clubsMap.get(event.club_id) ?? null : null;
+        //
+        // #60: online events are always treated as global on the public
+        // site regardless of club_id — an online event isn't tied to a
+        // physical place, so it reuses the same "location: null is visible
+        // on every chapter" plumbing #39 built for genuinely cross-chapter
+        // events (clubSlugsForEvent, canonical URLs, etc.), rather than only
+        // showing up under whichever single chapter organizes it. club_id
+        // itself is left untouched in the DB for admin/internal purposes —
+        // only this public-facing `location` is forced null. This is a
+        // temporary simplification pending #52's per-chapter online filter;
+        // revisit once that ships.
+        const location = event.is_online
+          ? null
+          : event.club_id
+            ? clubsMap.get(event.club_id) ?? null
+            : null;
         const creator = unwrapRelation(event.members);
 
         if (!creator) {
