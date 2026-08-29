@@ -1,6 +1,7 @@
 import { defineCollection, z } from "astro:content";
 import { eventsLoader } from "./loaders/events";
 import { postsLoader } from "./loaders/posts";
+import { booksLoader } from "./loaders/books";
 import 'dotenv/config';
 
 const memberRefSchema = z.object({
@@ -46,4 +47,14 @@ const event = defineCollection({
   }),
 });
 
-export const collections = { blog, event };
+const books = defineCollection({
+  loader: booksLoader(),
+  schema: z.object({
+    title: z.string(),
+    author: z.string(),
+    blurb: z.string(),
+    coverImageUrl: z.string().nullable(),
+  }),
+});
+
+export const collections = { blog, event, books };

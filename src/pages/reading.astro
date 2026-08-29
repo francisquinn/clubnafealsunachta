@@ -1,0 +1,90 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const books = await getCollection("books");
+
+const entries = await Promise.all(
+  books.map(async (book) => ({ book, Content: (await render(book)).Content }))
+);
+
+const pageTitle = "Reading";
+---
+
+<style>
+  .cnf-reading__intro {
+    margin-bottom: 2.5rem;
+  }
+
+  .cnf-book {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2.25rem;
+    align-items: flex-start;
+  }
+
+  .cnf-book__cover {
+    width: 110px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    box-shadow: var(--box-shadow-card);
+  }
+
+  .cnf-book__title {
+    margin: 0 0 0.25rem 0;
+  }
+
+  .cnf-book__author {
+    margin: 0 0 0.5rem 0;
+    color: hsl(var(--color-grey));
+    font-style: italic;
+  }
+
+  .cnf-book__content {
+    font-size: 1rem;
+  }
+
+  .cnf-book__content p {
+    margin: 0.5rem 0 0 0;
+    font-size: 1rem;
+  }
+</style>
+
+<BaseLayout pageTitle={pageTitle} description="Books Club na Fealsúnachta reads and recommends — a good place to start.">
+  <section class="cnf-section">
+    <h1>{pageTitle}</h1>
+    <p class="cnf-reading__intro">
+      A selection of books we've read and talked about in the club — a good
+      way to get a feel for what we do and where to start. This is a living
+      list, so check back as we pick up new titles.
+    </p>
+
+    {entries.length === 0 && (
+      <p>No books listed yet — check back soon.</p>
+    )}
+
+    <ul>
+      {entries.map(({ book, Content }) => (
+        <li>
+          <article class="cnf-book">
+            {book.data.coverImageUrl && (
+              <img
+                class="cnf-book__cover"
+                src={book.data.coverImageUrl}
+                alt={`Cover of ${book.data.title}`}
+                loading="lazy"
+              />
+            )}
+            <div>
+              <h2 class="cnf-book__title">{book.data.title}</h2>
+              <p class="cnf-book__author">{book.data.author}</p>
+              <div class="cnf-book__content">
+                <Content />
+              </div>
+            </div>
+          </article>
+        </li>
+      ))}
+    </ul>
+  </section>
+</BaseLayout>
