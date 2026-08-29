@@ -25,13 +25,15 @@ vi.mock("../../layouts/EventCard", () => ({
 vi.mock("../../styles/event.css", () => ({}));
 
 // `data` is typed as the real `Event` shape (not the loosely-cast wrapper
-// below) so a future field added there — like the #39 `location.slug` — is
-// enforced here too, instead of being silently absent from these fixtures.
+// below) so a future field added there — like the #39 `location.slug` or the
+// #52 `club` — is enforced here too, instead of being silently absent from
+// these fixtures.
 function makeEvent(name: string, date: Date, locationName = "Trieste"): EventCollection {
   const data: Event = {
     name,
     date,
     location: { id: 1, name: locationName, slug: locationName.toLowerCase() },
+    club: { id: 1, name: locationName, slug: locationName.toLowerCase() },
     isOnline: false,
     venue: { name: "Test Venue", url: "https://maps.google.com" },
     slug: name.toLowerCase().replace(/ /g, "-"),
@@ -41,11 +43,14 @@ function makeEvent(name: string, date: Date, locationName = "Trieste"): EventCol
   return { id: name, data } as unknown as EventCollection;
 }
 
-function makeOnlineEvent(name: string, date: Date): EventCollection {
+function makeOnlineEvent(name: string, date: Date, clubName: string | null = null): EventCollection {
   const data: Event = {
     name,
     date,
     location: null,
+    club: clubName
+      ? { id: 2, name: clubName, slug: clubName.toLowerCase() }
+      : null,
     isOnline: true,
     venue: null,
     slug: name.toLowerCase().replace(/ /g, "-"),
@@ -57,9 +62,29 @@ function makeOnlineEvent(name: string, date: Date): EventCollection {
 
 const futureDate1 = new Date("2099-01-01");
 const futureDate2 = new Date("2099-06-01");
+const futureDate3 = new Date("2099-09-01");
 const pastDate1 = new Date("2020-01-01");
 const pastDate2 = new Date("2021-06-01");
 const pastDate3 = new Date("2019-03-01");
+
+// The sub-filter (Format) selector is present whenever a specific club is
+// selected; the location selector is the one whose options never include the
+// "All" format sentinel.
+function getLocationSelect(): HTMLSelectElement {
+  const location = screen.getAllByRole("combobox").find(
+    (s) => !Array.from(s.querySelectorAll("option")).some((o) => o.value === "All")
+  );
+  expect(location).toBeDefined();
+  return location as HTMLSelectElement;
+}
+
+function getFormatSelect(): HTMLSelectElement {
+  const format = screen.getAllByRole("combobox").find(
+    (s) => Array.from(s.querySelectorAll("option")).some((o) => o.value === "All")
+  );
+  expect(format).toBeDefined();
+  return format as HTMLSelectElement;
+}
 
 describe("EventList", () => {
   describe("upcoming events", () => {
@@ -127,9 +152,103 @@ describe("EventList", () => {
         makeOnlineEvent("Online Event", futureDate2),
       ];
       render(<EventList events={events} />);
-      fireEvent.change(screen.getByRole("combobox"), { target: { value: "Online" } });
+      fireEvent.change(getLocationSelect(), { target: { value: "Online" } });
       expect(screen.getAllByTestId("upcoming-event")).toHaveLength(1);
       expect(screen.getByText("Online Event")).toBeInTheDocument();
+    });
+  });
+
+  describe("cross-chapter Online view", () => {
+    it("shows every online event across all clubs", () => {
+      const events = [
+        makeEvent("Trieste In-Person", futureDate1, "Trieste"),
+        makeOnlineEvent("Trieste Online", futureDate2, "Trieste"),
+        makeOnlineEvent("Dublin Online", futureDate2, "Dublin"),
+        makeOnlineEvent("Global Online", futureDate3),
+      ];
+      render(<EventList events={events} />);
+      fireEvent.change(getLocationSelect(), { target: { value: "Online" } });
+      const cards = screen.getAllByTestId("upcoming-event");
+      expect(cards).toHaveLength(3);
+      expect(screen.getByText("Trieste Online")).toBeInTheDocument();
+      expect(screen.getByText("Dublin Online")).toBeInTheDocument();
+      expect(screen.getByText("Global Online")).toBeInTheDocument();
+      expect(screen.queryByText("Trieste In-Person")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("per-club format filter", () => {
+    it("exposes an in-person/online filter when a specific club is selected", () => {
+      const events = [
+        makeEvent("Trieste In-Person", futureDate1, "Trieste"),
+        makeOnlineEvent("Trieste Online", futureDate2, "Trieste"),
+      ];
+      render(<EventList events={events} />);
+      expect(getFormatSelect()).toBeInTheDocument();
+    });
+
+    it("hides the format filter while the cross-chapter Online entry is selected", () => {
+      const events = [makeOnlineEvent("Global Online", futureDate1)];
+      render(<EventList events={events} />);
+      expect(screen.getAllByRole("combobox")).toHaveLength(1);
+    });
+
+    it("shows only the selected club's online events under club > Online", () => {
+      const events = [
+        makeEvent("Trieste In-Person", futureDate1, "Trieste"),
+        makeOnlineEvent("Trieste Online", futureDate2, "Trieste"),
+        makeOnlineEvent("Dublin Online", futureDate3, "Dublin"),
+        makeOnlineEvent("Global Online", futureDate3),
+      ];
+      render(<EventList events={events} />);
+      fireEvent.change(getLocationSelect(), { target: { value: "Trieste" } });
+      fireEvent.change(getFormatSelect(), { target: { value: "Online" } });
+      const cards = screen.getAllByTestId("upcoming-event");
+      expect(cards).toHaveLength(1);
+      expect(screen.getByText("Trieste Online")).toBeInTheDocument();
+      expect(screen.queryByText("Trieste In-Person")).not.toBeInTheDocument();
+      expect(screen.queryByText("Dublin Online")).not.toBeInTheDocument();
+      expect(screen.queryByText("Global Online")).not.toBeInTheDocument();
+    });
+
+    it("shows in-person and online together under club > All", () => {
+      const events = [
+        makeEvent("Trieste In-Person", futureDate1, "Trieste"),
+        makeOnlineEvent("Trieste Online", futureDate2, "Trieste"),
+      ];
+      render(<EventList events={events} />);
+      fireEvent.change(getLocationSelect(), { target: { value: "Trieste" } });
+      expect(screen.getAllByTestId("upcoming-event")).toHaveLength(2);
+      expect(screen.getByText("Trieste In-Person")).toBeInTheDocument();
+      expect(screen.getByText("Trieste Online")).toBeInTheDocument();
+    });
+
+    it("shows only in-person events under club > In-person", () => {
+      const events = [
+        makeEvent("Trieste In-Person", futureDate1, "Trieste"),
+        makeOnlineEvent("Trieste Online", futureDate2, "Trieste"),
+      ];
+      render(<EventList events={events} />);
+      fireEvent.change(getLocationSelect(), { target: { value: "Trieste" } });
+      fireEvent.change(getFormatSelect(), { target: { value: "In-person" } });
+      const cards = screen.getAllByTestId("upcoming-event");
+      expect(cards).toHaveLength(1);
+      expect(screen.getByText("Trieste In-Person")).toBeInTheDocument();
+      expect(screen.queryByText("Trieste Online")).not.toBeInTheDocument();
+    });
+
+    it("includes a club's online events in its past view", () => {
+      const events = [
+        makeEvent("Trieste Old In-Person", pastDate1, "Trieste"),
+        makeOnlineEvent("Trieste Old Online", pastDate2, "Trieste"),
+      ];
+      render(<EventList events={events} />);
+      fireEvent.change(getLocationSelect(), { target: { value: "Trieste" } });
+      fireEvent.click(screen.getByText("Past"));
+      const cards = screen.getAllByTestId("past-event");
+      expect(cards).toHaveLength(2);
+      expect(screen.getByText("Trieste Old In-Person")).toBeInTheDocument();
+      expect(screen.getByText("Trieste Old Online")).toBeInTheDocument();
     });
   });
 });

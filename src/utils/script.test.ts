@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isValidEmail, isEventExpired, formatBlogDate } from "./script.ts";
+import { isValidEmail, isEventExpired, formatBlogDate, formatClubName } from "./script.ts";
 import type { Event } from "../types/types.ts";
 
 describe("isValidEmail", () => {
@@ -29,6 +29,7 @@ describe("isEventExpired", () => {
       name: "Test",
       date: new Date("2020-01-01"),
       location: { id: 1, name: "Trieste", slug: "trieste" },
+      club: { id: 1, name: "Trieste", slug: "trieste" },
       isOnline: false,
       venue: { name: "Test Venue", url: "https://test.com" },
       social: { instagram: "https://instagram.com" },
@@ -43,6 +44,7 @@ describe("isEventExpired", () => {
       name: "Test",
       date: new Date("2099-12-31"),
       location: { id: 1, name: "Trieste", slug: "trieste" },
+      club: { id: 1, name: "Trieste", slug: "trieste" },
       isOnline: false,
       venue: { name: "Test Venue", url: "https://test.com" },
       social: { instagram: "https://instagram.com" },
@@ -56,5 +58,16 @@ describe("formatBlogDate", () => {
   it("formats date correctly", () => {
     const result = formatBlogDate(new Date("2025-09-04"));
     expect(result).toBe("Sep 4, 2025");
+  });
+});
+
+describe("formatClubName", () => {
+  it("derives the CNF display name from the club's city name", () => {
+    expect(formatClubName("Trieste")).toBe("CNF Trieste");
+    expect(formatClubName("Dublin")).toBe("CNF Dublin");
+  });
+
+  it("falls back to the parent org for a null (global) club", () => {
+    expect(formatClubName(null)).toBe("Club na Fealsúnachta");
   });
 });

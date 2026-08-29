@@ -28,6 +28,14 @@ const event = defineCollection({
       name: z.string(),
       slug: z.string(),
     }).nullable(),
+    // #52: the hosting chapter (events.club_id) — kept separate from
+    // `location` so online events can stay "global" for routing while still
+    // surfacing their organizing club (see loaders/events.ts).
+    club: z.object({
+      id: z.number(),
+      name: z.string(),
+      slug: z.string(),
+    }).nullable(),
     isOnline: z.boolean(),
     venue: z.object({
       name: z.string().nullable(),

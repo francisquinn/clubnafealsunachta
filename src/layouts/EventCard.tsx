@@ -1,5 +1,5 @@
 import type { Event } from "../types/types";
-import { formatEventDate } from "../utils/script";
+import { formatEventDate, formatClubName } from "../utils/script";
 import { DEFAULT_CLUB_SLUG } from "../lib/clubDefaults";
 
 export default function EventCard({
@@ -38,6 +38,16 @@ export default function EventCard({
                     : null
               }
             </li>
+            {/* #52: an online event has no venue line saying where it is, so
+                the organizing chapter gets its own line here — its club in
+                the cross-chapter "Online" view, a generic fallback for a
+                genuinely global (club_id null) event. In-person events are
+                already identified by their venue, so they're left alone. */}
+            {event.isOnline && (
+              <li className="cnf-event__club">
+                Hosted by {formatClubName(event.club?.name ?? null)}
+              </li>
+            )}
           </ul>
         </div>
         <div className="cnf-event__social">
