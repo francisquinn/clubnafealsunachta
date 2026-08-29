@@ -1,6 +1,56 @@
+import { createHash } from 'crypto';
+
 const MAILCHIMP_API_KEY = process.env.MAILCHIMP_API_KEY;
 const MAILCHIMP_AUDIENCE_ID = process.env.MAILCHIMP_AUDIENCE_ID;
 const DC = MAILCHIMP_API_KEY?.split('-')[1];
+
+// #55: club subscriptions are mirrored onto Mailchimp member tags named
+// club:<slug> (e.g. club:trieste). The anonymous newsletter form
+// (subscribe.ts) creates untagged contacts; this is the tagged lane.
+export const CLUB_TAG_PREFIX = 'club:';
+
+export function clubTagFor(clubSlug: string): string {
+  return `${CLUB_TAG_PREFIX}${clubSlug}`;
+}
+
+// Test seam: vitest runs with import.meta.env.DEV === true, which would
+// otherwise silently no-op every campaign send. Spying this flag in unit
+// tests lets them exercise the real Mailchimp call paths against a stubbed
+// fetch, while the guard itself still applies whenever the app actually
+// runs in dev.
+export const mailchimpRuntime = {
+  isLocalDev: (): boolean => import.meta.env.DEV,
+};
+
+function isConfigured(): boolean {
+  return Boolean(MAILCHIMP_API_KEY && MAILCHIMP_AUDIENCE_ID && DC);
+}
+
+function subscriberHash(email: string): string {
+  return createHash('md5').update(email.trim().toLowerCase()).digest('hex');
+}
+
+async function mailchimpError(res: Response): Promise<Error> {
+  let detail: string | undefined;
+  try {
+    const body = (await res.json()) as { detail?: string; title?: string };
+    detail = body.detail ?? body.title;
+  } catch {
+    // Some proxies return non-JSON error bodies — fall through to the status.
+  }
+  return new Error(detail ?? `${res.status} ${res.statusText}`);
+}
+
+async function mailchimp(requestPath: string, init?: { method?: string; body?: unknown }): Promise<Response> {
+  return fetch(`https://${DC}.api.mailchimp.com/3.0${requestPath}`, {
+    method: init?.method ?? 'GET',
+    headers: {
+      Authorization: `Basic ${Buffer.from(`any:${MAILCHIMP_API_KEY}`).toString('base64')}`,
+      ...(init?.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
+  });
+}
 
 const SITE_URL = 'https://clubnafealsunachta.com';
 const GREEN = '#314837';
@@ -225,71 +275,131 @@ function buildPostEmailHtml(post: PostDraft): string {
   });
 }
 
-async function sendCampaign({ subjectLine, previewText, html }: {
+// The tags endpoint only updates the tags explicitly named in the request —
+// setting one "inactive" is how a tag is removed (the contact stays on the
+// audience). A 404 means the contact has never been on the audience at all
+// (e.g. a member who is only ever unsubscribing), so there is nothing to
+// untag: treat it as done.
+async function setMemberTags(email: string, tags: { name: string; status: 'active' | 'inactive' }[]): Promise<void> {
+  const res = await mailchimp(`/lists/${MAILCHIMP_AUDIENCE_ID}/members/${subscriberHash(email)}/tags`, {
+    method: 'POST',
+    body: { tags },
+  });
+  if (res.ok || res.status === 404) return;
+  throw new Error(`Mailchimp tag update failed: ${(await mailchimpError(res)).message}`);
+}
+
+// Join a club: make sure the member's email is on the audience (creating the
+// contact as subscribed if new, leaving an existing contact's status
+// untouched) and carry the club:<slug> tag. Not dev-gated like the campaign
+// send — same posture as subscribe.ts, a real user gesture.
+export async function addClubTag(email: string, clubSlug: string): Promise<void> {
+  if (!isConfigured()) {
+    console.warn('Mailchimp not configured — skipping tag update');
+    return;
+  }
+  const res = await mailchimp(`/lists/${MAILCHIMP_AUDIENCE_ID}/members/${subscriberHash(email)}`, {
+    method: 'PUT',
+    body: { email_address: email, status_if_new: 'subscribed' },
+  });
+  if (!res.ok) {
+    throw new Error(`Mailchimp member upsert failed: ${(await mailchimpError(res)).message}`);
+  }
+  await setMemberTags(email, [{ name: clubTagFor(clubSlug), status: 'active' }]);
+}
+
+// Leave a club: keep the contact, drop the club:<slug> tag.
+export async function removeClubTag(email: string, clubSlug: string): Promise<void> {
+  if (!isConfigured()) {
+    console.warn('Mailchimp not configured — skipping tag update');
+    return;
+  }
+  await setMemberTags(email, [{ name: clubTagFor(clubSlug), status: 'inactive' }]);
+}
+
+// Resolve the audience segment id whose name is the club's tag. Tags are
+// static segments on the audience (same name), so targeting one club's
+// subscribers is a saved_segment_id in the campaign recipients (see #55).
+async function clubSegmentId(clubSlug: string): Promise<number | null> {
+  const res = await mailchimp(`/lists/${MAILCHIMP_AUDIENCE_ID}/segments`);
+  if (!res.ok) {
+    throw new Error(`Mailchimp segment lookup failed: ${(await mailchimpError(res)).message}`);
+  }
+  const body = (await res.json()) as { segments?: { id: number; name: string }[] };
+  return body.segments?.find((segment) => segment.name === clubTagFor(clubSlug))?.id ?? null;
+}
+
+async function sendCampaign({ subjectLine, previewText, html, recipients }: {
   subjectLine: string;
   previewText: string;
   html: string;
+  recipients: Record<string, unknown>;
 }): Promise<void> {
   // Never hit the real Mailchimp account from a local dev server, even if
   // a real API key is present in .env (e.g. pulled down via sync-env) —
   // creating draft campaigns while testing locally would clutter the live
   // account. Astro sets DEV based on how the app is actually running, not
-  // on env-var presence, so there's nothing to remember to unset.
-  if (import.meta.env.DEV) {
+  // on env-var presence, so there's nothing to remember to unset. See
+  // mailchimpRuntime above for why the check goes through an indirection.
+  if (mailchimpRuntime.isLocalDev()) {
     console.warn(`Mailchimp campaign skipped in local dev: "${subjectLine}"`);
     return;
   }
 
-  const authHeader = `Basic ${Buffer.from(`any:${MAILCHIMP_API_KEY}`).toString('base64')}`;
-  const baseUrl = `https://${DC}.api.mailchimp.com/3.0`;
-
-  const campaignRes = await fetch(`${baseUrl}/campaigns`, {
+  const campaignRes = await mailchimp('/campaigns', {
     method: 'POST',
-    headers: { Authorization: authHeader, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+    body: {
       type: 'regular',
-      recipients: { list_id: MAILCHIMP_AUDIENCE_ID },
+      recipients,
       settings: {
         subject_line: subjectLine,
         preview_text: previewText,
         from_name: 'Club na Féalscúnachta',
         reply_to: process.env.EMAIL_INFO,
       },
-    }),
+    },
   });
 
   if (!campaignRes.ok) {
-    const err = await campaignRes.json();
-    throw new Error(`Mailchimp campaign creation failed: ${err.detail ?? campaignRes.statusText}`);
+    throw new Error(`Mailchimp campaign creation failed: ${(await mailchimpError(campaignRes)).message}`);
   }
 
   const { id: campaignId } = await campaignRes.json();
 
-  const contentRes = await fetch(`${baseUrl}/campaigns/${campaignId}/content`, {
+  const contentRes = await mailchimp(`/campaigns/${campaignId}/content`, {
     method: 'PUT',
-    headers: { Authorization: authHeader, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ html }),
+    body: { html },
   });
 
   if (!contentRes.ok) {
-    const err = await contentRes.json();
-    throw new Error(`Mailchimp content update failed: ${err.detail ?? contentRes.statusText}`);
+    throw new Error(`Mailchimp content update failed: ${(await mailchimpError(contentRes)).message}`);
   }
 
-  const sendRes = await fetch(`${baseUrl}/campaigns/${campaignId}/actions/send`, {
+  const sendRes = await mailchimp(`/campaigns/${campaignId}/actions/send`, {
     method: 'POST',
-    headers: { Authorization: authHeader },
   });
 
   if (!sendRes.ok) {
-    const err = await sendRes.json();
-    throw new Error(`Mailchimp send failed: ${err.detail ?? sendRes.statusText}`);
+    throw new Error(`Mailchimp send failed: ${(await mailchimpError(sendRes)).message}`);
   }
 }
 
 export async function sendMailchimpEmail(event: EventDraft): Promise<void> {
-  if (!MAILCHIMP_API_KEY || !MAILCHIMP_AUDIENCE_ID || !DC) {
+  if (!isConfigured()) {
     console.warn('Mailchimp not configured — skipping email send');
+    return;
+  }
+  if (mailchimpRuntime.isLocalDev()) {
+    console.warn(`Mailchimp campaign skipped in local dev: "Upcoming event - ${event.name}"`);
+    return;
+  }
+
+  // #55: route the event draft to the event's club segment instead of the
+  // whole audience. A club nobody has subscribed to yet has no segment at
+  // all — and no reason to get an event email — so skip those.
+  const segmentId = await clubSegmentId(event.club_slug);
+  if (segmentId == null) {
+    console.warn(`No Mailchimp segment for "${clubTagFor(event.club_slug)}" — skipping event email`);
     return;
   }
 
@@ -297,12 +407,17 @@ export async function sendMailchimpEmail(event: EventDraft): Promise<void> {
     subjectLine: `Upcoming event - ${event.name}`,
     previewText: `Join us for ${event.name} — ${formatEventDate(event.date)}`,
     html: buildEventEmailHtml(event),
+    recipients: { list_id: MAILCHIMP_AUDIENCE_ID, segment_opts: { saved_segment_id: segmentId } },
   });
 }
 
 export async function sendMailchimpPostEmail(post: PostDraft): Promise<void> {
-  if (!MAILCHIMP_API_KEY || !MAILCHIMP_AUDIENCE_ID || !DC) {
+  if (!isConfigured()) {
     console.warn('Mailchimp not configured — skipping email send');
+    return;
+  }
+  if (mailchimpRuntime.isLocalDev()) {
+    console.warn(`Mailchimp campaign skipped in local dev: "New blog post - ${post.title}"`);
     return;
   }
 
@@ -310,5 +425,6 @@ export async function sendMailchimpPostEmail(post: PostDraft): Promise<void> {
     subjectLine: `New blog post - ${post.title}`,
     previewText: extractFirstParagraph(post.body).slice(0, 150),
     html: buildPostEmailHtml(post),
+    recipients: { list_id: MAILCHIMP_AUDIENCE_ID },
   });
 }
