@@ -61,6 +61,10 @@ const { pathname } = Astro.url;
     href="/admin/posts">Posts</a
   >
   <a
+    class={`cnf-admin-sidebar__link ${pathname.startsWith("/admin/books") || pathname === "/admin/create-book" ? "cnf-admin-sidebar__link--active" : ""}`}
+    href="/admin/books">Books</a
+  >
+  <a
     class={`cnf-admin-sidebar__link ${pathname.startsWith("/admin/members") || pathname === "/admin/create-member" ? "cnf-admin-sidebar__link--active" : ""}`}
     href="/admin/members">Members</a
   >

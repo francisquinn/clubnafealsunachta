@@ -1,0 +1,42 @@
+---
+export const prerender = false;
+import AdminLayout from "../../../../layouts/AdminLayout.astro";
+import BookForm from "../../../../components/BookForm/BookForm";
+import type { BookFormInitialData } from "../../../../components/BookForm/BookForm";
+import { supabaseAdmin } from "../../../../lib/supabase";
+import "../../../../styles/form.css";
+
+const { slug } = Astro.params;
+
+if (!supabaseAdmin) {
+  return Astro.redirect("/admin/books");
+}
+
+const { data: book, error } = await supabaseAdmin
+  .from("books")
+  .select("id, title, author, slug, blurb, cover_image_url")
+  .eq("slug", slug!)
+  .single();
+
+if (error || !book) {
+  return Astro.redirect("/admin/books");
+}
+
+const initialData: BookFormInitialData = {
+  title: book.title,
+  author: book.author,
+  slug: book.slug,
+  blurb: book.blurb,
+  coverImageUrl: book.cover_image_url ?? undefined,
+};
+---
+
+<AdminLayout pageTitle={`Edit: ${book.title}`}>
+  <section class="cnf-section">
+    <div class="cnf-admin-header">
+      <h1>Edit book</h1>
+      <a href="/admin/books">Back to books</a>
+    </div>
+    <BookForm mode="edit" initialData={initialData} client:load />
+  </section>
+</AdminLayout>

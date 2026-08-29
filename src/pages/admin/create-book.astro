@@ -1,0 +1,16 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import BookForm from "../../components/BookForm/BookForm";
+import "../../styles/form.css";
+---
+
+<AdminLayout pageTitle="Create Book">
+  <section class="cnf-section">
+    <div class="cnf-admin-header">
+      <h1>Create book</h1>
+      <a href="/admin/books">Back to books</a>
+    </div>
+    <BookForm mode="create" client:load />
+  </section>
+</AdminLayout>

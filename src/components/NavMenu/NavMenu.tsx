@@ -45,6 +45,12 @@ export default function NavMenu({ pathname }: NavMenuProps) {
         >
           Blog
         </a>
+        <a
+          className={`cnf-nav__link ${pathname.startsWith("/reading") ? "tab-active" : ""}`}
+          href="/reading/"
+        >
+          Reading
+        </a>
       </Dropdown>
     </div>
   );
