@@ -2,6 +2,7 @@
 export const prerender = false;
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import AccountForm from "../../components/AccountForm/AccountForm";
+import ClubSubscriptions from "../../components/ClubSubscriptions/ClubSubscriptions";
 import { getSessionToken, verifySessionToken } from "../../lib/auth";
 import { supabaseAdmin } from "../../lib/supabase";
 
@@ -12,9 +13,20 @@ if (!payload) {
   return Astro.redirect("/");
 }
 
-const { data: member } = supabaseAdmin
-  ? await supabaseAdmin.from("members").select("username, email, full_name, display_full_name").eq("id", payload.memberId).single()
-  : { data: null };
+// Independent lookups — the profile form must keep working even if the club
+// subscription query fails, so each is its own query rather than one
+// Promise.all that would sink all three together.
+const [{ data: member }, { data: clubs }, { data: memberships }] = await Promise.all([
+  supabaseAdmin
+    ? supabaseAdmin.from("members").select("username, email, full_name, display_full_name").eq("id", payload.memberId).single()
+    : Promise.resolve({ data: null }),
+  supabaseAdmin
+    ? supabaseAdmin.from("clubs").select("id, name, slug").order("name")
+    : Promise.resolve({ data: null }),
+  supabaseAdmin
+    ? supabaseAdmin.from("club_members").select("club_id").eq("member_id", payload.memberId)
+    : Promise.resolve({ data: null }),
+]);
 
 if (!member) {
   return Astro.redirect("/");
@@ -33,5 +45,12 @@ if (!member) {
       initialFullName={member.full_name}
       initialDisplayFullName={member.display_full_name}
     />
+    {clubs && clubs.length > 0 && (
+      <ClubSubscriptions
+        client:load
+        clubs={clubs}
+        initialClubIds={(memberships ?? []).map((membership) => membership.club_id)}
+      />
+    )}
   </section>
 </BaseLayout>
