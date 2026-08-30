@@ -14,7 +14,7 @@ const state = vi.hoisted(() => {
     // posts update (updatePost) - .eq('slug').select().single()
     postUpdateError: null as Error | null,
     postUpdateSlug: null as string | null,
-    postUpdateResult: unknown,
+    postUpdateResult: null as unknown as { slug: string } | null | undefined,
   };
 });
 

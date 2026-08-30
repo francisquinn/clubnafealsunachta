@@ -40,7 +40,7 @@ const state = vi.hoisted(() => {
     // events: the row createEvent tried to insert (captured for assertions).
     insertedEvent: null as Record<string, unknown> | null,
     // events: existing row lookup for updateEvent (.eq('slug').single())
-    existingEventData: null as unknown as { club_id: number } | null,
+    existingEventData: null as unknown as { club_id: number | null } | null,
     existingEventError: null as Error | null,
     // events: update (updateEvent)
     eventUpdateError: null as Error | null,
