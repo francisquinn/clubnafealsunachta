@@ -27,6 +27,9 @@ const upcomingEvents = rows.filter((event) => event.date >= nowIso).length;
 // Posts have no club_id at all - they stay global, so this count is
 // deliberately unscoped for every admin, super or club-scoped alike.
 const posts = await getCollection("blog");
+
+// Books are global content too, same as posts.
+const books = await getCollection("books");
 ---
 
 <AdminLayout pageTitle="Admin">
@@ -44,6 +47,10 @@ const posts = await getCollection("blog");
       <div class="cnf-stat-card">
         <span class="cnf-stat-card__number">{posts.length}</span>
         <span class="cnf-stat-card__label">Total posts</span>
+      </div>
+      <div class="cnf-stat-card">
+        <span class="cnf-stat-card__number">{books.length}</span>
+        <span class="cnf-stat-card__label">Total books</span>
       </div>
     </div>
     <a href="/">View site</a>
