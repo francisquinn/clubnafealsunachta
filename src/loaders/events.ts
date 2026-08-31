@@ -36,21 +36,25 @@ export function eventsLoader(): Loader {
         // genuinely cross-chapter/global. No need to derive it from the
         // venue relation separately.
         //
-        // #60: online events are always treated as global on the public
-        // site regardless of club_id — an online event isn't tied to a
-        // physical place, so it reuses the same "location: null is visible
-        // on every chapter" plumbing #39 built for genuinely cross-chapter
-        // events (clubSlugsForEvent, canonical URLs, etc.), rather than only
+        // #60: online events are treated as global on the public site
+        // regardless of club_id — an online event isn't tied to a physical
+        // place, so it reuses the same "location: null is visible on every
+        // chapter" plumbing #39 built for genuinely cross-chapter events
+        // (clubSlugsForEvent, canonical URLs, etc.), rather than only
         // showing up under whichever single chapter organizes it. club_id
         // itself is left untouched in the DB for admin/internal purposes —
-        // only this public-facing `location` is forced null. This is a
-        // temporary simplification pending #52's per-chapter online filter;
-        // revisit once that ships.
+        // only this public-facing `location` is forced null.
+        //
+        // #52: the hosting club is still surfaced separately (below) so a
+        // card can say "Hosted by CNF Dublin" and the events page can offer
+        // a per-club online filter, while the cross-chapter "Online" view
+        // keeps every online event in reach.
         const location = event.is_online
           ? null
           : event.club_id
             ? clubsMap.get(event.club_id) ?? null
             : null;
+        const club = event.club_id ? clubsMap.get(event.club_id) ?? null : null;
         const creator = unwrapRelation(event.members);
 
         if (!creator) {
@@ -64,6 +68,7 @@ export function eventsLoader(): Loader {
             name: event.name,
             date: new Date(event.date),
             location,
+            club,
             isOnline: event.is_online,
             venue: venue ? { name: venue.name, url: venue.url } : null,
             slug: event.slug,
