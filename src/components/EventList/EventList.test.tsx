@@ -37,6 +37,7 @@ function makeEvent(name: string, date: Date, locationName = "Trieste"): EventCol
     slug: name.toLowerCase().replace(/ /g, "-"),
     social: { instagram: "https://instagram.com/test" },
     meetingUrl: null,
+    rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
   };
   return { id: name, data } as unknown as EventCollection;
 }
@@ -51,6 +52,7 @@ function makeOnlineEvent(name: string, date: Date): EventCollection {
     slug: name.toLowerCase().replace(/ /g, "-"),
     social: { instagram: "https://instagram.com/test" },
     meetingUrl: "https://meet.jit.si/test",
+    rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
   };
   return { id: name, data } as unknown as EventCollection;
 }

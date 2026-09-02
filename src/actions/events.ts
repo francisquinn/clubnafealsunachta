@@ -4,6 +4,7 @@ import { sendMailchimpEmail } from '../lib/mailchimp';
 import { requireAdmin, isClubInScope, scopeToAdminClubs, type AdminScope } from '../lib/auth';
 import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
 import { DEFAULT_CLUB_SLUG } from '../lib/clubDefaults';
+import { upsertRsvp } from './rsvps';
 
 type ResolvedVenue = { id: number; name: string; url: string | null; club_id: number };
 
@@ -110,7 +111,7 @@ export const createEvent = defineAction({
     const venue = await resolveVenue(formData, is_online, admin);
     const event_club_id = resolveEventClubId(formData, is_online, venue, admin);
 
-    const { error } = await supabaseAdmin
+    const { data: event, error } = await supabaseAdmin
       .from('events')
       .insert([{
         name,
@@ -132,6 +133,18 @@ export const createEvent = defineAction({
 
     if (error) {
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
+    }
+
+    // #27: the host is assumed to be attending their own event — seeded as a
+    // real RSVP row (not a bumped count) so it behaves like anyone else's:
+    // shows up in the named "Going" list, and the host can clear it later via
+    // the same RSVP widget if their plans change. Goes through the same
+    // write path setEventRsvp uses, so the row can't drift out of shape.
+    // Best-effort, like the Mailchimp draft below — shouldn't block event
+    // creation if it fails.
+    const { error: rsvpError } = await upsertRsvp(admin.memberId, event.id, 'going');
+    if (rsvpError) {
+      console.error(`Failed to seed host RSVP for event "${slug}":`, rsvpError.message);
     }
 
     triggerNetlifyBuild();

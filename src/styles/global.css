@@ -280,6 +280,16 @@ blockquote {
   text-align: center;
 }
 
+/* Small pill badge for a count next to a label (e.g. "Going 2") — shared
+   across the site rather than owned by any one feature; originally the
+   suggest-topic count, generalized for reuse. */
+.cnf-count {
+  background-color: hsl(var(--color-white));
+  padding: 0.2rem 0.5rem;
+  color: hsl(var(--color-green));
+  border-radius: 50px;
+}
+
 .cnf-button {
   position: relative;
   padding: 1rem 1.5rem;
@@ -295,6 +305,16 @@ blockquote {
 
 .cnf-button--compact {
   padding: 0.5rem 1rem;
+}
+
+/* Reads as a plain text link (matches the real <a> styling above) rather
+   than a button — for actions that need a click handler instead of an href. */
+.cnf-button--link {
+  background-color: transparent;
+  padding: 0;
+  color: hsl(var(--color-green));
+  font-weight: inherit;
+  text-decoration: underline;
 }
 
 .cnf-button__primary {
@@ -353,6 +373,13 @@ blockquote {
   border-top-color: hsl(var(--color-white));
   border-radius: 50%;
   animation: button-loading-spinner 1s ease infinite;
+}
+
+/* .cnf-button__secondary's background is light (beige) — the default white
+   spinner is barely visible on it, unlike on the dark primary/gold buttons
+   it was designed for. */
+.cnf-button__secondary.cnf-button--loading::after {
+  border-top-color: hsl(var(--color-green));
 }
 
 .cnf-button:active {

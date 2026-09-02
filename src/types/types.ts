@@ -22,6 +22,11 @@ export type Event = {
     meetup?: string | null;
   };
   meetingUrl: string | null;
+  rsvpCounts: {
+    going: number;
+    maybe: number;
+    not_going: number;
+  };
 };
 
 export interface BannerProps {

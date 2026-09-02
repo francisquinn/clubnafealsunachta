@@ -43,6 +43,11 @@ const event = defineCollection({
     }),
     meetingUrl: z.string().nullable(),
     creator: memberRefSchema,
+    rsvpCounts: z.object({
+      going: z.number(),
+      maybe: z.number(),
+      not_going: z.number(),
+    }),
   }),
 });
 

@@ -64,7 +64,7 @@ export default function TopicSuggestForm() {
   function renderTopics() {
     return (
       <div aria-live="polite">
-        <span className="cnf-suggest__count" aria-hidden="true">{topics.length}</span> Suggested
+        <span className="cnf-count" aria-hidden="true">{topics.length}</span> Suggested
         topic{topics.length !== 1 ? "s" : ""}:
         <ul className="cnf-suggest__list" aria-label="Suggested topics">
           {topics.map((topic: string, key: number) => (

@@ -2,6 +2,7 @@ import type { Loader } from 'astro/loaders';
 import { supabaseAdmin } from '../lib/supabase';
 import { unwrapRelation } from '../lib/supabaseRelations';
 import { getAllClubs } from '../lib/clubs';
+import { isRsvpStatus, type RsvpCounts } from '../lib/rsvpTypes';
 
 export function eventsLoader(): Loader {
   return {
@@ -13,16 +14,35 @@ export function eventsLoader(): Loader {
 
       store.clear();
 
-      const [eventsResult, clubs] = await Promise.all([
+      const [eventsResult, clubs, rsvpsResult] = await Promise.all([
         supabaseAdmin
           .from('events')
-          .select('*, venues(name, url), members(username, full_name, display_full_name)')
+          .select('*, venues(name, url), members!events_created_by_fkey(username, full_name, display_full_name)')
           .order('date', { ascending: true }),
         getAllClubs(),
+        supabaseAdmin.from('rsvps').select('event_id, status'),
       ]);
 
       if (eventsResult.error) {
         throw new Error(`Failed to fetch events from Supabase: ${eventsResult.error.message}`);
+      }
+
+      // #27: build-time aggregate RSVP counts, baked into each event page so
+      // a no-JS visitor (and the initial paint) still sees "12 going, 3
+      // maybe". Tolerated rather than fatal when the rsvps table isn't
+      // deployed yet — a migration-pending build shouldn't take the whole
+      // site down, and the client-side island refreshes live counts once the
+      // table exists.
+      const rsvpCountsByEvent = new Map<number, RsvpCounts>();
+      if (rsvpsResult.error) {
+        console.error(`Failed to fetch RSVP counts from Supabase: ${rsvpsResult.error.message}`);
+      } else {
+        for (const row of rsvpsResult.data ?? []) {
+          if (!isRsvpStatus(row.status)) continue;
+          const counts = rsvpCountsByEvent.get(row.event_id) ?? { going: 0, maybe: 0, not_going: 0 };
+          counts[row.status] += 1;
+          rsvpCountsByEvent.set(row.event_id, counts);
+        }
       }
 
       const clubsMap = new Map(clubs.map((c) => [c.id, c]));
@@ -76,6 +96,7 @@ export function eventsLoader(): Loader {
             },
             meetingUrl: event.meeting_url,
             creator,
+            rsvpCounts: rsvpCountsByEvent.get(event.id) ?? { going: 0, maybe: 0, not_going: 0 },
           },
         });
       }
