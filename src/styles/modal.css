@@ -3,7 +3,9 @@ body.cnf-modal-open {
 }
 
 .cnf-modal {
-  position: relative;
+  position: fixed;
+  inset: 0;
+  margin: auto;
   border: none;
   border-radius: var(--border-radius);
   padding: 1.5rem;
