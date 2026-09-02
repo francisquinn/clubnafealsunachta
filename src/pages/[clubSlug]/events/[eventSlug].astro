@@ -5,6 +5,7 @@ import { formatEventDate } from "../../../utils/script";
 import "../../../styles/event.css";
 import { getCollection } from "astro:content";
 import Banner from "../../../layouts/Banner.astro";
+import EventRsvp from "../../../components/EventRsvp/EventRsvp";
 import { getDisplayName } from "../../../lib/memberDisplay";
 import { getAllClubs, clubSlugsForEvent } from "../../../lib/clubs";
 import { DEFAULT_CLUB_SLUG } from "../../../lib/clubDefaults";
@@ -73,7 +74,24 @@ const canonicalPath = event.data.location
         <p>{event.data.summary}</p>
       </div>
     )}
-    {(event.data.social.instagram || event.data.social.facebook || event.data.social.meetup) && (
+    <div class="cnf-event-page__details">
+      <span class="cnf-event-page__details-info"
+        >Hosted by <a href={`/profile/${event.data.creator.username}`}>{getDisplayName(event.data.creator)}</a></span
+      >
+    </div>
+  </section>
+
+  <section class="cnf-section">
+    <EventRsvp
+      slug={event.data.slug}
+      initialCounts={event.data.rsvpCounts}
+      date={event.data.date.toISOString()}
+      client:load
+    />
+  </section>
+
+  {(event.data.social.instagram || event.data.social.facebook || event.data.social.meetup) && (
+    <section class="cnf-section">
       <div class="cnf-event-page__social">
         <h2>Social links</h2>
         <ul>
@@ -121,13 +139,8 @@ const canonicalPath = event.data.location
           }
         </ul>
       </div>
-    )}
-    <div class="cnf-event-page__details">
-      <span class="cnf-event-page__details-info"
-        >Hosted by <a href={`/profile/${event.data.creator.username}`}>{getDisplayName(event.data.creator)}</a></span
-      >
-    </div>
-  </section>
+    </section>
+  )}
   <Banner
     title="Like to suggest a topic?"
     description="Why not help the never-ending list of topics grow even more!"

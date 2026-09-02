@@ -147,6 +147,56 @@
   gap: 0.5rem;
 }
 
+.cnf-rsvp__title {
+  margin: 0 0 0.5rem;
+}
+
+.cnf-rsvp__summary {
+  margin: 0 0 1rem;
+}
+
+.cnf-rsvp__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.cnf-rsvp__status:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.cnf-rsvp__error {
+  margin: 0 0 1rem;
+  color: hsl(var(--color-red));
+}
+
+.cnf-rsvp__lists {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* The count sits next to the heading, not inside it — otherwise it inherits
+   the heading's Playfair/weight/color and needs overriding back to plain
+   body text. */
+.cnf-rsvp__list-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0 0 0.25rem;
+}
+
+.cnf-rsvp__list-title {
+  margin: 0;
+}
+
+.cnf-rsvp__list-members {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
 @media (min-width: 576px) {
   .cnf-events--grid {
     grid-template-columns: repeat(2, 1fr);

@@ -5,6 +5,7 @@ import { signup } from './signup';
 import { changePassword } from './changePassword';
 import { updateUsername } from './updateUsername';
 import { updateClubMemberships } from './clubMembers';
+import { getEventRsvps, setEventRsvp } from './rsvps';
 
 export const server = {
   createEvent,
@@ -18,4 +19,6 @@ export const server = {
   changePassword,
   updateUsername,
   updateClubMemberships,
+  getEventRsvps,
+  setEventRsvp,
 };
