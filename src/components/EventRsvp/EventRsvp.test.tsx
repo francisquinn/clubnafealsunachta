@@ -238,14 +238,16 @@ describe("EventRsvp", () => {
     });
   });
 
-  it("keeps the RSVP controls off once the event has passed", async () => {
+  it("keeps the RSVP controls off and switches to past-tense wording once the event has passed", async () => {
     mockGetEventRsvps.mockResolvedValue({ data: memberState });
 
     render(<EventRsvp slug="philosophy-101" initialCounts={baseCounts} date="2000-01-01T18:00:00.000Z" />);
 
     await waitFor(() => {
-      expect(screen.getByText("Going")).toBeInTheDocument();
+      expect(screen.getByText("2 went · 1 maybe")).toBeInTheDocument();
     });
+    expect(screen.getByText("Went")).toBeInTheDocument();
+    expect(screen.queryByText("Going")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Going" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /log in/i })).not.toBeInTheDocument();
   });

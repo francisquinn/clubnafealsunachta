@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { actions } from "astro:actions";
 import { getDisplayName } from "../../lib/memberDisplay";
+import { isPastDate } from "../../utils/script";
 import Modal from "../Modal/Modal";
 import {
+  PAST_RSVP_LABELS,
   RSVP_LABELS,
   RSVP_STATUSES,
   type RsvpCounts,
@@ -31,7 +33,7 @@ export default function EventRsvp({ slug, initialCounts, date }: EventRsvpProps)
   const [showAttendees, setShowAttendees] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  const eventHasPassed = new Date(date).getTime() < Date.now();
+  const eventHasPassed = isPastDate(date);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,7 +89,12 @@ export default function EventRsvp({ slug, initialCounts, date }: EventRsvpProps)
   }
 
   const total = counts.going + counts.maybe + counts.not_going;
-  const summary = [counts.going > 0 && `${counts.going} going`, counts.maybe > 0 && `${counts.maybe} maybe`, counts.not_going > 0 && `${counts.not_going} not going`]
+  const labels = eventHasPassed ? PAST_RSVP_LABELS : RSVP_LABELS;
+  const summary = [
+    counts.going > 0 && `${counts.going} ${eventHasPassed ? "went" : "going"}`,
+    counts.maybe > 0 && `${counts.maybe} maybe`,
+    counts.not_going > 0 && `${counts.not_going} ${eventHasPassed ? "didn't go" : "not going"}`,
+  ]
     .filter(Boolean)
     .join(" · ");
 
@@ -153,7 +160,7 @@ export default function EventRsvp({ slug, initialCounts, date }: EventRsvpProps)
               lists[status].length > 0 ? (
                 <div key={status} className="cnf-rsvp__list">
                   <div className="cnf-rsvp__list-header">
-                    <h3 className="cnf-rsvp__list-title">{RSVP_LABELS[status]}</h3>
+                    <h3 className="cnf-rsvp__list-title">{labels[status]}</h3>
                     <span className="cnf-count" aria-hidden="true">{lists[status].length}</span>
                   </div>
                   <ul className="cnf-rsvp__list-members">

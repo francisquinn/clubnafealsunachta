@@ -41,6 +41,14 @@ export const RSVP_LABELS: Record<RsvpStatus, string> = {
   not_going: "Not going",
 };
 
+// Used once an event has passed, so the attendance breakdown reads as a
+// record of what happened rather than a still-open invitation.
+export const PAST_RSVP_LABELS: Record<RsvpStatus, string> = {
+  going: "Went",
+  maybe: "Maybe",
+  not_going: "Didn't go",
+};
+
 export function isRsvpStatus(value: unknown): value is RsvpStatus {
   return typeof value === "string" && (RSVP_STATUSES as readonly string[]).includes(value);
 }
