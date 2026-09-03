@@ -16,8 +16,14 @@ export function formatEventDate(date: Date): string {
   ).padStart(2, "0")}`;
 }
 
+// Shared "has this already happened" check, so every consumer compares
+// dates the same way instead of each reimplementing `new Date(x) < new Date()`.
+export function isPastDate(date: Date | string) {
+  return new Date(date) < new Date();
+}
+
 export function isEventExpired(event: Event | null) {
-  return event ? new Date(event.date) < new Date() : true;
+  return event ? isPastDate(event.date) : true;
 }
 
 export function isValidEmail(email: string) {
