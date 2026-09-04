@@ -1,0 +1,32 @@
+-- Fixes a timezone bug found 2026-09-04: the event admin form's
+-- datetime-local input has no timezone info at all (e.g. "18:30" — always
+-- meant as Trieste/Rome local wall-clock time), but createEvent/updateEvent
+-- used to write that naive string straight into this `timestamptz` column
+-- with no conversion. Postgres's default UTC session timezone treated it as
+-- if it were already UTC, so every event has been stored 1-2 hours (the
+-- Rome/UTC offset, which itself varies with DST) off from its real instant.
+--
+-- It stayed invisible because the site's own display code read the same
+-- mislabeled UTC digits back out untouched (see src/utils/script.ts's old
+-- formatEventDate) — it only surfaced once a spec-correct UTC consumer (the
+-- new .ics/Google Calendar "Add to calendar" links) converted that wrong
+-- instant to each viewer's real local time, showing e.g. 20:30 for an event
+-- actually meant at 18:30 Trieste time.
+--
+-- The app code (createEvent/updateEvent, formatEventDate, the Mailchimp
+-- draft, the admin edit-form prefill) has already been fixed to convert
+-- properly going forward — this is the one-time backfill for every event
+-- already stored under the old, buggy assumption.
+--
+-- The fix: read back each row's current (buggy) UTC digits, and — since
+-- those digits already ARE the intended Rome-local wall-clock time, per the
+-- bug's own logic — reinterpret them as Rome-local and re-derive the real
+-- UTC instant. `AT TIME ZONE 'UTC'` strips a timestamptz down to its raw UTC
+-- digits as a naive timestamp; the second `AT TIME ZONE 'Europe/Rome'`
+-- reinterprets those naive digits AS Rome-local time, producing the
+-- corrected timestamptz. Postgres's own tz database resolves the correct
+-- CET/CEST offset per row automatically — confirmed against live data
+-- before running this: every row shifts by exactly +1h (CET, winter events)
+-- or +2h (CEST, summer events), matching the real 2026-03-29 DST boundary.
+update public.events
+set date = (date at time zone 'UTC') at time zone 'Europe/Rome';

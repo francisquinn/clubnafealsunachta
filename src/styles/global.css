@@ -134,7 +134,9 @@ select {
 
 /* Single source of layout for every dropdown panel (Dropdown component): position,
    offset, sizing, spacing, background, shadow, radius, and open/close animation.
-   Nav and account panels share this exactly - no per-consumer overrides for now. */
+   Nav and account panels share this exactly. The one override so far is the
+   event page's calendar menu, which flips left/right (see event.css) since
+   it isn't pinned to the header's right edge like the other two. */
 .cnf-dropdown__panel {
   display: flex;
   flex-direction: column;

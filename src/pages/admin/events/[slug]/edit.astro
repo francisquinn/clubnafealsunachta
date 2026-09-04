@@ -6,6 +6,8 @@ import type { EventFormInitialData } from "../../../../components/EventForm/Even
 import { supabase } from "../../../../lib/supabase";
 import { requireAdmin, isClubInScope } from "../../../../lib/auth";
 import { unwrapRelation } from "../../../../lib/supabaseRelations";
+import { utcToLocalWallTime } from "../../../../lib/timezone";
+import { DEFAULT_CLUB_TIMEZONE } from "../../../../lib/clubDefaults";
 import "../../../../styles/form.css";
 
 // #37: only a super admin may leave an event unscoped ("No specific
@@ -28,7 +30,10 @@ if (error || !event || !isClubInScope(admin, event.club_id)) {
   return Astro.redirect("/admin/events");
 }
 
-const dateStr = new Date(event.date).toISOString().slice(0, 16);
+// The datetime-local input needs the club's own local wall-clock time, not
+// raw UTC (see src/lib/timezone.ts) — event.date is now a true UTC instant,
+// so this has to convert back rather than just slicing the ISO string.
+const dateStr = utcToLocalWallTime(new Date(event.date), DEFAULT_CLUB_TIMEZONE);
 
 const venue = unwrapRelation(event.venues);
 

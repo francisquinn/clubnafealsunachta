@@ -1,12 +1,14 @@
 ---
 export const prerender = true;
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { formatEventDate } from "../../../utils/script";
+import { formatEventDate, isEventExpired } from "../../../utils/script";
+import { buildEventIcs, buildGoogleCalendarUrl } from "../../../lib/ics";
 import "../../../styles/event.css";
 import { getCollection } from "astro:content";
 import Banner from "../../../layouts/Banner.astro";
 import EventRsvp from "../../../components/EventRsvp/EventRsvp";
 import JoinEventButton from "../../../components/JoinEventButton/JoinEventButton";
+import AddToCalendarButton from "../../../components/AddToCalendarButton/AddToCalendarButton";
 import { getDisplayName } from "../../../lib/memberDisplay";
 import { getAllClubs, clubSlugsForEvent } from "../../../lib/clubs";
 import { DEFAULT_CLUB_SLUG } from "../../../lib/clubDefaults";
@@ -35,6 +37,33 @@ const { event } = Astro.props;
 const canonicalPath = event.data.location
   ? undefined
   : `/${DEFAULT_CLUB_SLUG}/events/${event.data.slug}/`;
+
+// #28: an "Add to calendar" dropdown for upcoming events (Google Calendar /
+// Apple Calendar), built at build time from the same normalized event data
+// the page renders. Google gets a real deep link — no file, no MIME
+// sniffing. Apple/Outlook-desktop/everything-else gets the .ics as a data:
+// URI with a `download` filename — confirmed live (2026-09-04) that
+// dropping `download` makes Chrome save it as a generic "download.ics"
+// instead. AddToCalendarButton itself handles the Safari exception
+// client-side (drops `download` only for real Safari, once detected, so its
+// native text/calendar handoff can take over) rather than this static href
+// trying to serve every browser at once. Past events get no button.
+const isCalendarVisible = !isEventExpired(event.data);
+const icsEventData = {
+  name: event.data.name,
+  date: event.data.date,
+  isOnline: event.data.isOnline,
+  venue: event.data.venue,
+  meetingUrl: event.data.meetingUrl,
+  slug: event.data.slug,
+  description: event.data.description,
+  summary: event.data.summary,
+};
+const icsHref = `data:text/calendar;charset=utf-8,${encodeURIComponent(
+  buildEventIcs(icsEventData)
+)}`;
+const icsFilename = `${event.data.slug}.ics`;
+const googleCalendarUrl = buildGoogleCalendarUrl(icsEventData);
 ---
 
 <BaseLayout
@@ -80,7 +109,19 @@ const canonicalPath = event.data.location
         >Hosted by <a href={`/profile/${event.data.creator.username}`}>{getDisplayName(event.data.creator)}</a></span
       >
     </div>
-    <JoinEventButton event={event.data} />
+    <div class="cnf-event-page__details">
+      <JoinEventButton event={event.data} />
+      {
+        isCalendarVisible && (
+          <AddToCalendarButton
+            icsHref={icsHref}
+            icsFilename={icsFilename}
+            googleUrl={googleCalendarUrl}
+            client:load
+          />
+        )
+      }
+    </div>
   </section>
 
   <section class="cnf-section">
