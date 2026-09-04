@@ -3,7 +3,8 @@ import { supabase, supabaseAdmin } from '../lib/supabase';
 import { sendMailchimpEmail } from '../lib/mailchimp';
 import { requireAdmin, isClubInScope, scopeToAdminClubs, type AdminScope } from '../lib/auth';
 import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
-import { DEFAULT_CLUB_SLUG } from '../lib/clubDefaults';
+import { DEFAULT_CLUB_SLUG, DEFAULT_CLUB_TIMEZONE } from '../lib/clubDefaults';
+import { localWallTimeToUtc } from '../lib/timezone';
 import { upsertRsvp } from './rsvps';
 
 type ResolvedVenue = { id: number; name: string; url: string | null; club_id: number };
@@ -95,18 +96,25 @@ export const createEvent = defineAction({
     }
 
     const name = formData.get('name') as string;
-    const date = formData.get('date') as string;
+    const rawDate = formData.get('date') as string;
     const slug = formData.get('slug') as string;
     const is_online = formData.get('is_online') === 'true';
     const meeting_url = (formData.get('meeting_url') as string) || null;
 
-    if (!name || !date || !slug) {
+    if (!name || !rawDate || !slug) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });
     }
 
     if (!/^[a-z0-9-]+$/.test(slug)) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Slug must contain only lowercase letters, numbers and hyphens' });
     }
+
+    // rawDate is a naive "YYYY-MM-DDTHH:mm" from a timezone-less
+    // datetime-local input — always the club's own local wall-clock time
+    // (see DEFAULT_CLUB_TIMEZONE), never UTC. Converted to a real UTC
+    // instant here, once, before it reaches storage or the Mailchimp draft
+    // below.
+    const date = localWallTimeToUtc(rawDate, DEFAULT_CLUB_TIMEZONE).toISOString();
 
     const venue = await resolveVenue(formData, is_online, admin);
     const event_club_id = resolveEventClubId(formData, is_online, venue, admin);
@@ -194,13 +202,16 @@ export const updateEvent = defineAction({
 
     const slug = formData.get('slug') as string;
     const name = formData.get('name') as string;
-    const date = formData.get('date') as string;
+    const rawDate = formData.get('date') as string;
     const is_online = formData.get('is_online') === 'true';
     const meeting_url = (formData.get('meeting_url') as string) || null;
 
-    if (!name || !date || !slug) {
+    if (!name || !rawDate || !slug) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });
     }
+
+    // See createEvent — same naive-local-to-UTC conversion, same reasoning.
+    const date = localWallTimeToUtc(rawDate, DEFAULT_CLUB_TIMEZONE).toISOString();
 
     // A club-scoped admin also can't be allowed to edit an event they don't
     // currently administer, even if their submitted new venue/club would

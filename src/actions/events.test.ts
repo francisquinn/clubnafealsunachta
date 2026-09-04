@@ -256,9 +256,13 @@ function form(fields: Record<string, string>): FormData {
 const SUPER_ADMIN = { memberId: 'admin-1', isSuperAdmin: true, clubIds: [] as number[] };
 const CLUB_ADMIN = { memberId: 'admin-2', isSuperAdmin: false, clubIds: [3] };
 
+// A real datetime-local input's value has no timezone info at all — always
+// the club's own local wall-clock time (Europe/Rome), never a full ISO
+// instant. Jan 1 is winter (CET, UTC+1), hence the '...T17:00:00.000Z'
+// assertion below.
 const ONLINE_FORM = {
   name: 'Philosophy Night',
-  date: '2099-01-01T18:00:00.000Z',
+  date: '2099-01-01T18:00',
   slug: 'philosophy-night',
   is_online: 'true',
   meeting_url: 'https://meet.jit.si/x',
@@ -337,7 +341,9 @@ describe('createEvent', () => {
     expect(result).toEqual({ success: true });
     expect(state.insertedEvent).toMatchObject({
       name: 'Philosophy Night',
-      date: '2099-01-01T18:00:00.000Z',
+      // Converted from the naive '18:00' Rome-local wall-clock time in
+      // ONLINE_FORM to the real UTC instant (CET, UTC+1, in January).
+      date: '2099-01-01T17:00:00.000Z',
       slug: 'philosophy-night',
       is_online: true,
       venue_id: null,
@@ -363,7 +369,7 @@ describe('createEvent', () => {
     const result = await createHandler(
       form({
         name: 'In-Person Talk',
-        date: '2099-02-01T18:00:00.000Z',
+        date: '2099-02-01T18:00',
         slug: 'in-person-talk',
         is_online: 'false',
         venue_id: '5',
@@ -413,7 +419,7 @@ describe('createEvent', () => {
 describe('updateEvent', () => {
   const UPDATE_FORM = {
     name: 'Updated Name',
-    date: '2099-03-01T18:00:00.000Z',
+    date: '2099-03-01T18:00',
     slug: 'philosophy-night',
     is_online: 'true',
     meeting_url: 'https://meet.jit.si/y',

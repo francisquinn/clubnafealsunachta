@@ -11,3 +11,11 @@
 // the Supabase admin client — importing from it would drag that whole
 // module (and its secret-key-reading env access) into the client bundle.
 export const DEFAULT_CLUB_SLUG = 'trieste';
+
+// Same "one club exists today" reasoning as DEFAULT_CLUB_SLUG, for the one
+// piece of club data that isn't a display fallback: the IANA zone every
+// event's wall-clock time (entered via a timezone-less datetime-local input)
+// is actually in. See src/lib/timezone.ts for where this crosses the
+// UTC/local boundary. Revisit alongside DEFAULT_CLUB_SLUG once a second real
+// club (in a different timezone) exists.
+export const DEFAULT_CLUB_TIMEZONE = 'Europe/Rome';

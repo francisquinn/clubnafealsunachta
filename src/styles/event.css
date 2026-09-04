@@ -130,6 +130,34 @@
   height: 20px;
 }
 
+/* Positioning context for the Dropdown panel (see AddToCalendarButton) —
+   same relative-wrapper role as .cnf-nav__group plays for the nav/account
+   menus, which .cnf-dropdown__panel's `position: absolute` is built against. */
+.cnf-event-page__calendar-menu {
+  position: relative;
+  display: inline-block;
+}
+
+/* Nav/account menus sit at the right edge of the header, so the shared
+   .cnf-dropdown__panel default (right: 0) opens flush with that edge. This
+   button sits mid-page instead, so the panel opens from the button's own
+   left edge rather than potentially overflowing further right. */
+.cnf-event-page__calendar-menu .cnf-dropdown__panel {
+  left: 0;
+  right: auto;
+}
+
+.cnf-event-page__calendar-link {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.cnf-event-page__calendar-link img {
+  width: 18px;
+  height: 18px;
+}
+
 .cnf-event-page__description p,
 .cnf-event-page__summary p {
   white-space: pre-wrap;

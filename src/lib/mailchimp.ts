@@ -1,3 +1,5 @@
+import { DEFAULT_CLUB_TIMEZONE } from './clubDefaults';
+
 const MAILCHIMP_API_KEY = process.env.MAILCHIMP_API_KEY;
 const MAILCHIMP_AUDIENCE_ID = process.env.MAILCHIMP_AUDIENCE_ID;
 const DC = MAILCHIMP_API_KEY?.split('-')[1];
@@ -27,15 +29,20 @@ export interface PostDraft {
   body: string;
 }
 
+// `date` is a true UTC instant (see src/lib/timezone.ts) — rendered in the
+// club's own local time, same as the site's own formatEventDate, not raw
+// UTC. Previously pinned timeZone: 'UTC' here, which only produced the
+// correct-looking digits because of a separate storage bug that stored
+// Trieste wall-clock digits mislabeled as UTC in the first place.
 function formatEventDate(dateStr: string): string {
   const date = new Date(dateStr);
   const datePart = date.toLocaleDateString('en-IE', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-    timeZone: 'UTC',
+    timeZone: DEFAULT_CLUB_TIMEZONE,
   });
   const timePart = date.toLocaleTimeString('en-IE', {
     hour: '2-digit', minute: '2-digit',
-    timeZone: 'UTC',
+    timeZone: DEFAULT_CLUB_TIMEZONE,
   });
   return `${datePart} @ ${timePart}`;
 }
