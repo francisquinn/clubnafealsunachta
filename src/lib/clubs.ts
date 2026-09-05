@@ -1,4 +1,6 @@
+import { getCollection } from 'astro:content';
 import { supabaseAdmin } from './supabase';
+import type { EventCollection } from '../types/types';
 
 export type Club = { id: number; name: string; slug: string };
 
@@ -11,7 +13,19 @@ export { DEFAULT_CLUB_SLUG } from './clubDefaults';
 // loader (to resolve an event's club) and by the [clubSlug] static routes
 // (#39) to know which club-prefixed pages to build, including a club with
 // zero events yet.
-export async function getAllClubs(): Promise<Club[]> {
+//
+// Memoized per build/process: [eventSlug].astro and [eventSlug].ics.ts each
+// run their own getStaticPaths (Astro doesn't share state between route
+// files), and without this cache both independently hit Supabase for the
+// exact same "every club" data. Caching also closes a real divergence risk —
+// two live, unmemoized queries a moment apart could see a different club
+// list if the clubs table changed mid-build, desyncing which .ics files
+// exist from which event pages link to them. A rejected fetch clears the
+// cache so a real Supabase outage doesn't wedge every future call in the
+// same process into a stale failure.
+let clubsPromise: Promise<Club[]> | null = null;
+
+async function fetchAllClubs(): Promise<Club[]> {
   if (!supabaseAdmin) {
     throw new Error('Supabase is not configured — set SUPABASE_PROJECT_URL and SUPABASE_SECRET_KEY');
   }
@@ -28,6 +42,16 @@ export async function getAllClubs(): Promise<Club[]> {
   return data;
 }
 
+export async function getAllClubs(): Promise<Club[]> {
+  if (!clubsPromise) {
+    clubsPromise = fetchAllClubs().catch((error) => {
+      clubsPromise = null;
+      throw error;
+    });
+  }
+  return clubsPromise;
+}
+
 // #39: the set of club slugs a given event belongs under — the club it's
 // actually scoped to, or, for a genuinely cross-chapter event (location
 // null), every club that exists (the "visible everywhere" decision). Shared
@@ -35,4 +59,25 @@ export async function getAllClubs(): Promise<Club[]> {
 // the list page and the detail page's getStaticPaths.
 export function clubSlugsForEvent(location: { slug: string } | null, allClubSlugs: string[]): string[] {
   return location ? [location.slug] : allClubSlugs;
+}
+
+export type EventClubPath = {
+  params: { clubSlug: string; eventSlug: string };
+  props: { event: EventCollection };
+};
+
+// The getStaticPaths shared by [eventSlug].astro and [eventSlug].ics.ts —
+// every event/club pair that needs a page, kept in exactly one place instead
+// of copy-pasted so the two routes can't drift out of lockstep with each
+// other.
+export async function getEventClubStaticPaths(): Promise<EventClubPath[]> {
+  const [events, clubs] = await Promise.all([getCollection('event'), getAllClubs()]);
+  const clubSlugs = clubs.map((c) => c.slug);
+
+  return events.flatMap((event) =>
+    clubSlugsForEvent(event.data.location, clubSlugs).map((clubSlug) => ({
+      params: { clubSlug, eventSlug: event.data.slug },
+      props: { event },
+    }))
+  );
 }

@@ -5,6 +5,8 @@
 // in Trieste or remote. DTEND is DTSTART + DEFAULT_EVENT_DURATION_MS because
 // there's no stored end time yet; revisit if a duration field is ever added.
 
+import type { EventCollection } from "../types/types";
+
 const DEFAULT_EVENT_DURATION_MS = 90 * 60 * 1000; // 1.5 hours — e.g. an 18:30 start ends at 20:00
 const MAX_LINE_OCTETS = 75;
 
@@ -18,6 +20,15 @@ export type EventIcsData = {
   description: string | null;
   summary: string | null;
 };
+
+// The one place that narrows a full event collection entry down to what the
+// calendar builders below need — used by both [eventSlug].astro (Google
+// Calendar link) and [eventSlug].ics.ts (the served .ics file) so the two
+// outputs can't quietly disagree on content if EventIcsData's fields change.
+export function toEventIcsData(event: EventCollection): EventIcsData {
+  const { name, date, isOnline, venue, meetingUrl, slug, description, summary } = event.data;
+  return { name, date, isOnline, venue, meetingUrl, slug, description, summary };
+}
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
