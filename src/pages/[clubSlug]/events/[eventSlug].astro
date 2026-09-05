@@ -2,34 +2,25 @@
 export const prerender = true;
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { formatEventDate, isEventExpired } from "../../../utils/script";
-import { buildEventIcs, buildGoogleCalendarUrl } from "../../../lib/ics";
+import { buildGoogleCalendarUrl, toEventIcsData } from "../../../lib/ics";
 import "../../../styles/event.css";
-import { getCollection } from "astro:content";
 import Banner from "../../../layouts/Banner.astro";
 import EventRsvp from "../../../components/EventRsvp/EventRsvp";
 import JoinEventButton from "../../../components/JoinEventButton/JoinEventButton";
 import AddToCalendarButton from "../../../components/AddToCalendarButton/AddToCalendarButton";
 import { getDisplayName } from "../../../lib/memberDisplay";
-import { getAllClubs, clubSlugsForEvent } from "../../../lib/clubs";
+import { getEventClubStaticPaths } from "../../../lib/clubs";
 import { DEFAULT_CLUB_SLUG } from "../../../lib/clubDefaults";
 
-export async function getStaticPaths() {
-  const [events, clubs] = await Promise.all([getCollection("event"), getAllClubs()]);
-  const clubSlugs = clubs.map((c) => c.slug);
-
-  // #39: an event with a club gets exactly one URL, under that club's
-  // prefix. A genuinely cross-chapter event (location null) has no club of
-  // its own, so — matching the "visible everywhere" call on the list page —
-  // it gets one URL per existing club instead of a single fixed one.
-  return events.flatMap((event) =>
-    clubSlugsForEvent(event.data.location, clubSlugs).map((clubSlug) => ({
-      params: { clubSlug, eventSlug: event.data.slug },
-      props: { event },
-    }))
-  );
-}
+// #39: an event with a club gets exactly one URL, under that club's prefix. A
+// genuinely cross-chapter event (location null) has no club of its own, so —
+// matching the "visible everywhere" call on the list page — it gets one URL
+// per existing club instead of a single fixed one. Shared with
+// [eventSlug].ics.ts so the two routes can't drift out of lockstep.
+export const getStaticPaths = getEventClubStaticPaths;
 
 const { event } = Astro.props;
+const { clubSlug } = Astro.params;
 // A cross-chapter event is duplicated across every club's URL space — give
 // them all ONE shared canonical (the default club's copy) instead of each
 // page self-referencing, which would otherwise be duplicate-content SEO-wise
@@ -38,30 +29,21 @@ const canonicalPath = event.data.location
   ? undefined
   : `/${DEFAULT_CLUB_SLUG}/events/${event.data.slug}/`;
 
-// #28: an "Add to calendar" dropdown for upcoming events (Google Calendar /
-// Apple Calendar), built at build time from the same normalized event data
+// #28/#76: an "Add to calendar" dropdown for upcoming events (Google Calendar
+// / Apple Calendar), built at build time from the same normalized event data
 // the page renders. Google gets a real deep link — no file, no MIME
-// sniffing. Apple/Outlook-desktop/everything-else gets the .ics as a data:
-// URI with a `download` filename — confirmed live (2026-09-04) that
-// dropping `download` makes Chrome save it as a generic "download.ics"
-// instead. AddToCalendarButton itself handles the Safari exception
-// client-side (drops `download` only for real Safari, once detected, so its
-// native text/calendar handoff can take over) rather than this static href
-// trying to serve every browser at once. Past events get no button.
+// sniffing. Apple/Outlook-desktop/everything-else gets a real same-origin
+// .ics file at [eventSlug].ics.ts (kept as a separate static route in
+// lockstep with this page's own getStaticPaths) rather than a `data:` URI —
+// WebKit blocks top-level navigation to `data:` URLs, which silently broke
+// "Apple Calendar" in real iOS Safari (#76). AddToCalendarButton still keeps
+// a `download` filename for every browser except real Safari (confirmed live
+// 2026-09-04: without it, Chrome saves a generic "download.ics") — that part
+// is unaffected by the swap since it works the same on a real URL. Past
+// events get no button.
 const isCalendarVisible = !isEventExpired(event.data);
-const icsEventData = {
-  name: event.data.name,
-  date: event.data.date,
-  isOnline: event.data.isOnline,
-  venue: event.data.venue,
-  meetingUrl: event.data.meetingUrl,
-  slug: event.data.slug,
-  description: event.data.description,
-  summary: event.data.summary,
-};
-const icsHref = `data:text/calendar;charset=utf-8,${encodeURIComponent(
-  buildEventIcs(icsEventData)
-)}`;
+const icsEventData = toEventIcsData(event);
+const icsHref = `/${clubSlug}/events/${event.data.slug}.ics`;
 const icsFilename = `${event.data.slug}.ics`;
 const googleCalendarUrl = buildGoogleCalendarUrl(icsEventData);
 ---
