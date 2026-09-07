@@ -59,6 +59,13 @@ describe("formatBlogDate", () => {
     const result = formatBlogDate(new Date("2025-09-04"));
     expect(result).toBe("Sep 4, 2025");
   });
+
+  it("renders the given timeZone's calendar day, not the runtime's own", () => {
+    // 22:30 UTC on Sep 4 is 00:30 in Rome (CEST, UTC+2) the *next* day —
+    // the #75 bug case: no timeZone would show Sep 4, not Sep 5.
+    const result = formatBlogDate(new Date("2026-09-04T22:30:00.000Z"), "Europe/Rome");
+    expect(result).toBe("Sep 5, 2026");
+  });
 });
 
 describe("formatEventDate", () => {

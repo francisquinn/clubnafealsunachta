@@ -5,6 +5,7 @@ import EventCard from "../../layouts/EventCard";
 import { formatBlogDate } from "../../utils/script";
 import Selector from "../Selector/Selector";
 import type { EventCollection } from "../../types/types";
+import { DEFAULT_CLUB_TIMEZONE } from "../../lib/clubDefaults";
 
 export default function EventList(props: EventListProps) {
   const cityNames = [...new Set(
@@ -84,7 +85,7 @@ export default function EventList(props: EventListProps) {
         <EventCard
           event={event.data}
           key={event.data.slug}
-          dateFormatter={formatBlogDate}
+          dateFormatter={(date) => formatBlogDate(date, DEFAULT_CLUB_TIMEZONE)}
           clubSlug={props.clubSlug}
         />
     );
