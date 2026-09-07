@@ -1,10 +1,27 @@
 import type { Event } from "../types/types";
 import { DEFAULT_CLUB_TIMEZONE } from "../lib/clubDefaults";
 
-export function formatBlogDate(date: Date): string {
-  return `${date.toLocaleDateString("en-US", {
-    month: "short",
-  })} ${date.getDate()}, ${date.getFullYear()}`;
+// `timeZone` is optional so blog posts (the one remaining caller that
+// doesn't pass one) are unaffected — pass it explicitly for a date that must
+// read as a specific timezone's calendar day regardless of where the code
+// runs. Both event callers (the admin events list, and the public
+// past-events list in EventList.tsx) now pass DEFAULT_CLUB_TIMEZONE (#75:
+// rendering with no timeZone defaults to wherever the code executes — the
+// server's UTC runtime for the admin page, the visitor's own browser for the
+// client-hydrated public list — either of which can disagree with the
+// club's actual local calendar day for a late-enough event).
+export function formatBlogDate(date: Date, timeZone?: string): string {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+      .formatToParts(date)
+      .map((p) => [p.type, p.value])
+  );
+  return `${parts.month} ${parts.day}, ${parts.year}`;
 }
 
 // Always shown in the club's own local time (see DEFAULT_CLUB_TIMEZONE), not
