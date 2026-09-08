@@ -360,6 +360,22 @@ describe('createEvent', () => {
     expect(state.mailchimpCall).toMatchObject({ slug: 'philosophy-night', club_slug: DEFAULT_CLUB_SLUG });
   });
 
+  it('ignores a submitted venue_id when is_online is true, keeping venue_id/club_id null', async () => {
+    // #49: there's no active BAD_REQUEST rejection for this combination —
+    // resolveVenue returns null whenever is_online is true, before it ever
+    // looks at venue_id, so a client bug that submits both silently loses
+    // the venue rather than erroring. The DB's events_online_xor_venue CHECK
+    // (is_online = false OR venue_id IS NULL) is a backstop that this path
+    // never actually exercises, since venue_id is always null here.
+    state.admin = SUPER_ADMIN;
+    state.venueById = { id: 9, name: 'Some Hall', url: null, club_id: 3 };
+
+    const result = await createHandler(form({ ...ONLINE_FORM, venue_id: '9' }), context());
+
+    expect(result).toEqual({ success: true });
+    expect(state.insertedEvent).toMatchObject({ is_online: true, venue_id: null, club_id: null });
+  });
+
   it("creates an in-person event via an existing venue, using the venue's club", async () => {
     state.admin = CLUB_ADMIN; // clubIds: [3]
     state.venueById = { id: 5, name: 'The Reading Room', url: 'https://example.com/venue', club_id: 3 };
