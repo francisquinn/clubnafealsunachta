@@ -414,6 +414,75 @@ describe('createEvent', () => {
       code: 'INTERNAL_SERVER_ERROR',
     });
   });
+
+  // Ported from #65 (migueltorrescosta) — genuinely missing cases the
+  // scaffolding above (upsertedVenuePayload/Row, venueLookupError,
+  // clubLookupError) was already wired for but nothing exercised yet.
+  it("creates an in-person event and upserts a brand-new venue via 'New venue…'", async () => {
+    state.admin = CLUB_ADMIN; // clubIds: [3]
+    state.upsertedVenueRow = { id: 9, name: 'New Hall', url: 'https://newhall.example.com', club_id: 3 };
+    state.insertedEventRow = { id: 44 };
+
+    const result = await createHandler(
+      form({
+        ...ONLINE_FORM,
+        is_online: 'false',
+        club_id: '3',
+        location_name: 'New Hall',
+        location_url: 'https://newhall.example.com',
+      }),
+      context()
+    );
+
+    expect(result).toEqual({ success: true });
+    expect(state.upsertedVenuePayload).toMatchObject({ name: 'New Hall', url: 'https://newhall.example.com', club_id: 3 });
+    expect(state.insertedEvent).toMatchObject({ venue_id: 9, club_id: 3 });
+  });
+
+  it('throws FORBIDDEN when a club-scoped admin creates an in-person event with no venue (would be global)', async () => {
+    state.admin = CLUB_ADMIN; // clubIds: [3]
+
+    await expect(
+      createHandler(form({ ...ONLINE_FORM, is_online: 'false' }), context())
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it("throws FORBIDDEN when a club-scoped admin's online event targets a club outside their scope", async () => {
+    state.admin = CLUB_ADMIN; // clubIds: [3]
+
+    await expect(
+      createHandler(form({ ...ONLINE_FORM, event_club_id: '99' }), context())
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it("allows a club-scoped admin's online event when event_club_id is one of their own clubs", async () => {
+    state.admin = CLUB_ADMIN; // clubIds: [3]
+    state.insertedEventRow = { id: 45 };
+
+    const result = await createHandler(form({ ...ONLINE_FORM, event_club_id: '3' }), context());
+
+    expect(result).toEqual({ success: true });
+    expect(state.insertedEvent).toMatchObject({ is_online: true, venue_id: null, club_id: 3 });
+  });
+
+  it('throws INTERNAL_SERVER_ERROR when the venue lookup fails', async () => {
+    state.admin = SUPER_ADMIN;
+    state.venueLookupError = new Error('boom');
+
+    await expect(
+      createHandler(form({ ...ONLINE_FORM, is_online: 'false', venue_id: '5' }), context())
+    ).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
+  });
+
+  it('throws INTERNAL_SERVER_ERROR when the club-slug lookup for the Mailchimp draft fails', async () => {
+    state.admin = SUPER_ADMIN;
+    state.insertedEventRow = { id: 46 };
+    state.clubLookupError = new Error('boom');
+
+    await expect(
+      createHandler(form({ ...ONLINE_FORM, event_club_id: '3' }), context())
+    ).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
+  });
 });
 
 describe('updateEvent', () => {
@@ -474,6 +543,35 @@ describe('updateEvent', () => {
     await expect(updateHandler(form(UPDATE_FORM), context())).rejects.toMatchObject({
       code: 'INTERNAL_SERVER_ERROR',
     });
+  });
+
+  // Ported from #65 (migueltorrescosta).
+  it("allows a club-scoped admin to edit an in-person event via a venue in their club", async () => {
+    state.admin = CLUB_ADMIN; // clubIds: [3]
+    state.existingEvent = { club_id: 3 };
+    state.venueById = { id: 5, name: 'The Reading Room', url: null, club_id: 3 };
+
+    const result = await updateHandler(
+      form({ ...UPDATE_FORM, is_online: 'false', venue_id: '5' }),
+      context()
+    );
+
+    expect(result).toEqual({ success: true });
+    expect(state.updatedEvent).toMatchObject({ is_online: false, venue_id: 5, club_id: 3 });
+  });
+
+  it('updates an event to be in-person with a venue', async () => {
+    state.admin = SUPER_ADMIN;
+    state.existingEvent = { club_id: null };
+    state.venueById = { id: 5, name: 'The Reading Room', url: null, club_id: 3 };
+
+    const result = await updateHandler(
+      form({ ...UPDATE_FORM, is_online: 'false', venue_id: '5' }),
+      context()
+    );
+
+    expect(result).toEqual({ success: true });
+    expect(state.updatedEvent).toMatchObject({ is_online: false, venue_id: 5, club_id: 3 });
   });
 });
 
