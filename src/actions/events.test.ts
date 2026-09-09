@@ -357,7 +357,14 @@ describe('createEvent', () => {
     expect(state.rsvpInsertPayload).toMatchObject({ member_id: 'admin-1', event_id: 42, status: 'going' });
     expect(state.rsvpInsertPayload?.updated_at).toEqual(expect.any(String));
     expect(state.netlifyBuildCalled).toBe(true);
-    expect(state.mailchimpCall).toMatchObject({ slug: 'philosophy-night', club_slug: DEFAULT_CLUB_SLUG });
+    // Cross-chapter (club_id null): club_slug still falls back to
+    // DEFAULT_CLUB_SLUG for the CTA link, but is_cross_chapter must be true
+    // so mailchimp.ts doesn't narrow the audience to that one club.
+    expect(state.mailchimpCall).toMatchObject({
+      slug: 'philosophy-night',
+      club_slug: DEFAULT_CLUB_SLUG,
+      is_cross_chapter: true,
+    });
   });
 
   it("creates an in-person event via an existing venue, using the venue's club", async () => {
@@ -380,7 +387,11 @@ describe('createEvent', () => {
     expect(result).toEqual({ success: true });
     expect(state.insertedEvent).toMatchObject({ venue_id: 5, club_id: 3, created_by: 'admin-2' });
     expect(state.rsvpInsertPayload).toMatchObject({ member_id: 'admin-2', event_id: 43, status: 'going' });
-    expect(state.mailchimpCall).toMatchObject({ club_slug: 'galway', venue_name: 'The Reading Room' });
+    expect(state.mailchimpCall).toMatchObject({
+      club_slug: 'galway',
+      is_cross_chapter: false,
+      venue_name: 'The Reading Room',
+    });
   });
 
   it('still creates the event when seeding the host RSVP fails', async () => {
