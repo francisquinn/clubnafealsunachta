@@ -1,6 +1,40 @@
 import { defineAction, ActionError } from 'astro:actions';
 import { verifySessionToken } from '../lib/auth';
 import { supabaseAdmin } from '../lib/supabase';
+import { addClubTag, removeClubTag } from '../lib/mailchimp';
+
+// #55: mirror the member's club subscriptions onto Mailchimp member tags
+// (club:<slug>) so event emails can target one club's audience. Everything
+// checked stays tagged on, everything not checked (against the full club
+// list) is tagged off — an idempotent upsert, so saving the same choice
+// again is a no-op, and a member with no stored email just skips out.
+async function syncMailchimpClubTags(memberId: string, selectedClubIds: number[]): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  const { data: member, error: memberError } = await supabaseAdmin
+    .from('members')
+    .select('email')
+    .eq('id', memberId)
+    .single();
+  if (memberError || !member?.email) return;
+
+  const { data: clubs, error: clubsError } = await supabaseAdmin
+    .from('clubs')
+    .select('id, slug');
+  if (clubsError) return;
+
+  const slugById = new Map((clubs ?? []).map((club) => [club.id, club.slug]));
+  const leavingClubIds = (clubs ?? []).map((club) => club.id).filter((id) => !selectedClubIds.includes(id));
+
+  for (const id of selectedClubIds) {
+    const slug = slugById.get(id);
+    if (slug) await addClubTag(member.email, slug);
+  }
+  for (const id of leavingClubIds) {
+    const slug = slugById.get(id);
+    if (slug) await removeClubTag(member.email, slug);
+  }
+}
 
 // #38: any logged-in member can register to any club — this is purely an
 // opt-in to that club's news/updates, not a gate on browsing/RSVP (which
@@ -70,6 +104,16 @@ export const updateClubMemberships = defineAction({
 
     if (deleteError) {
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to update club subscriptions' });
+    }
+
+    // #55: keep the Mailchimp tags in line with the new membership set.
+    // Best effort never fails the request — same posture as the event email
+    // in createEvent — so a transient Mailchimp outage can't strand the
+    // member with a half-applied club change.
+    try {
+      await syncMailchimpClubTags(payload.memberId, selectedClubIds);
+    } catch (err) {
+      console.error('Mailchimp club tag sync failed:', err);
     }
 
     return { success: true, club_ids: selectedClubIds };

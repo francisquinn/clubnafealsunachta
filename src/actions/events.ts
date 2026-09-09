@@ -159,10 +159,14 @@ export const createEvent = defineAction({
 
     // #39: events are routed under /[clubSlug]/events — a cross-chapter
     // event (event_club_id null) has no club of its own to link into, so
-    // the draft email falls back to the one club that exists today. A
-    // single-row lookup, not getAllClubs() — no need to fetch every club
-    // just to read one slug (and event_club_id null can never match a row
-    // anyway, so that path would always fetch and discard the whole table).
+    // the draft email's CTA link falls back to the one club that exists
+    // today. A single-row lookup, not getAllClubs() — no need to fetch
+    // every club just to read one slug (and event_club_id null can never
+    // match a row anyway, so that path would always fetch and discard the
+    // whole table). This fallback is link-only: it must not also decide
+    // who receives the email (see is_cross_chapter below) — #64's
+    // segment-per-club targeting would otherwise silently narrow a
+    // cross-chapter event's audience down to just that one club.
     let club_slug: string = DEFAULT_CLUB_SLUG;
     if (event_club_id !== null) {
       const { data: club, error: clubError } = await supabaseAdmin
@@ -179,6 +183,7 @@ export const createEvent = defineAction({
       date,
       slug,
       club_slug,
+      is_cross_chapter: event_club_id === null,
       meeting_url,
       venue_name: venue?.name ?? null,
       venue_url: venue?.url ?? null,
