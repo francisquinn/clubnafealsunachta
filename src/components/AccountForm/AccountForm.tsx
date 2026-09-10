@@ -11,12 +11,34 @@ interface Props {
   initialUsername: string;
   initialFullName: string | null;
   initialDisplayFullName: boolean;
+  clubs: { id: number; name: string }[];
+  initialClubIds: number[];
 }
 
-export default function AccountForm({ initialUsername, initialFullName, initialDisplayFullName }: Props) {
+function capitalize(label: string): string {
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+// "a" -> "a", "a and b" -> "a and b", "a, b, and c" -> "a, b, and c" — scales
+// to however many parts of the form actually saved this time.
+function joinWithAnd(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+}
+
+export default function AccountForm({
+  initialUsername,
+  initialFullName,
+  initialDisplayFullName,
+  clubs,
+  initialClubIds,
+}: Props) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  const hasClubs = clubs.length > 0;
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const name = e.target.name as FieldName;
@@ -57,34 +79,38 @@ export default function AccountForm({ initialUsername, initialFullName, initialD
     setStatus("loading");
 
     try {
-      const [usernameResult, passwordResult] = await Promise.all([
+      const [usernameResult, passwordResult, clubsResult] = await Promise.all([
         actions.updateUsername(formData),
         wantsPasswordChange ? actions.changePassword(formData) : Promise.resolve(null),
+        hasClubs ? actions.updateClubMemberships(formData) : Promise.resolve(null),
       ]);
 
-      const usernameError = usernameResult.error?.message ?? null;
-      const passwordError = wantsPasswordChange ? passwordResult?.error?.message ?? null : null;
+      const parts: { label: string; error: string | null }[] = [
+        { label: "info", error: usernameResult.error?.message ?? null },
+      ];
+      if (wantsPasswordChange) {
+        parts.push({ label: "password", error: passwordResult?.error?.message ?? null });
+      }
+      if (hasClubs) {
+        parts.push({ label: "club settings", error: clubsResult?.error?.message ?? null });
+      }
 
-      if (!usernameError && !passwordError) {
+      const failedParts = parts.filter((p) => p.error);
+      const succeededLabels = parts.filter((p) => !p.error).map((p) => p.label);
+
+      if (failedParts.length === 0) {
         setStatus("success");
-        setMessage(wantsPasswordChange ? "Your info and password have been updated." : "Your info has been updated.");
+        setMessage(`Your ${joinWithAnd(succeededLabels)} ${succeededLabels.length > 1 ? "have" : "has"} been updated.`);
         return;
       }
 
       setStatus("error");
-
-      if (!wantsPasswordChange) {
-        setMessage(usernameError);
-        return;
-      }
-
-      if (!usernameError) {
-        setMessage(`Your info has been updated. Password unchanged: ${passwordError}`);
-      } else if (!passwordError) {
-        setMessage(`Your password has been updated. Info unchanged: ${usernameError}`);
-      } else {
-        setMessage(`Info unchanged: ${usernameError} Password unchanged: ${passwordError}`);
-      }
+      const failedText = failedParts.map((p) => `${capitalize(p.label)} unchanged: ${p.error}`).join(" ");
+      setMessage(
+        succeededLabels.length > 0
+          ? `Your ${joinWithAnd(succeededLabels)} ${succeededLabels.length > 1 ? "have" : "has"} been updated. ${failedText}`
+          : failedText
+      );
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Something went wrong");
       setStatus("error");
@@ -189,6 +215,27 @@ export default function AccountForm({ initialUsername, initialFullName, initialD
           {fieldErrors.confirm_password && <div className="cnf-form__message--error">{fieldErrors.confirm_password}</div>}
         </div>
       </fieldset>
+
+      {hasClubs && (
+        <fieldset className="cnf-form__fieldset">
+          <legend>Club memberships</legend>
+
+          <p className="cnf-form__hint">Select the clubs you're part of.</p>
+
+          <div className="cnf-form__group">
+            {clubs.map((club) => (
+              <Checkbox
+                key={club.id}
+                id={`club-${club.id}`}
+                name="club_id"
+                value={String(club.id)}
+                defaultChecked={initialClubIds.includes(club.id)}
+                label={club.name}
+              />
+            ))}
+          </div>
+        </fieldset>
+      )}
 
       <button type="submit" disabled={status === "loading"} aria-busy={status === "loading"} className={`cnf-form__submit cnf-button cnf-button__gold${status === "loading" ? " cnf-button--loading" : ""}`}>
         <span className="cnf-button__text">Save</span>
