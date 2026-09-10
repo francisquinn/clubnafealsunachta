@@ -5,8 +5,8 @@ export type BookFormInitialData = {
   title: string;
   author: string;
   slug: string;
-  blurb: string;
   coverImageUrl?: string;
+  goodreadsUrl?: string;
 };
 
 type BookFormProps = {
@@ -115,34 +115,40 @@ export default function BookForm({ mode, initialData }: BookFormProps) {
       </div>
 
       <div className="cnf-form__group">
-        <label className="cnf-form__label" htmlFor="blurb">
-          Blurb (Markdown) *
+        <label className="cnf-form__label" htmlFor="cover_image">
+          Cover image
         </label>
-        <textarea
+        {initialData?.coverImageUrl && (
+          <img
+            className="cnf-form__cover-preview"
+            src={initialData.coverImageUrl}
+            alt="Current cover"
+          />
+        )}
+        <input
           className="cnf-form__input"
-          id="blurb"
-          name="blurb"
-          rows={6}
-          placeholder="A short note on why this book is here…"
-          defaultValue={initialData?.blurb}
-          required
+          type="file"
+          id="cover_image"
+          name="cover_image"
+          accept="image/*"
         />
+        <small className="cnf-form__hint">
+          {mode === "edit" ? "Optional. Leave empty to keep the current cover." : "Optional."}
+        </small>
       </div>
 
       <div className="cnf-form__group">
-        <label className="cnf-form__label" htmlFor="cover_image_url">
-          Cover image URL
+        <label className="cnf-form__label" htmlFor="goodreads_url">
+          Goodreads URL *
         </label>
         <input
           className="cnf-form__input"
           type="url"
-          id="cover_image_url"
-          name="cover_image_url"
-          defaultValue={initialData?.coverImageUrl ?? ""}
+          id="goodreads_url"
+          name="goodreads_url"
+          defaultValue={initialData?.goodreadsUrl ?? ""}
+          required
         />
-        <small className="cnf-form__hint">
-          Optional. Entered by hand for now; auto-fetching from a books API is a possible future enhancement.
-        </small>
       </div>
 
       {status === "error" && (

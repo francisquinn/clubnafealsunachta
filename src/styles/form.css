@@ -77,6 +77,12 @@ select.cnf-form__input {
   cursor: not-allowed;
 }
 
+.cnf-form__cover-preview {
+  width: 90px;
+  border-radius: 4px;
+  box-shadow: var(--box-shadow-card);
+}
+
 .cnf-form__hint {
   margin: 0;
   color: hsl(var(--color-grey));

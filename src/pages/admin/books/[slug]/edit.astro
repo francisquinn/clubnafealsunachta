@@ -14,7 +14,7 @@ if (!supabaseAdmin) {
 
 const { data: book, error } = await supabaseAdmin
   .from("books")
-  .select("id, title, author, slug, blurb, cover_image_url")
+  .select("id, title, author, slug, cover_image_url, goodreads_url")
   .eq("slug", slug!)
   .single();
 
@@ -26,8 +26,8 @@ const initialData: BookFormInitialData = {
   title: book.title,
   author: book.author,
   slug: book.slug,
-  blurb: book.blurb,
   coverImageUrl: book.cover_image_url ?? undefined,
+  goodreadsUrl: book.goodreads_url ?? undefined,
 };
 ---
 

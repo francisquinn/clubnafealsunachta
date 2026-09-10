@@ -17,8 +17,8 @@ const sampleInitialData = {
   title: "Meditations",
   author: "Marcus Aurelius",
   slug: "meditations",
-  blurb: "A starting point for Stoic philosophy.",
   coverImageUrl: "https://example.com/meditations.jpg",
+  goodreadsUrl: "https://www.goodreads.com/book/show/30001.Meditations",
 };
 
 describe("BookForm (create mode)", () => {
@@ -31,8 +31,8 @@ describe("BookForm (create mode)", () => {
     expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/author/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/url slug/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/blurb/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/cover image url/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/cover image/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/goodreads url/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^create$/i })).toBeInTheDocument();
   });
 
@@ -81,12 +81,21 @@ describe("BookForm (edit mode)", () => {
     expect(screen.queryByRole("button", { name: /^create$/i })).not.toBeInTheDocument();
   });
 
-  it("pre-populates all fields from initialData", () => {
+  it("pre-populates fields from initialData", () => {
     render(<BookForm mode="edit" initialData={sampleInitialData} />);
     expect(screen.getByLabelText(/title/i)).toHaveValue("Meditations");
     expect(screen.getByLabelText(/author/i)).toHaveValue("Marcus Aurelius");
-    expect(screen.getByLabelText(/blurb/i)).toHaveValue("A starting point for Stoic philosophy.");
-    expect(screen.getByLabelText(/cover image url/i)).toHaveValue("https://example.com/meditations.jpg");
+    expect(screen.getByLabelText(/goodreads url/i)).toHaveValue(
+      "https://www.goodreads.com/book/show/30001.Meditations"
+    );
+  });
+
+  it("shows the current cover as a preview image", () => {
+    render(<BookForm mode="edit" initialData={sampleInitialData} />);
+    expect(screen.getByAltText(/current cover/i)).toHaveAttribute(
+      "src",
+      "https://example.com/meditations.jpg"
+    );
   });
 
   it("displays slug as read-only", () => {
