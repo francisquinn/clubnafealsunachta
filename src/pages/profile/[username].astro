@@ -17,7 +17,7 @@ const payload = token ? verifySessionToken(token) : null;
 // any) — run in parallel rather than one after another.
 const [{ data: profileUser }, { data: currentMember }] = await Promise.all([
   supabaseAdmin
-    ? supabaseAdmin.from("members").select("username, full_name, display_full_name, created_at").eq("username", username).single()
+    ? supabaseAdmin.from("members").select("id, username, full_name, display_full_name, created_at").eq("username", username).single()
     : Promise.resolve({ data: null }),
   payload && supabaseAdmin
     ? supabaseAdmin.from("members").select("username").eq("id", payload.memberId).single()
@@ -26,6 +26,33 @@ const [{ data: profileUser }, { data: currentMember }] = await Promise.all([
 
 if (!profileUser) {
   Astro.response.status = 404;
+}
+
+// Public, visible to any visitor — not gated on isOwnProfile. Hide the line
+// on a lookup failure rather than showing an empty/wrong list, same posture
+// as the edit page's club-section fallback.
+let clubNames: string[] = [];
+if (profileUser && supabaseAdmin) {
+  const { data: memberships, error: membershipsError } = await supabaseAdmin
+    .from("club_members")
+    .select("club_id")
+    .eq("member_id", profileUser.id);
+
+  if (membershipsError) {
+    console.error("Failed to load club memberships for profile page:", membershipsError.message);
+  } else if (memberships && memberships.length > 0) {
+    const { data: clubs, error: clubsError } = await supabaseAdmin
+      .from("clubs")
+      .select("name")
+      .in("id", memberships.map((membership) => membership.club_id))
+      .order("name");
+
+    if (clubsError) {
+      console.error("Failed to load clubs for profile page:", clubsError.message);
+    } else {
+      clubNames = (clubs ?? []).map((club) => club.name);
+    }
+  }
 }
 
 const displayName = profileUser ? getDisplayName(profileUser) : null;
@@ -50,6 +77,9 @@ const authoredPosts = profileUser
       <>
         <h1>{displayName}</h1>
         {showHandle && <p class="cnf-profile__handle">@{profileUser.username}</p>}
+        {clubNames.length > 0 && (
+          <p>Club membership{clubNames.length > 1 ? "s" : ""}: {clubNames.join(", ")}</p>
+        )}
         <p>Member since: {memberSince}</p>
         {isOwnProfile && (
           <p><a href="/profile/edit">Edit your info</a></p>
