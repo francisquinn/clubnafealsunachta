@@ -1,0 +1,37 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getCollection } from "astro:content";
+import "../../styles/form.css";
+
+const books = await getCollection("books");
+---
+
+<AdminLayout pageTitle="Books">
+  <section class="cnf-section">
+    <div class="cnf-admin-header">
+      <h1>Books</h1>
+      <a href="/admin/create-book" class="cnf-button cnf-button__gold">
+        <span class="cnf-button__text">Create book</span>
+      </a>
+    </div>
+    <table class="cnf-admin-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Author</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {books.map((book) => (
+          <tr>
+            <td data-label="Title">{book.data.title}</td>
+            <td data-label="Author">{book.data.author}</td>
+            <td><a href={`/admin/books/${book.id}/edit`}>Edit</a></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+</AdminLayout>
