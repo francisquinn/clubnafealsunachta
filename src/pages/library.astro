@@ -1,0 +1,91 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const books = await getCollection("books");
+
+const pageTitle = "Library";
+---
+
+<style>
+  .cnf-library__intro {
+    margin-bottom: 2.5rem;
+  }
+
+  ul {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  @media (min-width: 768px) {
+    ul {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .cnf-book__cover {
+    width: 100%;
+    border-radius: 4px;
+    box-shadow: var(--box-shadow-card);
+    display: block;
+  }
+
+  /* Same press feedback as .cnf-button:active in global.css. */
+  .cnf-book__cover-link {
+    display: block;
+    transition: transform 0.1s ease;
+  }
+
+  .cnf-book__cover-link:active {
+    transform: scale(0.95);
+  }
+</style>
+
+<BaseLayout pageTitle={pageTitle} description="Books Club na Fealsúnachta reads and recommends — a good place to start.">
+  <section class="cnf-section">
+    <h1>{pageTitle}</h1>
+    <p class="cnf-library__intro">
+      Books we've read and recommend in the club, a good place to start if
+      you're curious what we're about. We'll keep adding new titles.
+    </p>
+
+    {books.length === 0 && (
+      <p>No books listed yet — check back soon.</p>
+    )}
+
+    <ul>
+      {books.map((book) => (
+        <li>
+          {book.data.coverImageUrl && (
+            book.data.goodreadsUrl ? (
+              <a
+                class="cnf-book__cover-link"
+                href={book.data.goodreadsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img
+                  class="cnf-book__cover"
+                  src={book.data.coverImageUrl}
+                  alt={`${book.data.title} by ${book.data.author} — more on Goodreads`}
+                  loading="lazy"
+                />
+              </a>
+            ) : (
+              <img
+                class="cnf-book__cover"
+                src={book.data.coverImageUrl}
+                alt={`Cover of ${book.data.title} by ${book.data.author}`}
+                loading="lazy"
+              />
+            )
+          )}
+        </li>
+      ))}
+    </ul>
+  </section>
+</BaseLayout>
