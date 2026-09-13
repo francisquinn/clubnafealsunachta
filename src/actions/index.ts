@@ -1,5 +1,6 @@
 import { createEvent, updateEvent, getClubs, getVenues } from './events';
 import { createPost, updatePost } from './posts';
+import { createBook, updateBook } from './books';
 import { createMember } from './members';
 import { signup } from './signup';
 import { changePassword } from './changePassword';
@@ -14,6 +15,8 @@ export const server = {
   getVenues,
   createPost,
   updatePost,
+  createBook,
+  updateBook,
   createMember,
   signup,
   changePassword,
