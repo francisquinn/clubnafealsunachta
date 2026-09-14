@@ -292,6 +292,35 @@ blockquote {
   border-radius: 50px;
 }
 
+/* #97: "on air" indicator for an event currently in progress — a small
+   pulsing dot plus label, no fill/pill background (dropped per Francis's
+   2026-09-14 review pass — flush with the surrounding text instead). */
+.cnf-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: hsl(var(--color-green));
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.cnf-live-badge__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: hsl(var(--color-red));
+  animation: cnf-live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes cnf-live-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
 .cnf-button {
   position: relative;
   padding: 1rem 1.5rem;

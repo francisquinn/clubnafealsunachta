@@ -18,7 +18,7 @@ const { slug } = Astro.params;
 
 const { data: event, error } = await supabase!
   .from("events")
-  .select("id, name, date, slug, is_online, venue_id, club_id, meeting_url, instagram, facebook, meetup, description, summary, venues(id, name, url)")
+  .select("id, name, date, end_date, slug, is_online, venue_id, club_id, meeting_url, instagram, facebook, meetup, description, summary, venues(id, name, url)")
   .eq("slug", slug!)
   .single();
 
@@ -34,12 +34,14 @@ if (error || !event || !isClubInScope(admin, event.club_id)) {
 // raw UTC (see src/lib/timezone.ts) — event.date is now a true UTC instant,
 // so this has to convert back rather than just slicing the ISO string.
 const dateStr = utcToLocalWallTime(new Date(event.date), DEFAULT_CLUB_TIMEZONE);
+const endDateStr = utcToLocalWallTime(new Date(event.end_date), DEFAULT_CLUB_TIMEZONE);
 
 const venue = unwrapRelation(event.venues);
 
 const initialData: EventFormInitialData = {
   name: event.name,
   date: dateStr,
+  endDate: endDateStr,
   slug: event.slug,
   isOnline: event.is_online,
   venueId: venue?.id,

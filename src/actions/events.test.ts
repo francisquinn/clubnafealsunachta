@@ -263,6 +263,7 @@ const CLUB_ADMIN = { memberId: 'admin-2', isSuperAdmin: false, clubIds: [3] };
 const ONLINE_FORM = {
   name: 'Philosophy Night',
   date: '2099-01-01T18:00',
+  end_date: '2099-01-01T20:00',
   slug: 'philosophy-night',
   is_online: 'true',
   meeting_url: 'https://meet.jit.si/x',
@@ -323,6 +324,15 @@ describe('createEvent', () => {
     });
   });
 
+  // #100: an end time at or before the start isn't a real event window.
+  it('throws BAD_REQUEST when the end time is not after the start time', async () => {
+    state.admin = SUPER_ADMIN;
+
+    await expect(
+      createHandler(form({ ...ONLINE_FORM, end_date: '2099-01-01T17:00' }), context())
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST', message: 'End time must be after the start time' });
+  });
+
   it('throws FORBIDDEN when a club-scoped admin picks a venue outside their clubs', async () => {
     state.admin = CLUB_ADMIN; // clubIds: [3]
     state.venueById = { id: 9, name: 'Elsewhere Hall', url: null, club_id: 7 };
@@ -341,9 +351,10 @@ describe('createEvent', () => {
     expect(result).toEqual({ success: true });
     expect(state.insertedEvent).toMatchObject({
       name: 'Philosophy Night',
-      // Converted from the naive '18:00' Rome-local wall-clock time in
-      // ONLINE_FORM to the real UTC instant (CET, UTC+1, in January).
+      // Converted from the naive '18:00'/'20:00' Rome-local wall-clock times
+      // in ONLINE_FORM to the real UTC instants (CET, UTC+1, in January).
       date: '2099-01-01T17:00:00.000Z',
+      end_date: '2099-01-01T19:00:00.000Z',
       slug: 'philosophy-night',
       is_online: true,
       venue_id: null,
@@ -377,6 +388,7 @@ describe('createEvent', () => {
       form({
         name: 'In-Person Talk',
         date: '2099-02-01T18:00',
+        end_date: '2099-02-01T20:00',
         slug: 'in-person-talk',
         is_online: 'false',
         venue_id: '5',
@@ -500,6 +512,7 @@ describe('updateEvent', () => {
   const UPDATE_FORM = {
     name: 'Updated Name',
     date: '2099-03-01T18:00',
+    end_date: '2099-03-01T20:00',
     slug: 'philosophy-night',
     is_online: 'true',
     meeting_url: 'https://meet.jit.si/y',
@@ -524,6 +537,14 @@ describe('updateEvent', () => {
     await expect(updateHandler(form(UPDATE_FORM), context())).rejects.toMatchObject({
       code: 'INTERNAL_SERVER_ERROR',
     });
+  });
+
+  it('throws BAD_REQUEST when the end time is not after the start time', async () => {
+    state.admin = SUPER_ADMIN;
+
+    await expect(
+      updateHandler(form({ ...UPDATE_FORM, end_date: '2099-03-01T18:00' }), context())
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST', message: 'End time must be after the start time' });
   });
 
   it("throws FORBIDDEN when the admin isn't in scope for the event's existing club", async () => {

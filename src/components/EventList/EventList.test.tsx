@@ -27,10 +27,18 @@ vi.mock("../../styles/event.css", () => ({}));
 // `data` is typed as the real `Event` shape (not the loosely-cast wrapper
 // below) so a future field added there — like the #39 `location.slug` — is
 // enforced here too, instead of being silently absent from these fixtures.
+// Every fixture's endDate trails its date by 1.5h (the club's usual event
+// length, #100) — irrelevant to what these tests check, just keeps
+// isEventExpired's past/future outcome matching the intended date.
+function endDateFor(date: Date): Date {
+  return new Date(date.getTime() + 90 * 60 * 1000);
+}
+
 function makeEvent(name: string, date: Date, locationName = "Trieste"): EventCollection {
   const data: Event = {
     name,
     date,
+    endDate: endDateFor(date),
     location: { id: 1, name: locationName, slug: locationName.toLowerCase() },
     isOnline: false,
     venue: { name: "Test Venue", url: "https://maps.google.com" },
@@ -46,6 +54,7 @@ function makeOnlineEvent(name: string, date: Date): EventCollection {
   const data: Event = {
     name,
     date,
+    endDate: endDateFor(date),
     location: null,
     isOnline: true,
     venue: null,

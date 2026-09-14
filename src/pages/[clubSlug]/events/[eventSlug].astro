@@ -1,13 +1,14 @@
 ---
 export const prerender = true;
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { formatEventDate, isEventExpired } from "../../../utils/script";
+import { formatEventDate, formatEventEndTime, isEventExpired, getEventLiveState } from "../../../utils/script";
 import { buildGoogleCalendarUrl, toEventIcsData } from "../../../lib/ics";
 import "../../../styles/event.css";
 import Banner from "../../../layouts/Banner.astro";
 import EventRsvp from "../../../components/EventRsvp/EventRsvp";
 import JoinEventButton from "../../../components/JoinEventButton/JoinEventButton";
 import AddToCalendarButton from "../../../components/AddToCalendarButton/AddToCalendarButton";
+import LiveBadge from "../../../components/LiveBadge/LiveBadge";
 import { getDisplayName } from "../../../lib/memberDisplay";
 import { getEventClubStaticPaths } from "../../../lib/clubs";
 import { DEFAULT_CLUB_SLUG } from "../../../lib/clubDefaults";
@@ -42,6 +43,7 @@ const canonicalPath = event.data.location
 // is unaffected by the swap since it works the same on a real URL. Past
 // events get no button.
 const isCalendarVisible = !isEventExpired(event.data);
+const isLive = getEventLiveState(event.data) === "live";
 const icsEventData = toEventIcsData(event);
 const icsHref = `/${clubSlug}/events/${event.data.slug}.ics`;
 const icsFilename = `${event.data.slug}.ics`;
@@ -55,9 +57,14 @@ const googleCalendarUrl = buildGoogleCalendarUrl(icsEventData);
 >
   <section class="cnf-section">
     <h1>{event.data.name}</h1>
+    {isLive && (
+      <div class="cnf-event-page__details">
+        <LiveBadge />
+      </div>
+    )}
     <div class="cnf-event-page__details">
       <span class="cnf-event-page__details-info"
-        >{formatEventDate(new Date(event.data.date))}</span
+        >{formatEventDate(new Date(event.data.date))}–{formatEventEndTime(new Date(event.data.endDate))}</span
       >
       {
         event.data.isOnline

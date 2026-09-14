@@ -51,14 +51,49 @@ export function formatEventDate(date: Date): string {
   return `${parts.weekday} ${parts.month} ${parts.day} @ ${hour}:${parts.minute}`;
 }
 
+// #100: just the club-local "HH:mm" for an end time, appended to
+// formatEventDate's start — e.g. "Fri Sep 4 @ 18:30–20:00". A bare end time
+// reads fine here since it's always the same calendar day as the start (see
+// the 20260914120000 migration's backfill and EventForm's default).
+export function formatEventEndTime(date: Date): string {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: DEFAULT_CLUB_TIMEZONE,
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: false,
+    })
+      .formatToParts(date)
+      .map((p) => [p.type, p.value])
+  );
+  const hour = parts.hour === "24" ? "0" : parts.hour;
+  return `${hour}:${parts.minute}`;
+}
+
 // Shared "has this already happened" check, so every consumer compares
 // dates the same way instead of each reimplementing `new Date(x) < new Date()`.
 export function isPastDate(date: Date | string) {
   return new Date(date) < new Date();
 }
 
+// #97: keyed off the end time (#100), not the start — an event stays
+// counted as "not past" for its whole run instead of flipping the moment it
+// begins. This single change is what fixes the online-events-flip-to-past-
+// at-start bug for every consumer (JoinEventButton, the add-to-calendar
+// button, EventList's upcoming/past split) without touching them directly.
 export function isEventExpired(event: Event | null) {
-  return event ? isPastDate(event.date) : true;
+  return event ? isPastDate(event.endDate) : true;
+}
+
+export type EventLiveState = "upcoming" | "live" | "past";
+
+// #97: the "on air" state — live from the start until the end time,
+// upcoming before that, past after. `now` is a parameter (not read
+// internally) purely so tests can pin it instead of faking the system clock.
+export function getEventLiveState(event: Pick<Event, "date" | "endDate">, now: Date = new Date()): EventLiveState {
+  if (now < new Date(event.date)) return "upcoming";
+  if (now < new Date(event.endDate)) return "live";
+  return "past";
 }
 
 export function isValidEmail(email: string) {

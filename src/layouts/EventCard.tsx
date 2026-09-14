@@ -1,12 +1,18 @@
 import type { Event } from "../types/types";
-import { formatEventDate } from "../utils/script";
+import { formatEventDate, formatEventEndTime, getEventLiveState } from "../utils/script";
 import { DEFAULT_CLUB_SLUG } from "../lib/clubDefaults";
+import LiveBadge from "../components/LiveBadge/LiveBadge";
 
 export default function EventCard({
   event,
   dateFormatter = formatEventDate,
   responsive = false,
   clubSlug,
+  // #100: only the default (upcoming/live) dateFormatter shows a time of
+  // day at all — EventList's past-events list passes a day-only
+  // formatBlogDate, where appending an end time would read as a mismatched
+  // fragment ("Sep 4, 2026–20:00"). Callers of that formatter opt out.
+  showEndTime = true,
 }: EventCardProps) {
   // #39: events are routed under /[clubSlug]/events/[eventSlug]. A caller
   // rendering within a club-scoped page (e.g. /trieste/events) passes its
@@ -14,6 +20,7 @@ export default function EventCard({
   // links correctly; outside that context it falls back to the event's own
   // club, defaulting to the one club that exists today.
   const href = `/${clubSlug ?? event.location?.slug ?? DEFAULT_CLUB_SLUG}/events/${event.slug}`;
+  const isLive = getEventLiveState(event) === "live";
 
   return (
     <div className={`cnf-event ${responsive ? 'cnf-event--responsive' : ''}`}>
@@ -24,9 +31,15 @@ export default function EventCard({
       </div>
       <div className="cnf-event__info">
         <div>
+          {isLive && (
+            <div className="cnf-event__live">
+              <LiveBadge />
+            </div>
+          )}
           <ul>
             <li className="cnf-event__date">
               {dateFormatter(new Date(event.date))}
+              {showEndTime && `–${formatEventEndTime(new Date(event.endDate))}`}
             </li>
             <li className="cnf-event__location">
               {event.isOnline
@@ -67,4 +80,5 @@ type EventCardProps = {
   dateFormatter?: (date: Date) => string;
   responsive?: boolean;
   clubSlug?: string;
+  showEndTime?: boolean;
 };

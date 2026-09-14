@@ -59,6 +59,10 @@
   color: hsl(var(--color-grey));
 }
 
+.cnf-event__live {
+  margin-bottom: 0.5rem;
+}
+
 .cnf-event__location {
   margin-top: 0.25rem;
   position: relative;

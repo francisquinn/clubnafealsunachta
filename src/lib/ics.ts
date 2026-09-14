@@ -1,18 +1,16 @@
-// RFC 5545 iCalendar generation for event pages. The events table stores a
-// single `date` (TIMESTAMP WITH TIME ZONE) as the start instant only, so the
-// .ics carries a fixed UTC start/end — UTC ("Z") times are a fixed instant,
-// so every attendee's calendar app renders the same local time whether they're
-// in Trieste or remote. DTEND is DTSTART + DEFAULT_EVENT_DURATION_MS because
-// there's no stored end time yet; revisit if a duration field is ever added.
+// RFC 5545 iCalendar generation for event pages. UTC ("Z") times are a fixed
+// instant, so every attendee's calendar app renders the same local time
+// whether they're in Trieste or remote. DTEND now comes straight from the
+// event's own stored end_date (#100) rather than a synthetic guess.
 
 import type { EventCollection } from "../types/types";
 
-const DEFAULT_EVENT_DURATION_MS = 90 * 60 * 1000; // 1.5 hours — e.g. an 18:30 start ends at 20:00
 const MAX_LINE_OCTETS = 75;
 
 export type EventIcsData = {
   name: string;
   date: Date;
+  endDate: Date;
   isOnline: boolean;
   venue: { name: string | null; url: string | null } | null;
   meetingUrl: string | null;
@@ -26,8 +24,8 @@ export type EventIcsData = {
 // Calendar link) and [eventSlug].ics.ts (the served .ics file) so the two
 // outputs can't quietly disagree on content if EventIcsData's fields change.
 export function toEventIcsData(event: EventCollection): EventIcsData {
-  const { name, date, isOnline, venue, meetingUrl, slug, description, summary } = event.data;
-  return { name, date, isOnline, venue, meetingUrl, slug, description, summary };
+  const { name, date, endDate, isOnline, venue, meetingUrl, slug, description, summary } = event.data;
+  return { name, date, endDate, isOnline, venue, meetingUrl, slug, description, summary };
 }
 
 function pad(n: number): string {
@@ -91,8 +89,7 @@ export function foldIcsLine(line: string): string {
 }
 
 function getEventBounds(event: EventIcsData): { start: Date; end: Date } {
-  const start = new Date(event.date);
-  return { start, end: new Date(start.getTime() + DEFAULT_EVENT_DURATION_MS) };
+  return { start: new Date(event.date), end: new Date(event.endDate) };
 }
 
 function combineDescription(event: EventIcsData): string {

@@ -97,11 +97,12 @@ export const createEvent = defineAction({
 
     const name = formData.get('name') as string;
     const rawDate = formData.get('date') as string;
+    const rawEndDate = formData.get('end_date') as string;
     const slug = formData.get('slug') as string;
     const is_online = formData.get('is_online') === 'true';
     const meeting_url = (formData.get('meeting_url') as string) || null;
 
-    if (!name || !rawDate || !slug) {
+    if (!name || !rawDate || !rawEndDate || !slug) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });
     }
 
@@ -109,12 +110,20 @@ export const createEvent = defineAction({
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Slug must contain only lowercase letters, numbers and hyphens' });
     }
 
-    // rawDate is a naive "YYYY-MM-DDTHH:mm" from a timezone-less
-    // datetime-local input — always the club's own local wall-clock time
-    // (see DEFAULT_CLUB_TIMEZONE), never UTC. Converted to a real UTC
-    // instant here, once, before it reaches storage or the Mailchimp draft
-    // below.
+    // rawDate/rawEndDate are naive "YYYY-MM-DDTHH:mm" from timezone-less
+    // datetime-local inputs — always the club's own local wall-clock time
+    // (see DEFAULT_CLUB_TIMEZONE), never UTC. Converted to real UTC instants
+    // here, once, before either reaches storage or the Mailchimp draft below.
     const date = localWallTimeToUtc(rawDate, DEFAULT_CLUB_TIMEZONE).toISOString();
+    const end_date = localWallTimeToUtc(rawEndDate, DEFAULT_CLUB_TIMEZONE).toISOString();
+
+    // #100: an end time before (or equal to) the start isn't a real event
+    // window — checked here rather than left to the DB's own
+    // events_end_date_after_date constraint so a bad submission comes back
+    // as a normal form error instead of a raw Postgres failure.
+    if (end_date <= date) {
+      throw new ActionError({ code: 'BAD_REQUEST', message: 'End time must be after the start time' });
+    }
 
     const venue = await resolveVenue(formData, is_online, admin);
     const event_club_id = resolveEventClubId(formData, is_online, venue, admin);
@@ -124,6 +133,7 @@ export const createEvent = defineAction({
       .insert([{
         name,
         date,
+        end_date,
         slug,
         is_online,
         venue_id: venue?.id ?? null,
@@ -208,15 +218,21 @@ export const updateEvent = defineAction({
     const slug = formData.get('slug') as string;
     const name = formData.get('name') as string;
     const rawDate = formData.get('date') as string;
+    const rawEndDate = formData.get('end_date') as string;
     const is_online = formData.get('is_online') === 'true';
     const meeting_url = (formData.get('meeting_url') as string) || null;
 
-    if (!name || !rawDate || !slug) {
+    if (!name || !rawDate || !rawEndDate || !slug) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });
     }
 
     // See createEvent — same naive-local-to-UTC conversion, same reasoning.
     const date = localWallTimeToUtc(rawDate, DEFAULT_CLUB_TIMEZONE).toISOString();
+    const end_date = localWallTimeToUtc(rawEndDate, DEFAULT_CLUB_TIMEZONE).toISOString();
+
+    if (end_date <= date) {
+      throw new ActionError({ code: 'BAD_REQUEST', message: 'End time must be after the start time' });
+    }
 
     // A club-scoped admin also can't be allowed to edit an event they don't
     // currently administer, even if their submitted new venue/club would
@@ -237,6 +253,7 @@ export const updateEvent = defineAction({
       .update({
         name,
         date,
+        end_date,
         is_online,
         venue_id: venue?.id ?? null,
         club_id: event_club_id,
