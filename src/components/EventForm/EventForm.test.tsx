@@ -20,6 +20,7 @@ vi.mock("astro:actions", () => ({
 const sampleInitialData = {
   name: "Test Event",
   date: "2025-06-01T19:00",
+  endDate: "2025-06-01T20:30",
   slug: "test-event",
 };
 
@@ -39,9 +40,37 @@ describe("EventForm (create mode)", () => {
   it("renders all required form fields", () => {
     render(<EventForm mode="create" isSuperAdmin />);
     expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/date & time/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^start date & time/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^end date & time/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/url slug/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^create$/i })).toBeInTheDocument();
+  });
+
+  // #100: end time defaults to 20:00 the same day as the start, re-derived
+  // each time the start changes, until the admin touches the end field
+  // themselves.
+  it("defaults the end time to 20:00 on the start's day, following the start field", () => {
+    render(<EventForm mode="create" isSuperAdmin />);
+    const dateInput = screen.getByLabelText(/^start date & time/i) as HTMLInputElement;
+    const endDateInput = screen.getByLabelText(/^end date & time/i) as HTMLInputElement;
+
+    fireEvent.change(dateInput, { target: { value: "2026-05-01T18:30" } });
+    expect(endDateInput.value).toBe("2026-05-01T20:00");
+
+    fireEvent.change(dateInput, { target: { value: "2026-05-02T19:00" } });
+    expect(endDateInput.value).toBe("2026-05-02T20:00");
+  });
+
+  it("stops following the start field once the end time is edited by hand", () => {
+    render(<EventForm mode="create" isSuperAdmin />);
+    const dateInput = screen.getByLabelText(/^start date & time/i) as HTMLInputElement;
+    const endDateInput = screen.getByLabelText(/^end date & time/i) as HTMLInputElement;
+
+    fireEvent.change(dateInput, { target: { value: "2026-05-01T18:30" } });
+    fireEvent.change(endDateInput, { target: { value: "2026-05-01T21:00" } });
+    fireEvent.change(dateInput, { target: { value: "2026-05-03T18:30" } });
+
+    expect(endDateInput.value).toBe("2026-05-01T21:00");
   });
 
   it("shows the venue field, not a meeting URL field, by default", () => {
@@ -125,7 +154,8 @@ describe("EventForm (edit mode)", () => {
   it("pre-populates name and date from initialData", () => {
     render(<EventForm mode="edit" initialData={sampleInitialData} isSuperAdmin />);
     expect(screen.getByLabelText(/title/i)).toHaveValue("Test Event");
-    expect(screen.getByLabelText(/date & time/i)).toHaveValue("2025-06-01T19:00");
+    expect(screen.getByLabelText(/^start date & time/i)).toHaveValue("2025-06-01T19:00");
+    expect(screen.getByLabelText(/^end date & time/i)).toHaveValue("2025-06-01T20:30");
   });
 
   it("pre-checks the online checkbox from initialData.isOnline", () => {

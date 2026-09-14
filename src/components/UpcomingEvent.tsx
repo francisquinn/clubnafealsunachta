@@ -1,10 +1,14 @@
 import "../styles/event.css";
 import EventCard from "../layouts/EventCard";
 import type { Event } from "../types/types";
+import { isEventExpired } from "../utils/script";
 
 export default function UpcomingEvent(props: UpcomingEventProps) {
+  // #97: "not yet ended" (isEventExpired is keyed off endDate), not "not yet
+  // started" — a currently live event stays featured here, badge and all,
+  // instead of dropping off the homepage the moment it begins.
   const nextEvent = props.events
-    ?.filter((e) => new Date(e.date) >= new Date())
+    ?.filter((e) => !isEventExpired(e))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
 
   if (!nextEvent) {

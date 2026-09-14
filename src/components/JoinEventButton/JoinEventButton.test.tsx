@@ -8,6 +8,7 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
   return {
     name: "Test Event",
     date: new Date("2099-01-01"),
+    endDate: new Date("2099-01-01T02:00:00Z"),
     location: null,
     isOnline: true,
     venue: null,
@@ -36,8 +37,22 @@ describe("JoinEventButton", () => {
     expect(screen.queryByRole("link", { name: /join online/i })).not.toBeInTheDocument();
   });
 
-  it("does not render once the event date has passed", () => {
-    render(<JoinEventButton event={makeEvent({ date: new Date("2020-01-01") })} />);
+  it("does not render once the event has passed", () => {
+    render(<JoinEventButton event={makeEvent({ date: new Date("2020-01-01"), endDate: new Date("2020-01-01T02:00:00Z") })} />);
     expect(screen.queryByRole("link", { name: /join online/i })).not.toBeInTheDocument();
+  });
+
+  // #97: the on-air fix this button was named as an example of — Join stays
+  // visible for the whole run, not just until the start.
+  it("still renders while the event is in progress (started, not yet ended)", () => {
+    render(
+      <JoinEventButton
+        event={makeEvent({
+          date: new Date(Date.now() - 30 * 60 * 1000),
+          endDate: new Date(Date.now() + 30 * 60 * 1000),
+        })}
+      />
+    );
+    expect(screen.getByRole("link", { name: /join online/i })).toBeInTheDocument();
   });
 });

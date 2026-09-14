@@ -83,6 +83,7 @@ export function eventsLoader(): Loader {
           data: {
             name: event.name,
             date: new Date(event.date),
+            endDate: new Date(event.end_date),
             location,
             isOnline: event.is_online,
             venue: venue ? { name: venue.name, url: venue.url } : null,

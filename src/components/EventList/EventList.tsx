@@ -86,6 +86,7 @@ export default function EventList(props: EventListProps) {
           event={event.data}
           key={event.data.slug}
           dateFormatter={(date) => formatBlogDate(date, DEFAULT_CLUB_TIMEZONE)}
+          showEndTime={false}
           clubSlug={props.clubSlug}
         />
     );

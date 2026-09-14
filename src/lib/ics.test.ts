@@ -12,6 +12,7 @@ function makeEvent(overrides: Partial<EventIcsData> = {}): EventIcsData {
   return {
     name: "Philosophy Talk: Free Will",
     date: new Date("2026-09-05T17:00:00Z"),
+    endDate: new Date("2026-09-05T18:30:00Z"),
     isOnline: false,
     venue: { name: "Caffe San Marco", url: "https://maps.google.com/caffe" },
     meetingUrl: null,
@@ -25,6 +26,7 @@ function makeEvent(overrides: Partial<EventIcsData> = {}): EventIcsData {
 const ALL_WITHOUT_DESCRIPTION: EventIcsData = {
   name: "Talk",
   date: new Date("2026-09-05T17:00:00Z"),
+  endDate: new Date("2026-09-05T18:30:00Z"),
   isOnline: false,
   venue: { name: "Venue", url: null },
   meetingUrl: null,
@@ -103,7 +105,7 @@ describe("buildEventIcs", () => {
     expect(ics.split("END:VEVENT")).toHaveLength(2);
   });
 
-  it("maps the stored date to a UTC start and a 1.5-hour end", () => {
+  it("maps the stored date/end_date to a UTC start and end", () => {
     const ics = buildEventIcs(makeEvent());
     expect(ics).toContain("DTSTART:20260905T170000Z");
     expect(ics).toContain("DTEND:20260905T183000Z");

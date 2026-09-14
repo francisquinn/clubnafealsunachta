@@ -12,6 +12,7 @@ const DEFAULT_MEETING_URL = import.meta.env.PUBLIC_DEFAULT_MEETING_URL || '';
 export type EventFormInitialData = {
   name: string;
   date: string;
+  endDate: string;
   slug: string;
   isOnline?: boolean;
   venueId?: number;
@@ -40,6 +41,19 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
   const [selectedVenueId, setSelectedVenueId] = useState<string>(
     initialData?.venueId ? String(initialData.venueId) : ""
   );
+  // #100: end time defaults to 20:00 on the same calendar day as the start
+  // (the club's usual end time), re-derived from the start field until the
+  // admin actually edits the end field themselves — an existing event being
+  // edited keeps its own stored end time untouched from the start.
+  const [endDate, setEndDate] = useState<string>(initialData?.endDate ?? "");
+  const [endDateTouched, setEndDateTouched] = useState<boolean>(!!initialData?.endDate);
+
+  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const datePart = e.target.value.split("T")[0];
+    if (!endDateTouched && datePart) {
+      setEndDate(`${datePart}T20:00`);
+    }
+  }
 
   useEffect(() => {
     actions.getClubs().then(({ data }) => {
@@ -74,6 +88,8 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
         setStatus("success");
         if (mode === "create") {
           setSelectedVenueId("");
+          setEndDate("");
+          setEndDateTouched(false);
           const form = e.currentTarget as HTMLFormElement;
           if (form) form.reset();
         }
@@ -113,7 +129,7 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
 
       <div className="cnf-form__group">
         <label className="cnf-form__label" htmlFor="date">
-          Date & Time *
+          Start Date & Time *
         </label>
         <input
           className="cnf-form__input"
@@ -121,8 +137,28 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
           id="date"
           name="date"
           defaultValue={initialData?.date}
+          onChange={handleDateChange}
           required
         />
+      </div>
+
+      <div className="cnf-form__group">
+        <label className="cnf-form__label" htmlFor="end_date">
+          End Date & Time *
+        </label>
+        <input
+          className="cnf-form__input"
+          type="datetime-local"
+          id="end_date"
+          name="end_date"
+          value={endDate}
+          onChange={(e) => {
+            setEndDateTouched(true);
+            setEndDate(e.target.value);
+          }}
+          required
+        />
+        <small className="cnf-form__hint">Defaults to 20:00 on the event's start day.</small>
       </div>
 
       <div className="cnf-form__group">
