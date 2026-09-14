@@ -52,6 +52,23 @@ export default function AddToCalendarButton({
           Apple Calendar
         </a>
       </Dropdown>
+      {/* Both links above are real, server-rendered anchors, but Dropdown only
+          ever shows its panel once `aria-expanded` flips inside a `useEffect`
+          — with no JS that never happens, so the panel (and the links inside
+          it) stays hidden forever (#73). `<noscript>` content is only parsed
+          when scripting is unavailable, so this forces the panel permanently
+          open in that case: the toggle interaction is lost, but the links
+          become reachable again, matching pre-#66 zero-JS behavior. */}
+      <noscript>
+        <style>{`
+          .cnf-event-page__calendar-menu .cnf-dropdown__panel {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: none;
+          }
+        `}</style>
+      </noscript>
     </div>
   );
 }

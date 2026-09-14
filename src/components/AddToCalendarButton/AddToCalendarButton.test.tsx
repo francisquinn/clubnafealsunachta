@@ -1,7 +1,10 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import "@testing-library/jest-dom";
 import { render, screen, fireEvent } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import AddToCalendarButton from "./AddToCalendarButton";
+
+const NOSCRIPT_PANEL_SELECTOR = ".cnf-event-page__calendar-menu .cnf-dropdown__panel";
 
 const ICS_HREF = "data:text/calendar;charset=utf-8,BEGIN%3AVCALENDAR";
 const GOOGLE_URL = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Talk";
@@ -74,5 +77,24 @@ describe("AddToCalendarButton", () => {
     );
 
     expect(screen.getByRole("link", { name: /apple calendar/i })).not.toHaveAttribute("download");
+  });
+
+  it("ships a <noscript> fallback that forces the dropdown panel open, since it never hydrates without JS (#73)", () => {
+    // This is exactly what a no-JS browser receives and displays as-is —
+    // Astro's server render, via ReactDOMServer under the hood, not a
+    // client-side render/hydration. That distinction matters here: React's
+    // client renderer special-cases <noscript> and silently drops its
+    // children on the live DOM (a well-known React quirk, irrelevant to a
+    // no-JS visitor since the client bundle never runs for them at all), so
+    // asserting against @testing-library's client `render` would wrongly
+    // fail even though the real fallback works.
+    const html = renderToStaticMarkup(
+      <AddToCalendarButton icsHref={ICS_HREF} icsFilename="test-event.ics" googleUrl={GOOGLE_URL} />
+    );
+
+    expect(html).toContain("<noscript>");
+    expect(html).toContain(NOSCRIPT_PANEL_SELECTOR);
+    expect(html).toContain("visibility: visible");
+    expect(html).toContain("pointer-events: auto");
   });
 });
