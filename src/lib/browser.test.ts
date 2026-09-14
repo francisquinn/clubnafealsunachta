@@ -16,6 +16,10 @@ const IOS_FIREFOX =
 const WINDOWS_EDGE =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
 const DESKTOP_FIREFOX = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:128.0) Gecko/20100101 Firefox/128.0";
+const SAMSUNG_INTERNET_BARE =
+  "Mozilla/5.0 (Linux; Android 14; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Safari/537.36";
+const IOS_WEBVIEW_NO_VERSION =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Safari/604.1";
 
 describe("isSafariBrowser", () => {
   it("identifies macOS Safari", () => {
@@ -48,5 +52,13 @@ describe("isSafariBrowser", () => {
 
   it("does not misidentify desktop Firefox", () => {
     expect(isSafariBrowser(DESKTOP_FIREFOX)).toBe(false);
+  });
+
+  it("does not misidentify Samsung Internet builds with a bare Safari/… suffix and no Version/ token (#74)", () => {
+    expect(isSafariBrowser(SAMSUNG_INTERNET_BARE)).toBe(false);
+  });
+
+  it("does not misidentify an iOS in-app WebView with no Version/ token (#74)", () => {
+    expect(isSafariBrowser(IOS_WEBVIEW_NO_VERSION)).toBe(false);
   });
 });
