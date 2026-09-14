@@ -49,14 +49,41 @@ function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
 // the real UTC instant it represents in `timeZone`. Two-pass: a first guess
 // treats the digits as UTC just to land on roughly the right calendar date
 // (so the correct DST offset for that date can be looked up), then corrects
-// by that date's actual offset. Like any wall-clock<->UTC conversion using
-// this trick, the skipped/ambiguous hour during the moment of a DST
-// transition itself isn't perfectly disambiguated — fine here, nobody's
-// scheduling a philosophy talk at 2:30am on a clock-change night.
+// by that date's actual offset.
+//
+// That first guess can itself land the offset lookup on the wrong side of a
+// DST transition (#72): for a wall-clock time shortly before the actual
+// changeover, treating the naive digits as UTC pushes the lookup instant
+// *past* the transition even though the real local time hasn't reached it
+// yet, so the offset comes back wrong by exactly the DST delta. Re-deriving
+// the offset from the candidate UTC instant (rather than the guess) and
+// redoing the subtraction when that disagrees corrects for this — the same
+// self-correcting round-trip most wall-clock<->UTC libraries use around DST
+// boundaries. Looped to a fixed point (capped, so a `timeZone` with back-to-
+// back transitions can't spin forever) rather than a single correction pass,
+// since this is a general-purpose function taking an arbitrary IANA zone, not
+// just DEFAULT_CLUB_TIMEZONE's simple 1-hour Europe/Rome rule. Like any
+// conversion using this trick, the one genuinely ambiguous hour during a
+// "fall back" transition (which wall-clock time maps to two different UTC
+// instants) still isn't uniquely resolvable — fine here, nobody's scheduling
+// a philosophy talk at 2:30am on a clock-change night.
 export function localWallTimeToUtc(naiveLocal: string, timeZone: string): Date {
   const guess = new Date(`${naiveLocal}:00.000Z`);
-  const offsetMs = getTimeZoneOffsetMs(guess, timeZone);
-  return new Date(guess.getTime() - offsetMs);
+  let offsetMs = getTimeZoneOffsetMs(guess, timeZone);
+  let candidate = new Date(guess.getTime() - offsetMs);
+
+  // Re-derive the offset from the candidate instant and try again if it
+  // disagrees. A handful of iterations is generous for any real timezone's
+  // rules — this is just guarding against a pathological zone/input looping
+  // forever, not a case expected to actually occur.
+  for (let i = 0; i < 5; i++) {
+    const correctedOffsetMs = getTimeZoneOffsetMs(candidate, timeZone);
+    if (correctedOffsetMs === offsetMs) break;
+    offsetMs = correctedOffsetMs;
+    candidate = new Date(guess.getTime() - offsetMs);
+  }
+
+  return candidate;
 }
 
 // The inverse: renders a true UTC instant as `timeZone`'s wall-clock time, in
