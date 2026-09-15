@@ -3,6 +3,7 @@ import { supabaseAdmin } from '../lib/supabase';
 import { sendMailchimpPostEmail } from '../lib/mailchimp';
 import { requireAdmin } from '../lib/auth';
 import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
+import { resolveUniqueSlug } from '../lib/slugDedup';
 
 export const createPost = defineAction({
   accept: 'form',
@@ -17,17 +18,19 @@ export const createPost = defineAction({
     }
 
     const title = formData.get('title') as string;
-    const slug = formData.get('slug') as string;
+    const rawSlug = formData.get('slug') as string;
     const date = formData.get('date') as string;
     const body = formData.get('body') as string;
 
-    if (!title || !slug || !date || !body) {
+    if (!title || !rawSlug || !date || !body) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });
     }
 
-    if (!/^[a-z0-9-]+$/.test(slug)) {
+    if (!/^[a-z0-9-]+$/.test(rawSlug)) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Slug must contain only lowercase letters, numbers and hyphens' });
     }
+
+    const slug = await resolveUniqueSlug(supabaseAdmin, 'posts', rawSlug);
 
     const { error } = await supabaseAdmin
       .from('posts')

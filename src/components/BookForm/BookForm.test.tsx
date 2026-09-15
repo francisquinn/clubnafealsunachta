@@ -36,6 +36,32 @@ describe("BookForm (create mode)", () => {
     expect(screen.getByRole("button", { name: /^create$/i })).toBeInTheDocument();
   });
 
+  // #94: the slug field is pre-filled from the title as it's typed, until
+  // the admin edits the slug field itself.
+  it("auto-fills the slug from the title, following it as the title changes", () => {
+    render(<BookForm mode="create" />);
+    const titleInput = screen.getByLabelText(/title/i) as HTMLInputElement;
+    const slugInput = screen.getByLabelText(/url slug/i) as HTMLInputElement;
+
+    fireEvent.change(titleInput, { target: { value: "Café Meditations" } });
+    expect(slugInput.value).toBe("cafe-meditations");
+
+    fireEvent.change(titleInput, { target: { value: "The Republic" } });
+    expect(slugInput.value).toBe("the-republic");
+  });
+
+  it("stops following the title once the slug is edited by hand", () => {
+    render(<BookForm mode="create" />);
+    const titleInput = screen.getByLabelText(/title/i) as HTMLInputElement;
+    const slugInput = screen.getByLabelText(/url slug/i) as HTMLInputElement;
+
+    fireEvent.change(titleInput, { target: { value: "Meditations" } });
+    fireEvent.change(slugInput, { target: { value: "custom-slug" } });
+    fireEvent.change(titleInput, { target: { value: "Something Else" } });
+
+    expect(slugInput.value).toBe("custom-slug");
+  });
+
   it("disables submit button while submitting", async () => {
     mockCreateBook.mockReturnValue(new Promise(() => {}));
     render(<BookForm mode="create" />);
