@@ -6,6 +6,7 @@ import { supabaseAdmin } from "../../lib/supabase";
 import { getDisplayName } from "../../lib/memberDisplay";
 import { getCollection } from "astro:content";
 import BlogEntry from "../../components/BlogEntry.astro";
+import Avatar from "../../components/Avatar/Avatar.astro";
 import "../../styles/profile.css";
 
 const { username } = Astro.params;
@@ -17,7 +18,7 @@ const payload = token ? verifySessionToken(token) : null;
 // any) — run in parallel rather than one after another.
 const [{ data: profileUser }, { data: currentMember }] = await Promise.all([
   supabaseAdmin
-    ? supabaseAdmin.from("members").select("id, username, full_name, display_full_name, created_at").eq("username", username).single()
+    ? supabaseAdmin.from("members").select("id, username, full_name, display_full_name, avatar_url, created_at").eq("username", username).single()
     : Promise.resolve({ data: null }),
   payload && supabaseAdmin
     ? supabaseAdmin.from("members").select("username").eq("id", payload.memberId).single()
@@ -75,6 +76,7 @@ const authoredPosts = profileUser
   <section class="cnf-section">
     {profileUser ? (
       <>
+        <Avatar avatarUrl={profileUser.avatar_url} alt={displayName!} id={profileUser.id} size="lg" />
         <h1>{displayName}</h1>
         {showHandle && <p class="cnf-profile__handle">@{profileUser.username}</p>}
         {clubNames.length > 0 && (

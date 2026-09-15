@@ -3,6 +3,7 @@ import { actions } from "astro:actions";
 import { getDisplayName } from "../../lib/memberDisplay";
 import { isPastDate } from "../../utils/script";
 import Modal from "../Modal/Modal";
+import Avatar from "../Avatar/Avatar";
 import {
   PAST_RSVP_LABELS,
   RSVP_LABELS,
@@ -165,7 +166,8 @@ export default function EventRsvp({ slug, initialCounts, date }: EventRsvpProps)
                   </div>
                   <ul className="cnf-rsvp__list-members">
                     {lists[status].map((member) => (
-                      <li key={member.username}>
+                      <li key={member.username} className="cnf-rsvp__list-member">
+                        <Avatar avatarUrl={member.avatar_url} alt={getDisplayName(member)} id={member.id} size="sm" />
                         <a href={`/profile/${member.username}`}>{getDisplayName(member)}</a>
                       </li>
                     ))}

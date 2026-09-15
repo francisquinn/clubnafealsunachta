@@ -21,7 +21,7 @@ const [
   { data: memberships, error: membershipsError },
 ] = await Promise.all([
   supabaseAdmin
-    ? supabaseAdmin.from("members").select("username, email, full_name, display_full_name").eq("id", payload.memberId).single()
+    ? supabaseAdmin.from("members").select("username, email, full_name, display_full_name, avatar_url").eq("id", payload.memberId).single()
     : Promise.resolve({ data: null }),
   supabaseAdmin
     ? supabaseAdmin.from("clubs").select("id, name, slug").order("name")
@@ -51,9 +51,11 @@ if (membershipsError) console.error("Failed to load club memberships for profile
     </div>
     <AccountForm
       client:load
+      initialMemberId={payload.memberId}
       initialUsername={member.username}
       initialFullName={member.full_name}
       initialDisplayFullName={member.display_full_name}
+      initialAvatarUrl={member.avatar_url}
       clubs={membershipsError ? [] : (clubs ?? [])}
       initialClubIds={(memberships ?? []).map((membership) => membership.club_id)}
     />

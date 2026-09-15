@@ -7,6 +7,7 @@ import { changePassword } from './changePassword';
 import { updateUsername } from './updateUsername';
 import { updateClubMemberships } from './clubMembers';
 import { getEventRsvps, setEventRsvp } from './rsvps';
+import { uploadAvatar } from './avatar';
 
 export const server = {
   createEvent,
@@ -24,4 +25,5 @@ export const server = {
   updateClubMemberships,
   getEventRsvps,
   setEventRsvp,
+  uploadAvatar,
 };

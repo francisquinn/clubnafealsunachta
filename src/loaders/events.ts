@@ -17,7 +17,7 @@ export function eventsLoader(): Loader {
       const [eventsResult, clubs, rsvpsResult] = await Promise.all([
         supabaseAdmin
           .from('events')
-          .select('*, venues(name, url), members!events_created_by_fkey(username, full_name, display_full_name)')
+          .select('*, venues(name, url), members!events_created_by_fkey(id, username, full_name, display_full_name, avatar_url)')
           .order('date', { ascending: true }),
         getAllClubs(),
         supabaseAdmin.from('rsvps').select('event_id, status'),

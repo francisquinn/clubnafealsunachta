@@ -1,0 +1,54 @@
+---
+// #70 follow-up: paints AccountMenu's header avatar from the cnf_avatar_hint
+// cookie (see lib/auth.ts) before React hydrates it, so a returning member
+// sees their real avatar/letter immediately instead of the skeleton
+// flashing on every single page load — BaseLayout/AdminLayout can't read
+// this cookie server-side themselves since the pages using them are
+// statically prerendered. Placed right after Header/AdminHeader in the
+// layout (not in <head>, unlike the cnf_logged_in script) because it needs
+// .cnf-account__toggle to already exist in the DOM to write into.
+//
+// AccountMenu's own React state can still disagree with this once it
+// hydrates (localStorage cache, or a genuinely stale hint) - that's fine,
+// it just re-renders over what this script wrote, same as any other
+// stale-cache correction elsewhere in this feature.
+---
+
+<script is:inline>
+  (function () {
+    var match = document.cookie.match(/(?:^|;\s*)cnf_avatar_hint=([^;]*)/);
+    if (!match) return;
+
+    var hint;
+    try {
+      hint = JSON.parse(decodeURIComponent(match[1]));
+    } catch (e) {
+      return;
+    }
+
+    var toggle = document.querySelector(".cnf-account__toggle");
+    if (!toggle) return;
+
+    function showFallback() {
+      var div = document.createElement("div");
+      div.className = "cnf-avatar cnf-avatar--sm cnf-avatar--fallback";
+      div.style.backgroundColor = hint.c;
+      div.setAttribute("aria-hidden", "true");
+      div.textContent = hint.l;
+      toggle.replaceChildren(div);
+    }
+
+    if (hint.u) {
+      var img = document.createElement("img");
+      img.className = "cnf-avatar cnf-avatar--sm";
+      img.src = hint.u;
+      img.alt = "";
+      // Mirrors Avatar.astro's own broken-image fallback (#70) - a stored
+      // avatar_url can outlive its actual Storage object.
+      img.onerror = showFallback;
+      toggle.replaceChildren(img);
+    } else {
+      showFallback();
+    }
+  })();
+</script>

@@ -2,15 +2,31 @@ import { useState } from "react";
 import { actions } from "astro:actions";
 import { validateUsername, validateFullName, validatePassword } from "../../utils/validation";
 import Checkbox from "../Checkbox/Checkbox";
+import Avatar from "../Avatar/Avatar";
+import { getDisplayName } from "../../lib/memberDisplay";
+import { getCachedMember, setCachedMember } from "../../utils/session";
 import "../../styles/form.css";
 
-type FieldName = "username" | "full_name" | "current_password" | "new_password" | "confirm_password";
+type FieldName = "username" | "full_name" | "current_password" | "new_password" | "confirm_password" | "avatar";
 type FieldErrors = Partial<Record<FieldName, string>>;
 
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2MB — mirrors the server-side cap in actions/avatar.ts
+
+// v1 client-side-only gate per #70's scope (the server re-checks both
+// regardless — see actions/avatar.ts): a clear inline message beats a
+// generic upload-failed error from the round trip.
+function validateAvatarFile(file: File): string | null {
+  if (!file.type.startsWith("image/")) return "Must be an image file";
+  if (file.size > MAX_AVATAR_BYTES) return "Must be 2MB or smaller";
+  return null;
+}
+
 interface Props {
+  initialMemberId: string;
   initialUsername: string;
   initialFullName: string | null;
   initialDisplayFullName: boolean;
+  initialAvatarUrl: string | null;
   clubs: { id: number; name: string }[];
   initialClubIds: number[];
 }
@@ -28,21 +44,47 @@ function joinWithAnd(items: string[]): string {
 }
 
 export default function AccountForm({
+  initialMemberId,
   initialUsername,
   initialFullName,
   initialDisplayFullName,
+  initialAvatarUrl,
   clubs,
   initialClubIds,
 }: Props) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const hasClubs = clubs.length > 0;
+  // Real display name (not a generic "your photo" label) so the letter-avatar
+  // fallback shows the same initial as everywhere else on the site.
+  const displayName = getDisplayName({
+    username: initialUsername,
+    full_name: initialFullName,
+    display_full_name: initialDisplayFullName,
+  });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const name = e.target.name as FieldName;
     setFieldErrors((prev) => (prev[name] ? { ...prev, [name]: undefined } : prev));
+  }
+
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setAvatarPreview(null);
+      setFieldErrors((prev) => (prev.avatar ? { ...prev, avatar: undefined } : prev));
+      return;
+    }
+
+    const error = validateAvatarFile(file);
+    setFieldErrors((prev) => ({ ...prev, avatar: error ?? undefined }));
+    // A locally-rejected file still gets a preview — seeing what you picked
+    // (even though it won't upload) is clearer than the input just going
+    // quiet on you.
+    setAvatarPreview(URL.createObjectURL(file));
   }
 
   async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
@@ -56,6 +98,12 @@ export default function AccountForm({
     const currentPassword = formData.get("current_password")?.toString() ?? "";
     const newPassword = formData.get("new_password")?.toString() ?? "";
     const confirmPassword = formData.get("confirm_password")?.toString() ?? "";
+    const avatarFile = formData.get("avatar");
+    // An empty file input still shows up in FormData, just as a zero-size File.
+    const wantsAvatarUpload = avatarFile instanceof File && avatarFile.size > 0;
+    // Mirrors updateUsername.ts's own parsing — needed locally too, to cache
+    // the right value alongside username/full_name below.
+    const displayFullName = formData.get("display_full_name") === "true";
 
     // A filled-in "new password" is what signals intent to change the password, not
     // "current password" — password managers autofill current-password fields on page
@@ -69,6 +117,7 @@ export default function AccountForm({
       current_password: wantsPasswordChange && !currentPassword ? "Enter your current password" : undefined,
       new_password: wantsPasswordChange ? validatePassword(newPassword) ?? undefined : undefined,
       confirm_password: wantsPasswordChange && newPassword !== confirmPassword ? "Passwords do not match" : undefined,
+      avatar: wantsAvatarUpload ? validateAvatarFile(avatarFile) ?? undefined : undefined,
     };
     setFieldErrors(errors);
 
@@ -79,24 +128,57 @@ export default function AccountForm({
     setStatus("loading");
 
     try {
+      // updateUsername and uploadAvatar each independently rebuild the full
+      // cnf_avatar_hint cookie (name + photo together) from a fresh DB read,
+      // so running them in parallel races whichever Set-Cookie the browser
+      // applies last — the cookie could end up pairing a new username with
+      // the old photo, or vice versa. Sequencing them (avatar first) means
+      // updateUsername's read/cookie-write always reflects both changes.
+      const avatarResult = wantsAvatarUpload ? await actions.uploadAvatar(formData) : null;
       const [usernameResult, passwordResult, clubsResult] = await Promise.all([
         actions.updateUsername(formData),
         wantsPasswordChange ? actions.changePassword(formData) : Promise.resolve(null),
         hasClubs ? actions.updateClubMemberships(formData) : Promise.resolve(null),
       ]);
 
-      const parts: { label: string; error: string | null }[] = [
-        { label: "info", error: usernameResult.error?.message ?? null },
+      const parts: { label: string; code?: string; error: string | null }[] = [
+        { label: "info", code: usernameResult.error?.code, error: usernameResult.error?.message ?? null },
       ];
       if (wantsPasswordChange) {
-        parts.push({ label: "password", error: passwordResult?.error?.message ?? null });
+        parts.push({ label: "password", code: passwordResult?.error?.code, error: passwordResult?.error?.message ?? null });
       }
       if (hasClubs) {
-        parts.push({ label: "club settings", error: clubsResult?.error?.message ?? null });
+        parts.push({ label: "club settings", code: clubsResult?.error?.code, error: clubsResult?.error?.message ?? null });
+      }
+      if (wantsAvatarUpload) {
+        parts.push({ label: "photo", code: avatarResult?.error?.code, error: avatarResult?.error?.message ?? null });
       }
 
       const failedParts = parts.filter((p) => p.error);
       const succeededLabels = parts.filter((p) => !p.error).map((p) => p.label);
+
+      // AccountMenu's header avatar is seeded from this same cache on the
+      // next page load (see session.ts) — updating it here, right when a
+      // save actually succeeds, means that next load is already correct
+      // instead of showing the just-replaced photo/letter for one more
+      // load until the background /api/me fetch catches up.
+      if (!usernameResult.error || (wantsAvatarUpload && !avatarResult?.error)) {
+        const base = getCachedMember() ?? {
+          id: initialMemberId,
+          username: initialUsername,
+          full_name: initialFullName,
+          display_full_name: initialDisplayFullName,
+          avatar_url: initialAvatarUrl,
+        };
+        setCachedMember({
+          ...base,
+          id: initialMemberId,
+          ...(!usernameResult.error ? { username, full_name: fullName || null, display_full_name: displayFullName } : {}),
+          ...(wantsAvatarUpload && !avatarResult?.error && avatarResult?.data
+            ? { avatar_url: avatarResult.data.avatar_url }
+            : {}),
+        });
+      }
 
       if (failedParts.length === 0) {
         setStatus("success");
@@ -105,6 +187,21 @@ export default function AccountForm({
       }
 
       setStatus("error");
+
+      // A too-large request fails before it even reaches the server, so it
+      // always takes every part of this shared submission down together
+      // (all parts post the same FormData, avatar file included) — the raw
+      // "Request body exceeds N bytes" repeated per field reads like three
+      // separate problems when it's really just one oversized photo.
+      if (failedParts.every((p) => p.code === "CONTENT_TOO_LARGE")) {
+        setMessage(
+          wantsAvatarUpload
+            ? "Your photo is too large to submit. Try a smaller file."
+            : "That's too much to submit at once. Try again with less at a time."
+        );
+        return;
+      }
+
       const failedText = failedParts.map((p) => `${capitalize(p.label)} unchanged: ${p.error}`).join(" ");
       setMessage(
         succeededLabels.length > 0
@@ -127,6 +224,22 @@ export default function AccountForm({
 
       <fieldset className="cnf-form__fieldset">
         <legend className="cnf-visually-hidden">Profile details</legend>
+        <div className="cnf-form__group">
+          <label className="cnf-form__label" htmlFor="avatar">Photo</label>
+          <Avatar avatarUrl={avatarPreview ?? initialAvatarUrl} alt={displayName} id={initialMemberId} size="lg" />
+          <input
+            id="avatar"
+            type="file"
+            name="avatar"
+            accept="image/*"
+            className="cnf-form__input"
+            onChange={handleAvatarChange}
+            aria-invalid={!!fieldErrors.avatar}
+          />
+          <p className="cnf-form__hint">Optional. JPG, PNG, or similar, up to 2MB.</p>
+          {fieldErrors.avatar && <div className="cnf-form__message--error">{fieldErrors.avatar}</div>}
+        </div>
+
         <div className="cnf-form__group">
           <label className="cnf-form__label" htmlFor="username">Username</label>
           <input

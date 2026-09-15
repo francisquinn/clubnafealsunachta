@@ -96,6 +96,9 @@ select {
 
 .cnf-nav__group {
   position: relative;
+  /* Pulls the hamburger closer to the account-menu icon specifically,
+     without touching .cnf-nav's shared gap (brand-to-auth spacing). */
+  margin-left: -0.5rem;
 }
 
 .cnf-nav__toggle {
@@ -217,19 +220,88 @@ button[aria-expanded="true"] + .cnf-dropdown__panel {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 3rem;
+  height: 3rem;
   padding: 0;
   border-radius: 50%;
-  border: 2px solid hsl(var(--color-green));
-  background: hsl(var(--color-beige));
-  color: hsl(var(--color-green));
+  border: none;
+  background: none;
   cursor: pointer;
 }
 
-.cnf-account__icon {
+/* Bigger than the shared --sm size elsewhere (Hosted-by, post byline, RSVP
+   lists) — this is the one avatar that stands alone as a nav icon rather
+   than sitting inline next to text. */
+.cnf-account__toggle .cnf-avatar--sm {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* #70: a member photo, or a fallback letter-avatar when none is set.
+   Used inline next to a name (profile page, "Hosted by" byline, RSVP
+   lists) and as the account-menu toggle's icon — .cnf-account__toggle
+   above supplies only the clickable hit area, this supplies the circular
+   chrome shared by both the photo and the fallback variant. */
+.cnf-avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.cnf-avatar--sm {
   width: 1.5rem;
   height: 1.5rem;
+}
+
+.cnf-avatar--lg {
+  width: 4rem;
+  height: 4rem;
+}
+
+/* #70 follow-up: a letter-avatar (first letter of the member's display
+   name, background color from getAvatarColor) instead of a generic
+   person-icon glyph — background color comes as an inline style per
+   member, this just lays out the letter itself. */
+.cnf-avatar--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: hsl(var(--color-white));
+  line-height: 1;
+  user-select: none;
+}
+
+.cnf-avatar--fallback.cnf-avatar--sm {
+  font-size: 0.8rem;
+}
+
+/* AccountMenu's placeholder while the signed-in member's avatar is still
+   loading — a neutral pulse instead of a specific (and possibly wrong)
+   letter/color flashing on every page load. Pulses via background-color
+   alone (not `opacity`, which would multiply against this already-
+   translucent background and wash out to nearly invisible).
+   `--color-green` is stored comma-separated ("135.65, 19.01%, 23.73%"), so
+   it needs the legacy hsla() form for alpha — hsl(var(--color-green) / 0.5)
+   would mix comma and slash syntax in one function, which is invalid CSS
+   and gets the whole declaration dropped (silently, no visible avatar at
+   all — bit us once already with --color-grey here). */
+.cnf-avatar--skeleton {
+  background-color: hsla(var(--color-green), 0.5);
+  animation: cnf-avatar-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes cnf-avatar-pulse {
+  0%, 100% {
+    background-color: hsla(var(--color-green), 0.5);
+  }
+  50% {
+    background-color: hsla(var(--color-green), 0.25);
+  }
+}
+
+.cnf-avatar--fallback.cnf-avatar--lg {
+  font-size: 1.75rem;
 }
 
 a {

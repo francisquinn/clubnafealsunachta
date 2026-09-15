@@ -4,6 +4,7 @@ import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { formatBlogDate } from "../../utils/script";
 import { getDisplayName } from "../../lib/memberDisplay";
+import Avatar from "../../components/Avatar/Avatar.astro";
 import Banner from "../../layouts/Banner.astro";
 
 export async function getStaticPaths() {
@@ -20,6 +21,9 @@ const { Content } = await render(post);
 
 <style>
   .cnf-post__details {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-size: 1rem;
     color: hsl(var(--color-grey));
   }
@@ -33,6 +37,7 @@ const { Content } = await render(post);
   <section class="cnf-section">
     <h1>{post.data.title}</h1>
     <div class="cnf-post__details">
+      <Avatar avatarUrl={post.data.author.avatar_url} alt={getDisplayName(post.data.author)} id={post.data.author.id} size="sm" />
       <a href={`/profile/${post.data.author.username}`}>{getDisplayName(post.data.author)}</a> &#8226; {formatBlogDate(post.data.date)}
     </div>
     <Content />

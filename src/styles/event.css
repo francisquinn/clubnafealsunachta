@@ -113,6 +113,9 @@
 }
 
 .cnf-event-page__details-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   color: hsl(var(--color-grey));
 }
 
@@ -227,6 +230,13 @@
 .cnf-rsvp__list-members {
   margin: 0;
   padding-left: 1.25rem;
+}
+
+.cnf-rsvp__list-member {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
 }
 
 @media (min-width: 576px) {

@@ -19,7 +19,7 @@ const state = vi.hoisted(() => {
     rsvpRows: [] as {
       member_id: string;
       status: string;
-      members: { username: string; full_name: string | null; display_full_name: boolean } | null;
+      members: { id: string; username: string; full_name: string | null; display_full_name: boolean; avatar_url: string | null } | null;
     }[],
     rsvpFetchError: null as Error | null,
     // rsvps: the row setEventRsvp tried to upsert (captured for assertions).
@@ -116,9 +116,9 @@ function context(): { cookies: { get(name: string): { value?: string } | undefin
   };
 }
 
-const MEMBER_ALICE = { username: 'alice', full_name: null, display_full_name: false };
-const MEMBER_BOB = { username: 'bob', full_name: 'Bob Smith', display_full_name: true };
-const MEMBER_CAROL = { username: 'carol', full_name: null, display_full_name: false };
+const MEMBER_ALICE = { id: 'member-alice', username: 'alice', full_name: null, display_full_name: false, avatar_url: null };
+const MEMBER_BOB = { id: 'member-bob', username: 'bob', full_name: 'Bob Smith', display_full_name: true, avatar_url: null };
+const MEMBER_CAROL = { id: 'member-carol', username: 'carol', full_name: null, display_full_name: false, avatar_url: null };
 
 beforeEach(() => {
   state.supabaseConfigured = true;

@@ -14,7 +14,7 @@ export function postsLoader(): Loader {
 
       const { data, error } = await supabaseAdmin
         .from('posts')
-        .select('*, members(username, full_name, display_full_name)')
+        .select('*, members(id, username, full_name, display_full_name, avatar_url)')
         .order('date', { ascending: false });
 
       if (error) {

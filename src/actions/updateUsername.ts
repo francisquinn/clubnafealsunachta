@@ -1,5 +1,5 @@
 import { defineAction, ActionError } from 'astro:actions';
-import { verifySessionToken } from '../lib/auth';
+import { verifySessionToken, setAvatarHintCookie } from '../lib/auth';
 import { validateUsername, validateFullName } from '../utils/validation';
 import { escapeLikePattern } from '../lib/username';
 import { supabaseAdmin } from '../lib/supabase';
@@ -47,16 +47,32 @@ export const updateUsername = defineAction({
       throw new ActionError({ code: 'CONFLICT', message: 'That username is already taken' });
     }
 
-    const { error } = await supabaseAdmin
+    // avatar_url comes back too even though this action doesn't touch it —
+    // needed to rebuild the full cnf_avatar_hint cookie below without a
+    // second round trip (this action doesn't change the photo, only the
+    // name/username feeding the fallback letter).
+    const { data: updated, error } = await supabaseAdmin
       .from('members')
       .update({ username, full_name: fullName || null, display_full_name: displayFullName })
-      .eq('id', payload.memberId);
+      .eq('id', payload.memberId)
+      .select('avatar_url')
+      .single();
 
     if (error) {
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to update info' });
     }
 
     triggerNetlifyBuild();
+
+    // Otherwise AccountMenu's header avatar would show the old letter for
+    // one more page load, until its own background /api/me fetch catches up.
+    setAvatarHintCookie(context.cookies, {
+      id: payload.memberId,
+      username,
+      full_name: fullName || null,
+      display_full_name: displayFullName,
+      avatar_url: updated?.avatar_url ?? null,
+    });
 
     return { success: true, username, full_name: fullName || null, display_full_name: displayFullName };
   },
