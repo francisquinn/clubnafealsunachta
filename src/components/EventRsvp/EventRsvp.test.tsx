@@ -18,10 +18,10 @@ const baseCounts: RsvpCounts = { going: 2, maybe: 1, not_going: 0 };
 
 const memberLists: RsvpLists = {
   going: [
-    { username: "alice", full_name: null, display_full_name: false },
-    { username: "bob", full_name: "Bob Smith", display_full_name: true },
+    { id: "member-alice", username: "alice", full_name: null, display_full_name: false, avatar_url: null },
+    { id: "member-bob", username: "bob", full_name: "Bob Smith", display_full_name: true, avatar_url: null },
   ],
-  maybe: [{ username: "carol", full_name: null, display_full_name: false }],
+  maybe: [{ id: "member-carol", username: "carol", full_name: null, display_full_name: false, avatar_url: null }],
   not_going: [],
 };
 

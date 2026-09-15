@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { supabaseAdmin } from "../../lib/supabase";
-import { verifyPassword, createSessionToken, SESSION_DURATION_MS, loggedInHintCookie, SECURE_COOKIE } from "../../lib/auth";
+import { verifyPassword, createSessionToken, SESSION_DURATION_MS, loggedInHintCookie, avatarHintCookie, SECURE_COOKIE } from "../../lib/auth";
 import { escapeLikePattern } from "../../lib/username";
 
 export const prerender = false;
@@ -24,9 +24,11 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: "Server misconfiguration" }, 500);
   }
 
+  const memberFields = "id, email, password_hash, is_admin, email_verified_at, username, full_name, display_full_name, avatar_url";
+
   const { data: byEmail } = await supabaseAdmin
     .from("members")
-    .select("id, email, password_hash, is_admin, email_verified_at")
+    .select(memberFields)
     .eq("email", identifier.toLowerCase())
     .single();
 
@@ -35,7 +37,7 @@ export const POST: APIRoute = async ({ request }) => {
     (
       await supabaseAdmin
         .from("members")
-        .select("id, email, password_hash, is_admin, email_verified_at")
+        .select(memberFields)
         .ilike("username", escapeLikePattern(identifier))
         .single()
     ).data;
@@ -60,6 +62,16 @@ export const POST: APIRoute = async ({ request }) => {
   const headers = new Headers({ "Content-Type": "application/json" });
   headers.append("Set-Cookie", cookie);
   headers.append("Set-Cookie", loggedInHintCookie());
+  headers.append(
+    "Set-Cookie",
+    avatarHintCookie({
+      id: user.id,
+      username: user.username,
+      full_name: user.full_name,
+      display_full_name: user.display_full_name,
+      avatar_url: user.avatar_url,
+    })
+  );
 
   return new Response(JSON.stringify({ success: true }), {
     status: 200,

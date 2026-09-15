@@ -10,6 +10,7 @@ import JoinEventButton from "../../../components/JoinEventButton/JoinEventButton
 import AddToCalendarButton from "../../../components/AddToCalendarButton/AddToCalendarButton";
 import LiveBadge from "../../../components/LiveBadge/LiveBadge";
 import { getDisplayName } from "../../../lib/memberDisplay";
+import Avatar from "../../../components/Avatar/Avatar.astro";
 import { getEventClubStaticPaths } from "../../../lib/clubs";
 import { DEFAULT_CLUB_SLUG } from "../../../lib/clubDefaults";
 
@@ -95,7 +96,7 @@ const googleCalendarUrl = buildGoogleCalendarUrl(icsEventData);
     )}
     <div class="cnf-event-page__details">
       <span class="cnf-event-page__details-info"
-        >Hosted by <a href={`/profile/${event.data.creator.username}`}>{getDisplayName(event.data.creator)}</a></span
+        ><Avatar avatarUrl={event.data.creator.avatar_url} alt={getDisplayName(event.data.creator)} id={event.data.creator.id} size="sm" /> Hosted by <a href={`/profile/${event.data.creator.username}`}>{getDisplayName(event.data.creator)}</a></span
       >
     </div>
     <div class="cnf-event-page__details">

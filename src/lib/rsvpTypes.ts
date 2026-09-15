@@ -14,9 +14,11 @@ export type RsvpCounts = {
 };
 
 export type RsvpMember = {
+  id: string;
   username: string;
   full_name: string | null;
   display_full_name: boolean;
+  avatar_url: string | null;
 };
 
 export type RsvpLists = {

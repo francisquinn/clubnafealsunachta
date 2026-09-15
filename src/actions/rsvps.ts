@@ -40,7 +40,7 @@ async function resolveEventId(slug: string): Promise<number> {
 async function fetchRsvpRows(eventId: number): Promise<RsvpRow[]> {
   const { data, error } = await supabaseAdmin!
     .from('rsvps')
-    .select('member_id, status, members(username, full_name, display_full_name)')
+    .select('member_id, status, members(id, username, full_name, display_full_name, avatar_url)')
     .eq('event_id', eventId);
 
   if (error) {

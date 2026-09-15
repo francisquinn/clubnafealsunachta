@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import Dropdown from "../Dropdown/Dropdown";
-import { fetchSessionInfo } from "../../utils/session";
+import Avatar from "../Avatar/Avatar";
+import { fetchSessionInfo, getCachedMember, clearCachedMember, type SessionInfo } from "../../utils/session";
+import { getDisplayName } from "../../lib/memberDisplay";
 
 interface AccountMenuProps {
   pathname: string;
@@ -8,21 +10,45 @@ interface AccountMenuProps {
 
 export default function AccountMenu({ pathname }: AccountMenuProps) {
   const [isAdmin, setIsAdmin] = useState(false);
+  // Seeded from localStorage (see session.ts) so a returning member's real
+  // avatar paints on the very first frame, before /api/me even resolves —
+  // every page load is a fresh JS context in this MPA, so without this
+  // there'd be nothing to show but the skeleton below on every single page.
+  const [member, setMember] = useState<SessionInfo["member"]>(() => getCachedMember());
+  // Only a true first-ever load (nothing cached yet) needs the skeleton;
+  // a cached member means we already have something real to paint.
+  const [loaded, setLoaded] = useState(() => getCachedMember() !== null);
   const toggleRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    fetchSessionInfo().then((data) => setIsAdmin(!!data.isAdmin));
+    fetchSessionInfo().then((data) => {
+      setIsAdmin(!!data.isAdmin);
+      setMember(data.member ?? null);
+      setLoaded(true);
+    });
   }, []);
+
+  // Without this, a stale cached avatar from a previous member would flash
+  // on a shared/kiosk browser the moment someone else logs in next (the
+  // login flow does a full page reload) — logout is the one place we know
+  // for certain the signed-out member's cache should stop being shown.
+  function handleLogout() {
+    clearCachedMember();
+  }
 
   return (
     <>
       <button type="button" ref={toggleRef} className="cnf-account__toggle">
-        <svg className="cnf-account__icon" viewBox="0 0 640 640" fill="none" aria-hidden="true">
-          <path d="M320 320C381.714 320 432 269.714 432 208C432 146.286 381.714 96 320 96C258.286 96 208 146.286 208 208C208 269.714 258.286 320 320 320Z" fill="currentColor" stroke="currentColor" strokeWidth="30" />
-          <path d="M240.342 371.056C296.065 429.317 337.513 499.249 375.732 572.386C275.261 574.83 180.136 569.893 79 559.783V496C79.0001 464.61 99.5053 437.24 133.015 414.795C164.018 394.029 203.78 379.231 240.342 371.056Z" fill="hsl(var(--color-beige))" stroke="currentColor" strokeWidth="30" />
-          <path d="M240 373.334C305.778 440.001 344 490.122 386.667 573.5C440 573.499 501.333 566.034 557.333 560.167V461.5C557.333 394.834 477.333 354.834 397.333 384.167C360 405.5 328 408.167 301.333 386.834C280 370.834 266.667 386.667 240 373.334Z" fill="currentColor" stroke="currentColor" strokeWidth="30" />
-          <path d="M240 400C254.728 400 266.667 388.061 266.667 373.333C266.667 358.606 254.728 346.667 240 346.667C225.272 346.667 213.333 358.606 213.333 373.333C213.333 388.061 225.272 400 240 400Z" fill="hsl(var(--color-gold))" />
-        </svg>
+        {loaded ? (
+          <Avatar
+            avatarUrl={member?.avatar_url ?? null}
+            alt={member ? getDisplayName(member) : "Account"}
+            id={member?.id ?? "account"}
+            size="sm"
+          />
+        ) : (
+          <div className="cnf-avatar cnf-avatar--sm cnf-avatar--skeleton" aria-hidden="true" />
+        )}
       </button>
       <Dropdown label="Account menu" triggerRef={toggleRef}>
         <a className={`cnf-nav__link ${pathname.startsWith("/profile") ? "tab-active" : ""}`} href="/profile">
@@ -33,7 +59,7 @@ export default function AccountMenu({ pathname }: AccountMenuProps) {
             Admin console
           </a>
         )}
-        <form method="POST" action="/api/logout">
+        <form method="POST" action="/api/logout" onSubmit={handleLogout}>
           <button type="submit" className="cnf-nav__link cnf-nav__link--button cnf-nav__link--danger">
             Logout
           </button>

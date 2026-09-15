@@ -2,16 +2,19 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import "@testing-library/jest-dom";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import AccountForm from "./AccountForm";
+import { getCachedMember } from "../../utils/session";
 
 const mockUpdateUsername = vi.fn();
 const mockChangePassword = vi.fn();
 const mockUpdateClubMemberships = vi.fn();
+const mockUploadAvatar = vi.fn();
 
 vi.mock("astro:actions", () => ({
   actions: {
     updateUsername: (...args: unknown[]) => mockUpdateUsername(...args),
     changePassword: (...args: unknown[]) => mockChangePassword(...args),
     updateClubMemberships: (...args: unknown[]) => mockUpdateClubMemberships(...args),
+    uploadAvatar: (...args: unknown[]) => mockUploadAvatar(...args),
   },
 }));
 
@@ -25,9 +28,11 @@ function submittedFormData() {
 function renderForm(overrides: Partial<Parameters<typeof AccountForm>[0]> = {}) {
   render(
     <AccountForm
+      initialMemberId="member-1"
       initialUsername="oldname"
       initialFullName={null}
       initialDisplayFullName={false}
+      initialAvatarUrl={null}
       clubs={[]}
       initialClubIds={[]}
       {...overrides}
@@ -40,14 +45,18 @@ describe("AccountForm", () => {
     mockUpdateUsername.mockReset();
     mockChangePassword.mockReset();
     mockUpdateClubMemberships.mockReset();
+    mockUploadAvatar.mockReset();
+    localStorage.clear();
   });
 
   it("renders the username, full name and password fields, and a single save button", () => {
     render(
       <AccountForm
+        initialMemberId="member-1"
         initialUsername="oldname"
         initialFullName="Old Name"
         initialDisplayFullName={true}
+        initialAvatarUrl={null}
         clubs={[]}
         initialClubIds={[]}
       />
@@ -99,6 +108,29 @@ describe("AccountForm", () => {
     expect(mockUpdateUsername).toHaveBeenCalledTimes(1);
     expect(mockChangePassword).not.toHaveBeenCalled();
     expect(mockUpdateClubMemberships).not.toHaveBeenCalled();
+  });
+
+  // #70 follow-up: without this, AccountMenu's header avatar would show the
+  // just-replaced username/letter for one more page load, until its own
+  // background /api/me fetch catches up — see session.ts's cache helpers.
+  it("caches the new username/full name so the header avatar is right on the next page load", async () => {
+    mockUpdateUsername.mockResolvedValue({ data: { success: true } });
+    renderForm();
+
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "newname" } });
+    fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "New Name" } });
+    fireEvent.submit(document.querySelector("form")!);
+
+    await waitFor(() => {
+      expect(screen.getByText(/your info has been updated/i)).toBeInTheDocument();
+    });
+    expect(getCachedMember()).toEqual({
+      id: "member-1",
+      username: "newname",
+      full_name: "New Name",
+      display_full_name: false,
+      avatar_url: null,
+    });
   });
 
   it("does not treat an autofilled current-password field alone as a password-change request", async () => {
@@ -195,5 +227,66 @@ describe("AccountForm", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /save/i })).toBeDisabled();
     });
+  });
+
+  // The full choose-a-file-then-submit round trip (does handleSubmit's
+  // FormData actually carry the File through to actions.uploadAvatar) isn't
+  // testable here: happy-dom's FormData doesn't pick up a file input's
+  // `.files` when it's set the low-level fireEvent way, only a real browser
+  // does. Same gap as BookForm.tsx's cover-image upload, left untested there
+  // for the same reason. What IS testable at this level — the immediate
+  // client-side validation feedback on choosing a file, independent of any
+  // submit — is covered below.
+
+  // A request over Astro's action body-size cap fails before it reaches the
+  // server, so every part of the shared submission gets the same raw
+  // "Request body exceeds N bytes" — one plain message beats that repeated
+  // per field. (The avatar-specific wording branch needs a real File to
+  // reach handleSubmit's FormData, which happy-dom can't do — see the
+  // comment above; this covers the non-photo wording and the collapsing
+  // behavior itself.)
+  it("shows one friendly message instead of the raw size-limit error repeated per field", async () => {
+    const tooLarge = { code: "CONTENT_TOO_LARGE", message: "Request body exceeds 1048576 bytes" };
+    mockUpdateUsername.mockResolvedValue({ error: tooLarge });
+    mockUpdateClubMemberships.mockResolvedValue({ error: tooLarge });
+    renderForm({ clubs: [TRESTE], initialClubIds: [] });
+
+    fireEvent.submit(document.querySelector("form")!);
+
+    await waitFor(() => {
+      expect(screen.getByText(/too much to submit at once/i)).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/request body exceeds/i)).not.toBeInTheDocument();
+  });
+
+  it("doesn't call uploadAvatar when no file was chosen", async () => {
+    mockUpdateUsername.mockResolvedValue({ data: { success: true } });
+    renderForm();
+
+    fireEvent.submit(document.querySelector("form")!);
+
+    await waitFor(() => {
+      expect(screen.getByText(/your info has been updated/i)).toBeInTheDocument();
+    });
+    expect(mockUploadAvatar).not.toHaveBeenCalled();
+  });
+
+  it("shows an immediate field error when a non-image avatar file is chosen", () => {
+    renderForm();
+
+    const file = new File(["not an image"], "notes.txt", { type: "text/plain" });
+    fireEvent.change(screen.getByLabelText("Photo"), { target: { files: [file] } });
+
+    expect(screen.getByText(/must be an image file/i)).toBeInTheDocument();
+  });
+
+  it("shows an immediate field error when an oversized avatar file is chosen", () => {
+    renderForm();
+
+    const file = new File(["fake-image-bytes"], "big.png", { type: "image/png" });
+    Object.defineProperty(file, "size", { value: 3 * 1024 * 1024 });
+    fireEvent.change(screen.getByLabelText("Photo"), { target: { files: [file] } });
+
+    expect(screen.getByText(/must be 2mb or smaller/i)).toBeInTheDocument();
   });
 });

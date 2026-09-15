@@ -5,9 +5,11 @@ import { booksLoader } from "./loaders/books";
 import 'dotenv/config';
 
 const memberRefSchema = z.object({
+  id: z.string(),
   username: z.string(),
   full_name: z.string().nullable(),
   display_full_name: z.boolean(),
+  avatar_url: z.string().nullable(),
 });
 
 const blog = defineCollection({

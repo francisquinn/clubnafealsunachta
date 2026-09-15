@@ -1,7 +1,11 @@
 import { randomBytes, scrypt, timingSafeEqual } from "crypto";
 import { promisify } from "util";
+import type { AstroCookies } from "astro";
 import jwt from "jsonwebtoken";
 import { supabaseAdmin } from "./supabase";
+import { getAvatarColor, getAvatarLetter } from "./avatarColor";
+import { getDisplayName } from "./memberDisplay";
+import { getAvatarDisplayUrl } from "./avatarTransform";
 
 const scryptAsync = promisify(scrypt);
 
@@ -157,4 +161,52 @@ export function loggedInHintCookie(): string {
 
 export function clearedLoggedInHintCookie(): string {
   return `cnf_logged_in=; ${SECURE_COOKIE}SameSite=Strict; Path=/; Max-Age=0`;
+}
+
+export interface AvatarHintMember {
+  id: string;
+  username: string;
+  full_name: string | null;
+  display_full_name: boolean;
+  avatar_url: string | null;
+}
+
+const AVATAR_HINT_COOKIE = "cnf_avatar_hint";
+
+// Sibling to the logged-in hint above, for the same reason: pages using
+// BaseLayout/AdminLayout are statically prerendered, so they can't read a
+// per-request cookie server-side — only a synchronous inline script reading
+// document.cookie before AccountMenu (a client:load React island) hydrates
+// can avoid a skeleton-then-real-avatar flash on every single page load.
+// Carries the *result* of getAvatarColor/getDisplayName/getAvatarDisplayUrl,
+// not the raw member, so that inline script (see AvatarHintScript.astro)
+// doesn't need to duplicate any of lib/avatarColor.ts's hash algorithm or
+// lib/avatarTransform.ts's URL rewrite in vanilla JS. AccountMenu's toggle
+// is always "sm" sized, so that's the one size baked in here.
+function avatarHintValue(member: AvatarHintMember): string {
+  const letter = getAvatarLetter(getDisplayName(member));
+  const color = getAvatarColor(member.id);
+  const url = member.avatar_url ? getAvatarDisplayUrl(member.avatar_url, "sm") : null;
+  return JSON.stringify({ l: letter, c: color, u: url });
+}
+
+export function avatarHintCookie(member: AvatarHintMember): string {
+  const maxAge = Math.floor(SESSION_DURATION_MS / 1000);
+  return `${AVATAR_HINT_COOKIE}=${encodeURIComponent(avatarHintValue(member))}; ${SECURE_COOKIE}SameSite=Strict; Path=/; Max-Age=${maxAge}`;
+}
+
+export function clearedAvatarHintCookie(): string {
+  return `${AVATAR_HINT_COOKIE}=; ${SECURE_COOKIE}SameSite=Strict; Path=/; Max-Age=0`;
+}
+
+// Astro Actions use the cookies helper (which encodes the value itself)
+// rather than building a raw Set-Cookie header string.
+export function setAvatarHintCookie(cookies: AstroCookies, member: AvatarHintMember): void {
+  cookies.set(AVATAR_HINT_COOKIE, avatarHintValue(member), {
+    httpOnly: false,
+    secure: import.meta.env.PROD,
+    sameSite: "strict",
+    path: "/",
+    maxAge: Math.floor(SESSION_DURATION_MS / 1000),
+  });
 }

@@ -1,0 +1,42 @@
+---
+// #70: shared member avatar — a photo when the member has one, otherwise a
+// letter-avatar (first letter of their display name, on a color derived
+// from their id) that used to be a generic person-icon glyph. Astro-only
+// (no client directive): this never needs hydration, so shipping it as
+// plain server-rendered markup avoids a JS bundle for a static image.
+// EventRsvp.tsx (a React island) uses the sibling Avatar.tsx instead — same
+// markup/classes, since Astro components can't be imported into a .tsx file.
+import { getAvatarColor, getAvatarLetter } from "../../lib/avatarColor";
+import { getAvatarDisplayUrl } from "../../lib/avatarTransform";
+
+interface Props {
+  avatarUrl: string | null;
+  alt: string;
+  // Seed for the fallback letter-avatar's color — the member's id, so it
+  // stays stable for them regardless of a display-name/username change.
+  id: string;
+  size?: "sm" | "lg";
+}
+
+const { avatarUrl, alt, id, size = "sm" } = Astro.props;
+const letter = getAvatarLetter(alt);
+const color = getAvatarColor(id);
+---
+
+{
+  avatarUrl && (
+    <img
+      class={`cnf-avatar cnf-avatar--${size}`}
+      src={getAvatarDisplayUrl(avatarUrl, size)}
+      alt={alt}
+      onerror="this.style.display='none';this.nextElementSibling.style.display=''"
+    />
+  )
+}
+<div
+  class={`cnf-avatar cnf-avatar--${size} cnf-avatar--fallback`}
+  style={`background-color:${color};${avatarUrl ? "display:none" : ""}`}
+  aria-hidden="true"
+>
+  {letter}
+</div>

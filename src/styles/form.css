@@ -40,6 +40,13 @@ legend {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  /* Grid items default to min-width: auto, so a native file input (its
+     "Choose File" button + filename text can't shrink or wrap) forces the
+     whole grid column wide enough to fit it — every sibling field in the
+     same fieldset (Username, Full name) inherits that width and stops
+     shrinking with the viewport. This lets the file input clip/scroll
+     instead of blowing out the column. */
+  min-width: 0;
 }
 
 .cnf-form__label {

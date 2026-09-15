@@ -1,3 +1,12 @@
+/* `display: block` sits the photo on its own line above the name (an <img>
+   defaults to inline, so vertical margin wouldn't apply). `flex` does the
+   same for the letter-avatar fallback without overriding its own
+   `display: flex` centering (.cnf-avatar--fallback in global.css). */
+.cnf-section .cnf-avatar--lg {
+  display: flex;
+  margin-bottom: 0.75rem;
+}
+
 .cnf-profile__handle {
   color: hsl(var(--color-grey));
   margin-top: 0;
