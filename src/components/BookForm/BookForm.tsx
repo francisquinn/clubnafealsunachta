@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { actions } from "astro:actions";
+import { slugify } from "../../lib/slugify";
 
 export type BookFormInitialData = {
   title: string;
@@ -17,6 +18,17 @@ type BookFormProps = {
 export default function BookForm({ mode, initialData }: BookFormProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+
+  // #94: auto-fill the slug from the title on create, re-deriving it as the
+  // title changes until the admin edits the slug field themselves.
+  const [slug, setSlug] = useState<string>("");
+  const [slugTouched, setSlugTouched] = useState<boolean>(false);
+
+  function handleTitleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!slugTouched) {
+      setSlug(slugify(e.target.value));
+    }
+  }
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -64,6 +76,7 @@ export default function BookForm({ mode, initialData }: BookFormProps) {
           id="title"
           name="title"
           defaultValue={initialData?.title}
+          onChange={mode === "create" ? handleTitleChange : undefined}
           required
         />
       </div>
@@ -96,6 +109,11 @@ export default function BookForm({ mode, initialData }: BookFormProps) {
               placeholder="book-title"
               pattern="[a-z0-9-]+"
               title="Lowercase letters, numbers and hyphens only"
+              value={slug}
+              onChange={(e) => {
+                setSlugTouched(true);
+                setSlug(e.target.value);
+              }}
               required
             />
             <small className="cnf-form__hint">Internal identifier for the book entry.</small>

@@ -2,6 +2,7 @@ import { defineAction, ActionError } from 'astro:actions';
 import { supabaseAdmin } from '../lib/supabase';
 import { requireAdmin } from '../lib/auth';
 import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
+import { resolveUniqueSlug } from '../lib/slugDedup';
 
 const COVERS_BUCKET = 'book-covers';
 
@@ -44,17 +45,18 @@ export const createBook = defineAction({
 
     const title = formData.get('title') as string;
     const author = formData.get('author') as string;
-    const slug = formData.get('slug') as string;
+    const rawSlug = formData.get('slug') as string;
     const goodreads_url = (formData.get('goodreads_url') as string)?.trim() || null;
 
-    if (!title || !author || !slug || !goodreads_url) {
+    if (!title || !author || !rawSlug || !goodreads_url) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });
     }
 
-    if (!/^[a-z0-9-]+$/.test(slug)) {
+    if (!/^[a-z0-9-]+$/.test(rawSlug)) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Slug must contain only lowercase letters, numbers and hyphens' });
     }
 
+    const slug = await resolveUniqueSlug(supabaseAdmin, 'books', rawSlug);
     const cover_image_url = await uploadCoverIfPresent(formData, slug);
 
     const { error } = await supabaseAdmin

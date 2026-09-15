@@ -73,6 +73,32 @@ describe("EventForm (create mode)", () => {
     expect(endDateInput.value).toBe("2026-05-01T21:00");
   });
 
+  // #94: the slug field is pre-filled from the title as it's typed, until
+  // the admin edits the slug field itself.
+  it("auto-fills the slug from the title, following it as the title changes", () => {
+    render(<EventForm mode="create" isSuperAdmin />);
+    const nameInput = screen.getByLabelText(/title/i) as HTMLInputElement;
+    const slugInput = screen.getByLabelText(/url slug/i) as HTMLInputElement;
+
+    fireEvent.change(nameInput, { target: { value: "Café Night: Truth?" } });
+    expect(slugInput.value).toBe("cafe-night-truth");
+
+    fireEvent.change(nameInput, { target: { value: "Café Night: Reason?" } });
+    expect(slugInput.value).toBe("cafe-night-reason");
+  });
+
+  it("stops following the title once the slug is edited by hand", () => {
+    render(<EventForm mode="create" isSuperAdmin />);
+    const nameInput = screen.getByLabelText(/title/i) as HTMLInputElement;
+    const slugInput = screen.getByLabelText(/url slug/i) as HTMLInputElement;
+
+    fireEvent.change(nameInput, { target: { value: "Philosophy Night" } });
+    fireEvent.change(slugInput, { target: { value: "custom-slug" } });
+    fireEvent.change(nameInput, { target: { value: "Something Else Entirely" } });
+
+    expect(slugInput.value).toBe("custom-slug");
+  });
+
   it("shows the venue field, not a meeting URL field, by default", () => {
     render(<EventForm mode="create" isSuperAdmin />);
     expect(screen.getByRole("checkbox", { name: /this event is online/i })).not.toBeChecked();
