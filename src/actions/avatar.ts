@@ -6,7 +6,7 @@ import { transformAvatarUrl, AVATAR_STORED_SIZE } from '../lib/avatarTransform';
 import { sniffImageType } from '../lib/imageType';
 
 const AVATARS_BUCKET = 'avatars';
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2MB, per #70's v1 scope
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5MB — covers a typical phone-camera photo; no client compression, so this is a sanity cap, not a quality one (the re-store below normalizes everything to AVATAR_STORED_SIZE regardless of input size)
 
 // #70: a member's own photo, uploaded from /profile/edit. Same upload shape
 // as books.ts's uploadCoverIfPresent (upsert, contentType from the file),
@@ -35,7 +35,7 @@ export const uploadAvatar = defineAction({
     }
 
     if (file.size > MAX_AVATAR_BYTES) {
-      throw new ActionError({ code: 'BAD_REQUEST', message: 'Avatar must be 2MB or smaller' });
+      throw new ActionError({ code: 'BAD_REQUEST', message: 'Avatar must be 5MB or smaller' });
     }
 
     // Client-side validation (AccountForm) is a nicer first error message,
@@ -60,7 +60,7 @@ export const uploadAvatar = defineAction({
 
     // Re-fetch through Supabase's own render/image transform and store THAT
     // in place of the just-uploaded original — otherwise the full-size file
-    // (up to 2MB) sits in Storage forever, even though nothing ever serves
+    // (up to 5MB) sits in Storage forever, even though nothing ever serves
     // it at more than AVATAR_STORED_SIZE (getAvatarDisplayUrl only ever
     // requests small transforms of whatever's stored). Best-effort: a
     // failure here keeps the original in place rather than failing the

@@ -284,9 +284,9 @@ describe("AccountForm", () => {
     renderForm();
 
     const file = new File(["fake-image-bytes"], "big.png", { type: "image/png" });
-    Object.defineProperty(file, "size", { value: 3 * 1024 * 1024 });
+    Object.defineProperty(file, "size", { value: 6 * 1024 * 1024 });
     fireEvent.change(screen.getByLabelText("Photo"), { target: { files: [file] } });
 
-    expect(screen.getByText(/must be 2mb or smaller/i)).toBeInTheDocument();
+    expect(screen.getByText(/must be 5mb or smaller/i)).toBeInTheDocument();
   });
 });
