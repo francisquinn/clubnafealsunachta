@@ -10,14 +10,14 @@ import "../../styles/form.css";
 type FieldName = "username" | "full_name" | "current_password" | "new_password" | "confirm_password" | "avatar";
 type FieldErrors = Partial<Record<FieldName, string>>;
 
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2MB — mirrors the server-side cap in actions/avatar.ts
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5MB — mirrors the server-side cap in actions/avatar.ts
 
 // v1 client-side-only gate per #70's scope (the server re-checks both
 // regardless — see actions/avatar.ts): a clear inline message beats a
 // generic upload-failed error from the round trip.
 function validateAvatarFile(file: File): string | null {
   if (!file.type.startsWith("image/")) return "Must be an image file";
-  if (file.size > MAX_AVATAR_BYTES) return "Must be 2MB or smaller";
+  if (file.size > MAX_AVATAR_BYTES) return "Must be 5MB or smaller";
   return null;
 }
 
@@ -236,7 +236,7 @@ export default function AccountForm({
             onChange={handleAvatarChange}
             aria-invalid={!!fieldErrors.avatar}
           />
-          <p className="cnf-form__hint">Optional. JPG, PNG, or similar, up to 2MB.</p>
+          <p className="cnf-form__hint">Optional. JPG, PNG, or similar, up to 5MB.</p>
           {fieldErrors.avatar && <div className="cnf-form__message--error">{fieldErrors.avatar}</div>}
         </div>
 
