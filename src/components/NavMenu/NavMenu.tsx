@@ -34,6 +34,12 @@ export default function NavMenu({ pathname }: NavMenuProps) {
           About
         </a>
         <a
+          className={`cnf-nav__link ${pathname.startsWith("/values") ? "tab-active" : ""}`}
+          href="/values/"
+        >
+          Values
+        </a>
+        <a
           className={`cnf-nav__link ${CLUB_EVENTS_PATH.test(pathname) ? "tab-active" : ""}`}
           href={`/${currentClubSlug}/events/`}
         >

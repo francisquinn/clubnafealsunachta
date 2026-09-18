@@ -1,0 +1,133 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const pageTitle = "Our Values";
+
+const values = [
+  {
+    title: "Curiosity",
+    description:
+      "We ask the bigger questions of life, not to settle on final answers or convince one another, but to enrich ourselves with each other's perspectives and keep exploring.",
+    image: "/values/curiosity.jpg",
+  },
+  {
+    title: "Open-mindedness",
+    description:
+      "We listen to views different from our own, and stay open to being changed by them.",
+    image: "/values/open-mindedness.jpg",
+  },
+  {
+    title: "Respect",
+    description:
+      "We hear each other out in a safe, friendly space, always challenging the argument, not the person.",
+    image: "/values/respect.jpg",
+  },
+  {
+    title: "Community",
+    description:
+      "We bring together people from all walks of life, making real connections on topics that touch us all.",
+    image: "/values/community.jpg",
+  },
+];
+---
+
+<style>
+  .cnf-values__intro {
+    max-width: 720px;
+    margin-bottom: 2.5rem;
+  }
+
+  .cnf-value__media {
+    position: relative;
+    aspect-ratio: 3 / 2;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+  }
+
+  @media (min-width: 768px) {
+    .cnf-value {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+    }
+
+    .cnf-value--reverse {
+      flex-direction: row-reverse;
+    }
+
+    .cnf-value__media {
+      margin-bottom: 0;
+      flex: 1 1 60%;
+    }
+
+    .cnf-value__body {
+      flex: 1 1 40%;
+    }
+  }
+
+  .cnf-value__photo {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    display: block;
+    width: 100%;
+    height: 130%;
+    object-fit: cover;
+    transform: translateY(-50%);
+    will-change: transform;
+  }
+
+  .cnf-value h2 {
+    margin-bottom: 0.5rem;
+  }
+
+  .cnf-value p {
+    margin: 0;
+  }
+</style>
+
+<BaseLayout
+  pageTitle={pageTitle}
+  description="The values Club na Fealsúnachta brings to every discussion: curiosity, open-mindedness, respect, and community."
+>
+  <section class="cnf-section">
+    <h1>{pageTitle}</h1>
+    <p class="cnf-values__intro">
+      These are the values we try to bring to every discussion, agreed on
+      together as a club.
+    </p>
+  </section>
+  {values.map((value, i) => (
+    <section class={`cnf-section cnf-value ${i % 2 === 1 ? "cnf-value--reverse" : ""}`}>
+      <div class="cnf-value__media">
+        <img class="cnf-value__photo" src={value.image} alt="" />
+      </div>
+      <div class="cnf-value__body">
+        <h2>{value.title}</h2>
+        <p>{value.description}</p>
+      </div>
+    </section>
+  ))}
+</BaseLayout>
+
+<script>
+  const maxShiftPx = 40;
+  const photos = document.querySelectorAll<HTMLElement>(".cnf-value__photo");
+
+  function updateParallax() {
+    const viewportHeight = window.innerHeight;
+    photos.forEach((photo) => {
+      const box = photo.parentElement;
+      if (!box) return;
+      const rect = box.getBoundingClientRect();
+      const progress = (viewportHeight - rect.top) / (viewportHeight + rect.height);
+      const offset = (progress - 0.5) * maxShiftPx * 2;
+      photo.style.transform = `translateY(calc(-50% + ${offset}px))`;
+    });
+  }
+
+  updateParallax();
+  window.addEventListener("scroll", updateParallax, { passive: true });
+  window.addEventListener("resize", updateParallax);
+</script>
