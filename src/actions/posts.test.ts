@@ -15,6 +15,10 @@ const state = vi.hoisted(() => {
     postUpdateError: null as Error | null,
     postUpdateSlug: null as string | null,
     postUpdateResult: null as unknown as { slug: string } | null | undefined,
+    // posts select+eq+maybeSingle (createPost's #94 slug-dedup check) —
+    // checked live against the value .eq('slug', ...) was called with.
+    takenSlugs: new Set<string>(),
+    slugCheckError: null as Error | null,
   };
 });
 
@@ -51,6 +55,14 @@ vi.mock('../lib/supabase', () => {
             state.insertedPost = rows[0] ?? null;
             return Promise.resolve({ error: state.postInsertError });
           },
+          select: () => ({
+            eq: (_column: string, value: string) => ({
+              maybeSingle: () =>
+                state.slugCheckError
+                  ? Promise.resolve({ data: null, error: state.slugCheckError })
+                  : Promise.resolve({ data: state.takenSlugs.has(value) ? { id: 1 } : null, error: null }),
+            }),
+          }),
           update: () => ({
             eq: (column: string, value: string) => {
               if (column === 'slug') state.postUpdateSlug = value;
@@ -112,6 +124,8 @@ beforeEach(() => {
   state.postUpdateError = null;
   state.postUpdateSlug = null;
   state.postUpdateResult = undefined;
+  state.takenSlugs = new Set<string>();
+  state.slugCheckError = null;
   vi.mocked(sendMailchimpPostEmail).mockClear();
   vi.mocked(triggerNetlifyBuild).mockClear();
 });
@@ -160,6 +174,19 @@ describe('createPost', () => {
       slug: 'hello-world',
       body: 'Some **markdown** body',
     });
+  });
+
+  // #94: a taken slug is resolved to a free one (-2, -3, ...) rather than
+  // rejected — mirrors createEvent's dedup behavior.
+  it('appends -2 to the slug when it is already taken', async () => {
+    state.admin = SUPER_ADMIN;
+    state.takenSlugs = new Set(['hello-world']);
+
+    await expect(createAction.handler(basePostFormData(), makeContext())).resolves.toEqual({
+      success: true,
+    });
+    expect(state.insertedPost).toMatchObject({ slug: 'hello-world-2' });
+    expect(sendMailchimpPostEmail).toHaveBeenCalledWith(expect.objectContaining({ slug: 'hello-world-2' }));
   });
 
   it('rejects with BAD_REQUEST when the slug already exists (unique violation)', async () => {

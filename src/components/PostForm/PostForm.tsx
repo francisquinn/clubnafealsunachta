@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { actions } from "astro:actions";
+import { slugify } from "../../lib/slugify";
 
 export type PostFormInitialData = {
   title: string;
@@ -16,6 +17,17 @@ type PostFormProps = {
 export default function PostForm({ mode, initialData }: PostFormProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+
+  // #94: auto-fill the slug from the title on create, re-deriving it as the
+  // title changes until the admin edits the slug field themselves.
+  const [slug, setSlug] = useState<string>(initialData?.slug ?? "");
+  const [slugTouched, setSlugTouched] = useState<boolean>(!!initialData?.slug);
+
+  function handleTitleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!slugTouched) {
+      setSlug(slugify(e.target.value));
+    }
+  }
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -63,6 +75,7 @@ export default function PostForm({ mode, initialData }: PostFormProps) {
           id="title"
           name="title"
           defaultValue={initialData?.title}
+          onChange={mode === "create" ? handleTitleChange : undefined}
           required
         />
       </div>
@@ -81,6 +94,11 @@ export default function PostForm({ mode, initialData }: PostFormProps) {
               placeholder="my-post-title"
               pattern="[a-z0-9-]+"
               title="Lowercase letters, numbers and hyphens only"
+              value={slug}
+              onChange={(e) => {
+                setSlugTouched(true);
+                setSlug(e.target.value);
+              }}
               required
             />
             <small className="cnf-form__hint">Used in URL: /posts/my-post-title</small>

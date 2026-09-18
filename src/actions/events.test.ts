@@ -25,6 +25,13 @@ const state = vi.hoisted(() => {
     updatedEvent: null as Record<string, unknown> | null,
     eventUpdateError: null as Error | null,
 
+    // events: select+eq+maybeSingle (createEvent's #94 slug-dedup check) —
+    // takenSlugs is checked live against the value .eq('slug', ...) was
+    // called with, so a loop that probes 'x', then 'x-2', etc. gets a real
+    // per-call answer instead of one fixed response.
+    takenSlugs: new Set<string>(),
+    slugCheckError: null as Error | null,
+
     // venues (admin client): existing-venue lookup + new-venue upsert, both used
     // by resolveVenue.
     venueById: null as { id: number; name: string; url: string | null; club_id: number } | null,
@@ -126,11 +133,15 @@ vi.mock('../lib/supabase', () => {
             };
           },
           select: () => ({
-            eq: () => ({
+            eq: (_col: string, val: string) => ({
               single: () =>
                 state.existingEventError
                   ? Promise.resolve({ data: null, error: state.existingEventError })
                   : Promise.resolve({ data: state.existingEvent, error: null }),
+              maybeSingle: () =>
+                state.slugCheckError
+                  ? Promise.resolve({ data: null, error: state.slugCheckError })
+                  : Promise.resolve({ data: state.takenSlugs.has(val) ? { id: 1 } : null, error: null }),
             }),
           }),
           update: (patch: Record<string, unknown>) => {
@@ -279,6 +290,8 @@ beforeEach(() => {
   state.existingEventError = null;
   state.updatedEvent = null;
   state.eventUpdateError = null;
+  state.takenSlugs = new Set<string>();
+  state.slugCheckError = null;
   state.venueById = null;
   state.venueLookupError = null;
   state.upsertedVenuePayload = null;
@@ -432,6 +445,39 @@ describe('createEvent', () => {
   it('throws INTERNAL_SERVER_ERROR when the event insert fails', async () => {
     state.admin = SUPER_ADMIN;
     state.eventInsertError = new Error('duplicate slug');
+
+    await expect(createHandler(form(ONLINE_FORM), context())).rejects.toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+    });
+  });
+
+  // #94: a taken slug is resolved to a free one (-2, -3, ...) rather than
+  // rejected — the client pre-fills the slug from the title, so a collision
+  // is expected to happen sometimes, not treated as a user error.
+  it('appends -2 to the slug when it is already taken', async () => {
+    state.admin = SUPER_ADMIN;
+    state.takenSlugs = new Set(['philosophy-night']);
+
+    const result = await createHandler(form(ONLINE_FORM), context());
+
+    expect(result).toEqual({ success: true });
+    expect(state.insertedEvent).toMatchObject({ slug: 'philosophy-night-2' });
+    expect(state.mailchimpCall).toMatchObject({ slug: 'philosophy-night-2' });
+  });
+
+  it('keeps incrementing past -2 when that is also taken', async () => {
+    state.admin = SUPER_ADMIN;
+    state.takenSlugs = new Set(['philosophy-night', 'philosophy-night-2']);
+
+    const result = await createHandler(form(ONLINE_FORM), context());
+
+    expect(result).toEqual({ success: true });
+    expect(state.insertedEvent).toMatchObject({ slug: 'philosophy-night-3' });
+  });
+
+  it('throws INTERNAL_SERVER_ERROR when the slug-dedup check fails', async () => {
+    state.admin = SUPER_ADMIN;
+    state.slugCheckError = new Error('connection reset');
 
     await expect(createHandler(form(ONLINE_FORM), context())).rejects.toMatchObject({
       code: 'INTERNAL_SERVER_ERROR',
