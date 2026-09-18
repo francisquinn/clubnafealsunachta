@@ -1,5 +1,6 @@
 import { createTransport, CLUB_FROM, isEmailConfigured } from "./email";
 import { createVerificationToken } from "./auth";
+import { renderVerificationEmail } from "./emailTemplate";
 
 export async function sendVerificationEmail(email: string, origin: string): Promise<void> {
   if (!isEmailConfigured()) {
@@ -14,6 +15,7 @@ export async function sendVerificationEmail(email: string, origin: string): Prom
     from: CLUB_FROM,
     to: email,
     subject: "Confirm your email",
-    text: `Welcome to Club na Fealsúnachta!\n\nPlease confirm your email address to activate your account:\n\n${verifyUrl}\n\nThis link expires in 3 days.`,
+    text: `Welcome to Club na Fealsúnachta!\n\nPlease confirm your email address to activate your account:\n\n${verifyUrl}\n\nThis link expires in 3 days. If you didn't create an account, you can safely ignore this email.`,
+    html: renderVerificationEmail(verifyUrl),
   });
 }
