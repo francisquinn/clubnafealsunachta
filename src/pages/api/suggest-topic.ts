@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createTransport, CLUB_FROM, isEmailConfigured } from "../../lib/email";
+import { renderTopicSuggestionEmail } from "../../lib/emailTemplate";
 
 export const prerender = false;
 
@@ -30,6 +31,7 @@ export const POST: APIRoute = async ({ request }) => {
       to: import.meta.env.EMAIL_INFO,
       subject: "New topic suggestion(s)",
       text: `Suggested topics: ${topics.join(', ')}`,
+      html: renderTopicSuggestionEmail(topics),
     });
 
     return new Response(

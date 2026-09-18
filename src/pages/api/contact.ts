@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { isValidEmail } from "../../utils/script";
 import { createTransport, CLUB_FROM, isEmailConfigured } from "../../lib/email";
+import { renderContactMessageEmail } from "../../lib/emailTemplate";
 
 export const prerender = false;
 
@@ -50,6 +51,7 @@ export const POST: APIRoute = async ({ request }) => {
       replyTo: email,
       subject: "New contact message",
       text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+      html: renderContactMessageEmail({ name, email, message }),
     });
 
     return new Response(
