@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { actions } from "astro:actions";
 import Checkbox from "../Checkbox/Checkbox";
 import { DEFAULT_CLUB_SLUG } from "../../lib/clubDefaults";
+import { slugify } from "../../lib/slugify";
 
 type Club = { id: number; name: string };
 type Venue = { id: number; name: string; url: string | null };
@@ -55,6 +56,18 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
     }
   }
 
+  // #94: auto-fill the slug from the title on create, re-deriving it as the
+  // title changes until the admin edits the slug field themselves — same
+  // touched-flag pattern as endDate above.
+  const [slug, setSlug] = useState<string>(initialData?.slug ?? "");
+  const [slugTouched, setSlugTouched] = useState<boolean>(!!initialData?.slug);
+
+  function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!slugTouched) {
+      setSlug(slugify(e.target.value));
+    }
+  }
+
   useEffect(() => {
     actions.getClubs().then(({ data }) => {
       if (data) setClubs(data);
@@ -90,6 +103,8 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
           setSelectedVenueId("");
           setEndDate("");
           setEndDateTouched(false);
+          setSlug("");
+          setSlugTouched(false);
           const form = e.currentTarget as HTMLFormElement;
           if (form) form.reset();
         }
@@ -123,6 +138,7 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
           id="name"
           name="name"
           defaultValue={initialData?.name}
+          onChange={mode === "create" ? handleNameChange : undefined}
           required
         />
       </div>
@@ -298,6 +314,11 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
               placeholder="my-event-name"
               pattern="[a-z0-9-]+"
               title="Lowercase letters, numbers and hyphens only"
+              value={slug}
+              onChange={(e) => {
+                setSlugTouched(true);
+                setSlug(e.target.value);
+              }}
               required
             />
             <small className="cnf-form__hint">
