@@ -13,6 +13,7 @@ export default function EventCard({
   // formatBlogDate, where appending an end time would read as a mismatched
   // fragment ("Sep 4, 2026–20:00"). Callers of that formatter opt out.
   showEndTime = true,
+  showTags = false,
 }: EventCardProps) {
   // #39: events are routed under /[clubSlug]/events/[eventSlug]. A caller
   // rendering within a club-scoped page (e.g. /trieste/events) passes its
@@ -52,6 +53,13 @@ export default function EventCard({
               }
             </li>
           </ul>
+          {showTags && event.tags && event.tags.length > 0 && (
+            <div className="cnf-event__tags">
+              {event.tags.map((tag) => (
+                <span key={tag} className="cnf-event__tag">{tag}</span>
+              ))}
+            </div>
+          )}
         </div>
         <div className="cnf-event__social">
           {event.social.instagram && (
@@ -81,4 +89,5 @@ type EventCardProps = {
   responsive?: boolean;
   clubSlug?: string;
   showEndTime?: boolean;
+  showTags?: boolean;
 };

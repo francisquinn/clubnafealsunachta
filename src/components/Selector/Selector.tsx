@@ -9,7 +9,7 @@ interface SelectorProps {
 }
 
 export default function Selector({ label, name, options, value, onChange }: SelectorProps): JSX.Element {
-  const id = label ? `${label.toLowerCase()}-select` : "cnf-select";
+  const id = label ? `${label.toLowerCase().replace(/\s+/g, '-')}-select` : "cnf-select";
   const placeholder = label ? `Select ${label.toLowerCase()}` : "Select a location";
   return (
     <div className="cnf-select">
@@ -17,6 +17,7 @@ export default function Selector({ label, name, options, value, onChange }: Sele
       <select
         id={id}
         name={name}
+        aria-label={label}
         className="cnf-select__input"
         value={value}
         onChange={(e) => onChange(e.target.value)}

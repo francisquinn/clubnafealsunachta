@@ -82,6 +82,14 @@ const googleCalendarUrl = buildGoogleCalendarUrl(icsEventData);
               : null
       }
     </div>
+    {event.data.tags && event.data.tags.length > 0 && (
+      <div class="cnf-event-page__details">
+        <span class="cnf-event-page__details-label">Tags:</span>
+        <span class="cnf-event-page__tags">
+          {event.data.tags.map((tag) => <span class="cnf-event__tag">{tag}</span>)}
+        </span>
+      </div>
+    )}
     {event.data.description && (
       <div class="cnf-event-page__description">
         <h2>Description</h2>

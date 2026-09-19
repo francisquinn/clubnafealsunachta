@@ -102,6 +102,9 @@ export const createEvent = defineAction({
     const rawSlug = formData.get('slug') as string;
     const is_online = formData.get('is_online') === 'true';
     const meeting_url = (formData.get('meeting_url') as string) || null;
+    // Tags: comma-separated string, parsed into array of trimmed non-empty tags
+    const tagsInput = (formData.get('tags') as string) || '';
+    const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
 
     if (!name || !rawDate || !rawEndDate || !rawSlug) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });
@@ -148,6 +151,7 @@ export const createEvent = defineAction({
         meetup: (formData.get('meetup') as string) || null,
         description: (formData.get('description') as string) || null,
         summary: (formData.get('summary') as string) || null,
+        tags,
       }])
       .select()
       .single();
@@ -224,6 +228,8 @@ export const updateEvent = defineAction({
     const rawEndDate = formData.get('end_date') as string;
     const is_online = formData.get('is_online') === 'true';
     const meeting_url = (formData.get('meeting_url') as string) || null;
+    const tagsInput = (formData.get('tags') as string) || '';
+    const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
 
     if (!name || !rawDate || !rawEndDate || !slug) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });
@@ -266,6 +272,7 @@ export const updateEvent = defineAction({
         meetup: (formData.get('meetup') as string) || null,
         description: (formData.get('description') as string) || null,
         summary: (formData.get('summary') as string) || null,
+        tags,
       })
       .eq('slug', slug);
 

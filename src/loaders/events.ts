@@ -98,6 +98,7 @@ export function eventsLoader(): Loader {
             meetingUrl: event.meeting_url,
             creator,
             rsvpCounts: rsvpCountsByEvent.get(event.id) ?? { going: 0, maybe: 0, not_going: 0 },
+            tags: event.tags ?? [],
           },
         });
       }

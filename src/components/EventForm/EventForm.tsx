@@ -24,6 +24,7 @@ export type EventFormInitialData = {
   meetup?: string;
   description?: string;
   summary?: string;
+  tags?: string;
 };
 
 type EventFormProps = {
@@ -409,6 +410,23 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
           rows={3}
           defaultValue={initialData?.summary ?? ""}
         />
+      </div>
+
+      <div className="cnf-form__group">
+        <label className="cnf-form__label" htmlFor="tags">
+          Tags (comma-separated)
+        </label>
+        <input
+          className="cnf-form__input"
+          type="text"
+          id="tags"
+          name="tags"
+          defaultValue={initialData?.tags ?? ""}
+          placeholder="workshop, philosophy, beginner"
+        />
+        <small className="cnf-form__hint">
+          Separate tags with commas. They'll be used for filtering events.
+        </small>
       </div>
 
       {status === "error" && (
