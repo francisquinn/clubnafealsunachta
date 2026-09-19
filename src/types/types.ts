@@ -23,11 +23,13 @@ export type Event = {
     meetup?: string | null;
   };
   meetingUrl: string | null;
+  meetPoint: string | null;
   rsvpCounts: {
     going: number;
     maybe: number;
     not_going: number;
   };
+  tags: string[];
 };
 
 export interface BannerProps {

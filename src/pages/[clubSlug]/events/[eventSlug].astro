@@ -81,7 +81,18 @@ const googleCalendarUrl = buildGoogleCalendarUrl(icsEventData);
               ? <span class="cnf-event-page__details-info">{event.data.venue.name}</span>
               : null
       }
+      {event.data.meetPoint && !event.data.isOnline && (
+        <span class="cnf-event-page__details-info">Meet point: {event.data.meetPoint}</span>
+      )}
     </div>
+    {event.data.tags && event.data.tags.length > 0 && (
+      <div class="cnf-event-page__details">
+        <span class="cnf-event-page__details-label">Tags:</span>
+        <span class="cnf-event-page__tags">
+          {event.data.tags.map((tag) => <span class="cnf-event__tag">{tag}</span>)}
+        </span>
+      </div>
+    )}
     {event.data.description && (
       <div class="cnf-event-page__description">
         <h2>Description</h2>

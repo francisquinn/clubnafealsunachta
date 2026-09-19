@@ -15,6 +15,7 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     slug: "test-event",
     social: {},
     meetingUrl: "https://meet.jit.si/test",
+    meetPoint: null,
     rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
     ...overrides,
   };

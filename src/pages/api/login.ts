@@ -55,7 +55,7 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: "Please confirm your email before logging in — check your inbox for the confirmation link." }, 403);
   }
 
-  const token = createSessionToken(user.id, user.is_admin);
+  const token = createSessionToken(user.id, user.is_admin, user.username);
   const maxAge = Math.floor(SESSION_DURATION_MS / 1000);
   const cookie = `session=${token}; HttpOnly; ${SECURE_COOKIE}SameSite=Strict; Path=/; Max-Age=${maxAge}`;
 

@@ -14,6 +14,13 @@ export default function EventList(props: EventListProps) {
   const locationNames = props.events.some((e) => e.data.isOnline)
     ? [...cityNames, "Online"]
     : cityNames;
+  
+  // Extract all unique tags from events
+  const allTags = [...new Set(
+    props.events.flatMap((e) => e.data.tags ?? []).filter(Boolean) as string[]
+  )].sort();
+  const tagOptions = ["All", ...allTags];
+  
   const [showUpcoming, setShowUpcoming] = useState<boolean>(true);
   const nextUpcoming = props.events
     .filter((e) => !isEventExpired(e.data))
@@ -22,16 +29,21 @@ export default function EventList(props: EventListProps) {
     ? "Online"
     : (nextUpcoming?.data.location?.name ?? locationNames[0] ?? "");
   const [selectedLocation, setSelectedLocation] = useState<string>(defaultLocation);
+  const [selectedTag, setSelectedTag] = useState<string>("All");
 
   const onlineEvents = props.events.filter((e) => e.data.isOnline);
   const locationEvents = selectedLocation === "Online"
     ? onlineEvents
     : props.events.filter((e) => e.data.location?.name === selectedLocation);
 
-  const upcomingEvents = locationEvents.filter(
+  const tagFilteredEvents = selectedTag === "All"
+    ? locationEvents
+    : locationEvents.filter((e) => (e.data.tags ?? []).includes(selectedTag));
+
+  const upcomingEvents = tagFilteredEvents.filter(
     (event) => !isEventExpired(event.data)
   );
-  const pastEvents = locationEvents
+  const pastEvents = tagFilteredEvents
     .filter((event) => isEventExpired(event.data))
     .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 
@@ -41,6 +53,18 @@ export default function EventList(props: EventListProps) {
         options={locationNames}
         value={selectedLocation}
         onChange={setSelectedLocation}
+      />
+    );
+  }
+
+  function renderTagSelector(): JSX.Element {
+    if (allTags.length === 0) return null;
+    return (
+      <Selector
+        label="Filter by tag"
+        options={tagOptions}
+        value={selectedTag}
+        onChange={setSelectedTag}
       />
     );
   }
@@ -95,6 +119,7 @@ export default function EventList(props: EventListProps) {
   return (
     <>
       {renderLocationSelector()}
+      {allTags.length > 0 && renderTagSelector()}
       {renderNavigation()}
       {renderEvents()}
     </>

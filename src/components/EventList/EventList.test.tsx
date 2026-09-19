@@ -5,8 +5,8 @@ import EventList from "./EventList";
 import type { EventCollection, Event } from "../../types/types";
 
 vi.mock("../Selector/Selector", () => ({
-  default: ({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) => (
-    <select value={value} onChange={(e) => onChange(e.target.value)}>
+  default: ({ options, value, onChange, label }: { options: string[]; value: string; onChange: (v: string) => void; label?: string }) => (
+    <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
       {options.map((o) => <option key={o} value={o}>{o}</option>)}
     </select>
   ),
@@ -34,7 +34,7 @@ function endDateFor(date: Date): Date {
   return new Date(date.getTime() + 90 * 60 * 1000);
 }
 
-function makeEvent(name: string, date: Date, locationName = "Trieste"): EventCollection {
+function makeEvent(name: string, date: Date, locationName = "Trieste", tags: string[] = []): EventCollection {
   const data: Event = {
     name,
     date,
@@ -45,12 +45,14 @@ function makeEvent(name: string, date: Date, locationName = "Trieste"): EventCol
     slug: name.toLowerCase().replace(/ /g, "-"),
     social: { instagram: "https://instagram.com/test" },
     meetingUrl: null,
+    meetPoint: null,
     rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
+    tags,
   };
   return { id: name, data } as unknown as EventCollection;
 }
 
-function makeOnlineEvent(name: string, date: Date): EventCollection {
+function makeOnlineEvent(name: string, date: Date, tags: string[] = []): EventCollection {
   const data: Event = {
     name,
     date,
@@ -61,7 +63,9 @@ function makeOnlineEvent(name: string, date: Date): EventCollection {
     slug: name.toLowerCase().replace(/ /g, "-"),
     social: { instagram: "https://instagram.com/test" },
     meetingUrl: "https://meet.jit.si/test",
+    meetPoint: null,
     rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
+    tags,
   };
   return { id: name, data } as unknown as EventCollection;
 }
@@ -141,6 +145,57 @@ describe("EventList", () => {
       fireEvent.change(screen.getByRole("combobox"), { target: { value: "Online" } });
       expect(screen.getAllByTestId("upcoming-event")).toHaveLength(1);
       expect(screen.getByText("Online Event")).toBeInTheDocument();
+    });
+  });
+
+  describe("tag filtering", () => {
+    it("filters events by selected tag", () => {
+      const events = [
+        makeEvent("Workshop Event", futureDate1, "Trieste", ["workshop"]),
+        makeEvent("Talk Event", futureDate2, "Trieste", ["talk"]),
+      ];
+      render(<EventList events={events} />);
+      // By default, no tag is selected so both events show
+      expect(screen.getAllByTestId("upcoming-event")).toHaveLength(2);
+      
+      // Select the "workshop" tag - use label to distinguish from location selector
+      fireEvent.change(screen.getByRole("combobox", { name: /tag/i }), { target: { value: "workshop" } });
+      expect(screen.getAllByTestId("upcoming-event")).toHaveLength(1);
+      expect(screen.getByText("Workshop Event")).toBeInTheDocument();
+    });
+
+    it("shows all events when 'All' tag is selected", () => {
+      const events = [
+        makeEvent("Workshop Event", futureDate1, "Trieste", ["workshop"]),
+        makeEvent("Talk Event", futureDate2, "Trieste", ["talk"]),
+      ];
+      render(<EventList events={events} />);
+      fireEvent.change(screen.getByRole("combobox", { name: /tag/i }), { target: { value: "workshop" } });
+      expect(screen.getAllByTestId("upcoming-event")).toHaveLength(1);
+      
+      // Switch back to "All"
+      fireEvent.change(screen.getByRole("combobox", { name: /tag/i }), { target: { value: "All" } });
+      expect(screen.getAllByTestId("upcoming-event")).toHaveLength(2);
+    });
+
+    it("handles events with multiple tags", () => {
+      const events = [
+        makeEvent("Multi-tag Event", futureDate1, "Trieste", ["workshop", "talk"]),
+        makeEvent("Single-tag Event", futureDate2, "Trieste", ["talk"]),
+      ];
+      render(<EventList events={events} />);
+      fireEvent.change(screen.getByRole("combobox", { name: /tag/i }), { target: { value: "workshop" } });
+      expect(screen.getAllByTestId("upcoming-event")).toHaveLength(1);
+      expect(screen.getByText("Multi-tag Event")).toBeInTheDocument();
+    });
+
+    it("shows empty state when no events match selected tag", () => {
+      const events = [
+        makeEvent("Workshop Event", futureDate1, "Trieste", ["workshop"]),
+      ];
+      render(<EventList events={events} />);
+      fireEvent.change(screen.getByRole("combobox", { name: /tag/i }), { target: { value: "talk" } });
+      expect(screen.getByText(/no upcoming events/i)).toBeInTheDocument();
     });
   });
 });
