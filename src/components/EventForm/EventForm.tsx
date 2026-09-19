@@ -19,6 +19,7 @@ export type EventFormInitialData = {
   venueId?: number;
   eventClubId?: number;
   meetingUrl?: string;
+  meetPoint?: string;
   instagram?: string;
   facebook?: string;
   meetup?: string;
@@ -228,47 +229,63 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
           </div>
         </>
       ) : (
-        <div className="cnf-form__group">
-          <label className="cnf-form__label" htmlFor="venue_select">
-            Venue *
-          </label>
-          {venuesLoading ? (
-            <select className="cnf-form__input" id="venue_select" disabled>
-              <option>Loading venues…</option>
-            </select>
-          ) : (
-            <select
-              className="cnf-form__input"
-              id="venue_select"
-              name="venue_id"
-              value={selectedVenueId}
-              onChange={(e) => setSelectedVenueId(e.target.value)}
-              required
-            >
-              <option value="">Select a venue</option>
-              {venues.map((v) => (
-                <option key={v.id} value={String(v.id)}>
-                  {v.name}
-                </option>
-              ))}
-              <option value={NEW_VENUE}>New venue</option>
-            </select>
-          )}
-        </div>
-      )}
-
-      {!isOnline && isNewVenue && (
         <>
           <div className="cnf-form__group">
-            <label className="cnf-form__label" htmlFor="location_name">
-              Venue name *
+            <label className="cnf-form__label" htmlFor="venue_select">
+              Venue *
+            </label>
+            {venuesLoading ? (
+              <select className="cnf-form__input" id="venue_select" disabled>
+                <option>Loading venues…</option>
+              </select>
+            ) : (
+              <select
+                className="cnf-form__input"
+                id="venue_select"
+                name="venue_id"
+                value={selectedVenueId}
+                onChange={(e) => setSelectedVenueId(e.target.value)}
+                required
+              >
+                <option value="">Select a venue</option>
+                {venues.map((v) => (
+                  <option key={v.id} value={String(v.id)}>
+                    {v.name}
+                  </option>
+                ))}
+                <option value={NEW_VENUE}>New venue</option>
+              </select>
+            )}
+          </div>
+
+          <div className="cnf-form__group">
+            <label className="cnf-form__label" htmlFor="meet_point">
+              Meet point
             </label>
             <input
               className="cnf-form__input"
               type="text"
-              id="location_name"
-              name="location_name"
-              required
+              id="meet_point"
+              name="meet_point"
+              placeholder="e.g., main entrance, room 3B, by the fountain"
+            />
+          </div>
+        </>
+      )}
+
+      {!isOnline && isNewVenue && (
+        <>
+<div className="cnf-form__group">
+            <label className="cnf-form__label" htmlFor="meet_point">
+              Meet point
+            </label>
+            <input
+              className="cnf-form__input"
+              type="text"
+              id="meet_point"
+              name="meet_point"
+              placeholder="e.g., main entrance, room 3B, by the fountain"
+              defaultValue={initialData?.meetPoint ?? ""}
             />
           </div>
 
@@ -296,6 +313,20 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
               id="location_url"
               name="location_url"
               required
+            />
+          </div>
+
+          <div className="cnf-form__group">
+            <label className="cnf-form__label" htmlFor="meet_point">
+              Meet point
+            </label>
+            <input
+              className="cnf-form__input"
+              type="text"
+              id="meet_point"
+              name="meet_point"
+              placeholder="e.g., main entrance, room 3B, by the fountain"
+              defaultValue={initialData?.meetPoint ?? ""}
             />
           </div>
         </>

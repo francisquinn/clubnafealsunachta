@@ -102,6 +102,7 @@ export const createEvent = defineAction({
     const rawSlug = formData.get('slug') as string;
     const is_online = formData.get('is_online') === 'true';
     const meeting_url = (formData.get('meeting_url') as string) || null;
+    const meet_point = (formData.get('meet_point') as string) || null;
     // Tags: comma-separated string, parsed into array of trimmed non-empty tags
     const tagsInput = (formData.get('tags') as string) || '';
     const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
@@ -146,6 +147,7 @@ export const createEvent = defineAction({
         club_id: event_club_id,
         created_by: admin.memberId,
         meeting_url,
+        meet_point,
         instagram: (formData.get('instagram') as string) || null,
         facebook: (formData.get('facebook') as string) || null,
         meetup: (formData.get('meetup') as string) || null,
@@ -228,6 +230,7 @@ export const updateEvent = defineAction({
     const rawEndDate = formData.get('end_date') as string;
     const is_online = formData.get('is_online') === 'true';
     const meeting_url = (formData.get('meeting_url') as string) || null;
+    const meet_point = (formData.get('meet_point') as string) || null;
     const tagsInput = (formData.get('tags') as string) || '';
     const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
 
@@ -267,6 +270,7 @@ export const updateEvent = defineAction({
         venue_id: venue?.id ?? null,
         club_id: event_club_id,
         meeting_url,
+        meet_point,
         instagram: (formData.get('instagram') as string) || null,
         facebook: (formData.get('facebook') as string) || null,
         meetup: (formData.get('meetup') as string) || null,

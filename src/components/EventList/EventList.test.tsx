@@ -45,6 +45,7 @@ function makeEvent(name: string, date: Date, locationName = "Trieste", tags: str
     slug: name.toLowerCase().replace(/ /g, "-"),
     social: { instagram: "https://instagram.com/test" },
     meetingUrl: null,
+    meetPoint: null,
     rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
     tags,
   };
@@ -62,6 +63,7 @@ function makeOnlineEvent(name: string, date: Date, tags: string[] = []): EventCo
     slug: name.toLowerCase().replace(/ /g, "-"),
     social: { instagram: "https://instagram.com/test" },
     meetingUrl: "https://meet.jit.si/test",
+    meetPoint: null,
     rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
     tags,
   };

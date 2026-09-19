@@ -96,6 +96,7 @@ export function eventsLoader(): Loader {
               meetup: event.meetup,
             },
             meetingUrl: event.meeting_url,
+            meetPoint: event.meet_point,
             creator,
             rsvpCounts: rsvpCountsByEvent.get(event.id) ?? { going: 0, maybe: 0, not_going: 0 },
             tags: event.tags ?? [],

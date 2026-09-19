@@ -162,6 +162,11 @@ describe("EventForm (create mode)", () => {
       expect(screen.getByText(/event created successfully/i)).toBeInTheDocument();
     });
   });
+
+  it("renders a meet point field for in-person events", () => {
+    render(<EventForm mode="create" isSuperAdmin />);
+    expect(screen.getByLabelText(/meet point/i)).toBeInTheDocument();
+  });
 });
 
 describe("EventForm (edit mode)", () => {

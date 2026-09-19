@@ -46,6 +46,7 @@ const event = defineCollection({
       meetup: z.string().nullable(),
     }),
     meetingUrl: z.string().nullable(),
+    meetPoint: z.string().nullable(),
     creator: memberRefSchema,
     rsvpCounts: z.object({
       going: z.number(),

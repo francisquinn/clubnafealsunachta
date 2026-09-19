@@ -23,6 +23,7 @@ export type Event = {
     meetup?: string | null;
   };
   meetingUrl: string | null;
+  meetPoint: string | null;
   rsvpCounts: {
     going: number;
     maybe: number;
