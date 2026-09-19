@@ -2,6 +2,19 @@
 
 - **User registration:** Create registration flow. Users would need to be approved before being granted access.
 
+# 2026-09-20
+
+## Fixed
+
+- **content.config.ts**: Added `tags` to the event collection's Zod schema — it was missing from PR work so far, so the content layer stripped `data.tags` after validation and the EventList tag filter would never have seen any tags. Covered by a new assertion in `eventsLoader.test.ts`.
+- **EventCard.tsx**: Tags now render on event cards unconditionally (issue #92 asked for tags on cards, but the `showTags` prop was never passed by any caller). The opt-in prop was removed.
+- **EventForm.tsx**: Consolidated three duplicated `meet_point` fields into one shared field rendered once for in-person events — the new-venue branch previously rendered it twice (duplicate DOM ids, and the copy carrying `defaultValue` was shadowed on edit).
+- **actions/events.ts**: Extracted duplicated tag parsing into a shared `parseTags` helper; tags are lowercased so "Workshop" and "workshop" don't become two filter options.
+- **event.css**: Consolidated two near-duplicate `.cnf-event__tags`/`.cnf-event__tag` blocks into one.
+- **EventList.tsx**: Removed redundant `allTags.length > 0` guard around the tag selector (the render function already early-returns); `renderTagSelector` return type widened to `JSX.Element | null` (fixes a `tsc` error).
+- **profile/[username].astro**: Removed unused `formatBlogDate` import left over from the query-reduction change. **AdminLayout.astro**: removed unused `pageTitle` destructure (astro-check warning).
+- Trailing newlines added to `auth.test.ts`, `events.test.ts`, and the two event migrations.
+
 # 2026-06-06
 
 ## Fixed

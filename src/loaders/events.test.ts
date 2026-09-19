@@ -63,7 +63,7 @@ describe('eventsLoader', () => {
       meetup: null,
       meeting_url: null,
       meet_point: null,
-      tags: [],
+      tags: ['workshop', 'philosophy'],
       created_by: 'user-1',
       venues: { name: 'Test Venue', url: 'https://maps.google.com' },
       members: {
@@ -75,7 +75,7 @@ describe('eventsLoader', () => {
       },
     };
 
-    mockSupabaseAdmin.from.mockImplementation((table: string) => {
+    mockSupabaseAdmin.from.mockImplementation((table: string): any => {
       if (table === 'events') {
         return {
           select: () => ({
@@ -102,5 +102,8 @@ describe('eventsLoader', () => {
     expect(store.set).toHaveBeenCalled();
     const callArgs = store.set.mock.calls[0]?.[0];
     expect(callArgs?.data).toHaveProperty('meetPoint');
+    // #92: tags must survive the content-layer Zod validation, or the
+    // EventList tag filter silently sees an empty list.
+    expect(callArgs?.data).toHaveProperty('tags', ['workshop', 'philosophy']);
   });
 });

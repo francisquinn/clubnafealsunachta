@@ -57,7 +57,7 @@ export default function EventList(props: EventListProps) {
     );
   }
 
-  function renderTagSelector(): JSX.Element {
+  function renderTagSelector(): JSX.Element | null {
     if (allTags.length === 0) return null;
     return (
       <Selector
@@ -119,7 +119,7 @@ export default function EventList(props: EventListProps) {
   return (
     <>
       {renderLocationSelector()}
-      {allTags.length > 0 && renderTagSelector()}
+      {renderTagSelector()}
       {renderNavigation()}
       {renderEvents()}
     </>

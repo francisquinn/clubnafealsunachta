@@ -17,6 +17,16 @@ function assertClubInScope(admin: AdminScope, club_id: number | null) {
   throw new ActionError({ code: 'FORBIDDEN', message: 'You are not an admin of that club' });
 }
 
+// #92: tags arrive as one comma-separated form field. Lowercasing keeps the
+// EventList filter options stable ("Workshop" and "workshop" are the same tag).
+function parseTags(formData: FormData): string[] {
+  const tagsInput = (formData.get('tags') as string) || '';
+  return tagsInput
+    .split(',')
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 // Resolves the venue for a non-online event: an existing venue is looked up
 // by id as-is, a "New venue…" submission (name + club, no id yet) is
 // upserted. Returns null when the event is online or no venue was picked.
@@ -104,8 +114,7 @@ export const createEvent = defineAction({
     const meeting_url = (formData.get('meeting_url') as string) || null;
     const meet_point = (formData.get('meet_point') as string) || null;
     // Tags: comma-separated string, parsed into array of trimmed non-empty tags
-    const tagsInput = (formData.get('tags') as string) || '';
-    const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
+    const tags = parseTags(formData);
 
     if (!name || !rawDate || !rawEndDate || !rawSlug) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });
@@ -231,8 +240,7 @@ export const updateEvent = defineAction({
     const is_online = formData.get('is_online') === 'true';
     const meeting_url = (formData.get('meeting_url') as string) || null;
     const meet_point = (formData.get('meet_point') as string) || null;
-    const tagsInput = (formData.get('tags') as string) || '';
-    const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
+    const tags = parseTags(formData);
 
     if (!name || !rawDate || !rawEndDate || !slug) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });

@@ -257,38 +257,11 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
               </select>
             )}
           </div>
-
-          <div className="cnf-form__group">
-            <label className="cnf-form__label" htmlFor="meet_point">
-              Meet point
-            </label>
-            <input
-              className="cnf-form__input"
-              type="text"
-              id="meet_point"
-              name="meet_point"
-              placeholder="e.g., main entrance, room 3B, by the fountain"
-            />
-          </div>
         </>
       )}
 
       {!isOnline && isNewVenue && (
         <>
-<div className="cnf-form__group">
-            <label className="cnf-form__label" htmlFor="meet_point">
-              Meet point
-            </label>
-            <input
-              className="cnf-form__input"
-              type="text"
-              id="meet_point"
-              name="meet_point"
-              placeholder="e.g., main entrance, room 3B, by the fountain"
-              defaultValue={initialData?.meetPoint ?? ""}
-            />
-          </div>
-
           <div className="cnf-form__group">
             <label className="cnf-form__label" htmlFor="club_id">
               Club *
@@ -315,21 +288,26 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
               required
             />
           </div>
-
-          <div className="cnf-form__group">
-            <label className="cnf-form__label" htmlFor="meet_point">
-              Meet point
-            </label>
-            <input
-              className="cnf-form__input"
-              type="text"
-              id="meet_point"
-              name="meet_point"
-              placeholder="e.g., main entrance, room 3B, by the fountain"
-              defaultValue={initialData?.meetPoint ?? ""}
-            />
-          </div>
         </>
+      )}
+
+      {!isOnline && (
+        <div className="cnf-form__group">
+          <label className="cnf-form__label" htmlFor="meet_point">
+            Meet point
+          </label>
+          <input
+            className="cnf-form__input"
+            type="text"
+            id="meet_point"
+            name="meet_point"
+            placeholder="e.g., main entrance, room 3B, by the fountain"
+            defaultValue={initialData?.meetPoint ?? ""}
+          />
+          <small className="cnf-form__hint">
+            Where exactly to meet at the venue, if it's not obvious from the venue itself.
+          </small>
+        </div>
       )}
 
       <div className="cnf-form__group">
