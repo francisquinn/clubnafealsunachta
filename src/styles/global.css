@@ -127,12 +127,18 @@ select {
   flex-direction: column;
   justify-content: center;
   gap: 5px;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   padding: 0.5rem;
   background: none;
   border: none;
   cursor: pointer;
+}
+
+.cnf-nav__toggle:focus-visible {
+  outline: 2px solid hsl(var(--color-green));
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .cnf-nav__toggle-bar {
@@ -140,12 +146,12 @@ select {
   height: 2px;
   background: hsl(var(--color-green));
   border-radius: 1px;
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center;
 }
 
 .cnf-nav__toggle[aria-expanded="true"] .cnf-nav__toggle-bar:nth-child(1) {
-  transform: translateY(7px) rotate(45deg);
+  transform: translateY(8px) rotate(45deg);
 }
 
 .cnf-nav__toggle[aria-expanded="true"] .cnf-nav__toggle-bar:nth-child(2) {
@@ -153,7 +159,7 @@ select {
 }
 
 .cnf-nav__toggle[aria-expanded="true"] .cnf-nav__toggle-bar:nth-child(3) {
-  transform: translateY(-7px) rotate(-45deg);
+  transform: translateY(-8px) rotate(-45deg);
 }
 
 /* Single source of layout for every dropdown panel (Dropdown component): position,
@@ -170,8 +176,8 @@ select {
   top: 100%;
   right: 0;
   margin-top: 0.5rem;
-  min-width: 90px;
-  padding: 0.5rem;
+  min-width: 180px;
+  padding: 0.75rem;
   background: hsl(var(--color-white));
   box-shadow: var(--box-shadow-card);
   border-radius: var(--border-radius);
@@ -180,7 +186,7 @@ select {
   visibility: hidden;
   pointer-events: none;
   transform: translateY(-0.5rem);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.25s;
 }
 
 button[aria-expanded="true"] + .cnf-dropdown__panel {
@@ -188,7 +194,7 @@ button[aria-expanded="true"] + .cnf-dropdown__panel {
   visibility: visible;
   pointer-events: auto;
   transform: translateY(0);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .cnf-nav__link {
@@ -196,7 +202,7 @@ button[aria-expanded="true"] + .cnf-dropdown__panel {
   text-decoration: none;
   color: hsl(var(--color-green));
   font-size: 1.25rem;
-  padding: 0.5rem;
+  padding: 0.75rem 1rem;
   white-space: nowrap;
 }
 
