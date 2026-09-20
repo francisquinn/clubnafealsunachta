@@ -41,6 +41,27 @@ main {
   overflow-x: hidden;
 }
 
+.cnf-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: transparent;
+  transition: background-color 0.25s ease, backdrop-filter 0.25s ease;
+}
+
+.cnf-header--scrolled {
+  background-color: hsl(var(--color-beige) / 0.95);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Ensure content doesn't hide behind fixed header */
+main.content {
+  padding-top: 4rem;
+}
+
 h1,
 h2,
 h3 {
