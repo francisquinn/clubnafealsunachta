@@ -420,6 +420,37 @@ blockquote {
   }
 }
 
+/* Membership badge — small pill showing a club name on the profile page.
+   Mirrors the cnf-count pill style but with the green background for
+   visual prominence as a status indicator. */
+.cnf-membership-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.cnf-membership-badge {
+  display: inline-block;
+  background-color: hsl(var(--color-green));
+  color: hsl(var(--color-beige));
+  padding: 0.2rem 0.6rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.cnf-membership-badge--sm {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+}
+
+.cnf-membership-badge--lg {
+  font-size: 0.85rem;
+  padding: 0.25rem 0.75rem;
+}
+
 .cnf-button {
   position: relative;
   padding: 1rem 1.5rem;

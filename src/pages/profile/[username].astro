@@ -7,6 +7,7 @@ import { getDisplayName } from "../../lib/memberDisplay";
 import { getCollection } from "astro:content";
 import BlogEntry from "../../components/BlogEntry.astro";
 import Avatar from "../../components/Avatar/Avatar.astro";
+import MembershipBadge from "../../components/MembershipBadge/MembershipBadge";
 import "../../styles/profile.css";
 
 const { username } = Astro.params;
@@ -80,7 +81,7 @@ const authoredPosts = profileUser
         <h1>{displayName}</h1>
         {showHandle && <p class="cnf-profile__handle">@{profileUser.username}</p>}
         {clubNames.length > 0 && (
-          <p>Club membership{clubNames.length > 1 ? "s" : ""}: {clubNames.join(", ")}</p>
+          <MembershipBadge clubs={clubNames} size="lg" />
         )}
         <p>Member since: {memberSince}</p>
         {isOwnProfile && (
