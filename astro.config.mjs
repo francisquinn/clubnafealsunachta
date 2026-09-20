@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import netlify from '@astrojs/netlify';
 import sitemap from '@astrojs/sitemap';
+import rehypeLazyImages from './src/lib/rehypeLazyImages.js';
 
 // https://astro.build/config
 export default defineConfig({
@@ -10,6 +11,9 @@ export default defineConfig({
   output: 'static',
   integrations: [react(), sitemap()],
   adapter: netlify(),
+  markdown: {
+    rehypePlugins: [rehypeLazyImages],
+  },
   security: {
     // Astro Actions default to a 1MB request body cap — below #70's own
     // avatar upload limit (AccountForm.tsx/actions/avatar.ts), so any
