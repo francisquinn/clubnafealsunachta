@@ -114,4 +114,11 @@ const isOwnProfile = Boolean(payload && profileUser && payload.username === prof
           </ul>
         </section>
       )}
-    </BaseLayout>
+    </>
+  ) : (
+    <section class="cnf-section">
+      <h1>Profile not found</h1>
+      <p>No account exists with that username.</p>
+    </section>
+  )}
+</BaseLayout>
