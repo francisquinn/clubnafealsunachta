@@ -88,10 +88,23 @@ GRANT ALL ON public.events TO authenticated;
 
 GRANT ALL ON public.events TO service_role;
 
-CREATE TRIGGER "rebuild-on-event-change"
-  AFTER INSERT OR DELETE OR UPDATE ON public.events
-  FOR EACH ROW
-  EXECUTE FUNCTION supabase_functions.http_request('https://api.netlify.com/build_hooks/69ef16eb933e0dd40db64ab7', 'POST', '{"Content-type":"application/json"}', '{}', '5000');
+-- Guarded on the `net` schema (pg_net) actually existing: production has it
+-- (enabled outside of migrations, via the dashboard), but a fresh/local
+-- database doesn't, so creating this trigger unconditionally would make any
+-- event insert/update/delete fail with "schema net does not exist" locally
+-- — or, if pg_net were ever enabled locally too, silently fire a real
+-- Netlify build hook from local/seed data. Skipping it locally means event
+-- mutations just don't trigger a rebuild there, which is the correct local
+-- behavior anyway.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'net') THEN
+    CREATE TRIGGER "rebuild-on-event-change"
+      AFTER INSERT OR DELETE OR UPDATE ON public.events
+      FOR EACH ROW
+      EXECUTE FUNCTION supabase_functions.http_request('https://api.netlify.com/build_hooks/69ef16eb933e0dd40db64ab7', 'POST', '{"Content-type":"application/json"}', '{}', '5000');
+  END IF;
+END $$;
 
 CREATE POLICY "public read events" ON public.events
   FOR SELECT

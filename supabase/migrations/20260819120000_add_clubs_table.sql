@@ -42,8 +42,11 @@ CREATE POLICY "public read clubs" ON public.clubs
   FOR SELECT USING (true);
 
 -- Seed: Trieste is the current, only club. Raises a clear error if this is
--- run against an environment without that city, instead of silently
--- seeding no club at all (see #29's migration for the same pattern).
+-- run against an environment with cities but not the expected one, instead
+-- of silently seeding no club at all (see #29's migration for the same
+-- pattern) — but a completely empty cities table (a fresh/local database,
+-- which never had Trieste since that row predates migrations) creates it
+-- rather than erroring, so this runs clean on local dev too.
 do $$
 declare
   trieste_id integer;
@@ -51,7 +54,11 @@ begin
   select id into trieste_id from public.cities where name = 'Trieste';
 
   if trieste_id is null then
-    raise exception 'Seed expects a city named ''Trieste'' to exist. Adjust this migration before running it against an environment without that city.';
+    if exists (select 1 from public.cities) then
+      raise exception 'Seed expects a city named ''Trieste'' to exist. Adjust this migration before running it against an environment without that city.';
+    end if;
+
+    insert into public.cities (name) values ('Trieste') returning id into trieste_id;
   end if;
 
   insert into public.clubs (city_id, slug) values (trieste_id, 'trieste');
