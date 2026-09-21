@@ -13,19 +13,24 @@ alter table public.events add column created_by uuid references public.members(i
 -- lower(username)) rather than a case-sensitive literal match. Raises a
 -- clear error if this is run against an environment without that member,
 -- instead of silently leaving the columns null and failing opaquely at
--- the `set not null` step below.
+-- the `set not null` step below. Guarded on there being anything to
+-- backfill at all, so a fresh/empty database (e.g. local dev) doesn't
+-- require a seeded 'ephcue' member just to run this migration.
 do $$
 declare
   francis_id uuid;
 begin
-  select id into francis_id from public.members where lower(username) = lower('ephcue');
+  if exists (select 1 from public.posts where author_id is null)
+     or exists (select 1 from public.events where created_by is null) then
+    select id into francis_id from public.members where lower(username) = lower('ephcue');
 
-  if francis_id is null then
-    raise exception 'Backfill expects a member with username ''ephcue'' to exist (Francis has been the only post author/event creator so far). Adjust this migration before running it against an environment without that member.';
+    if francis_id is null then
+      raise exception 'Backfill expects a member with username ''ephcue'' to exist (Francis has been the only post author/event creator so far). Adjust this migration before running it against an environment without that member.';
+    end if;
+
+    update public.posts set author_id = francis_id where author_id is null;
+    update public.events set created_by = francis_id where created_by is null;
   end if;
-
-  update public.posts set author_id = francis_id where author_id is null;
-  update public.events set created_by = francis_id where created_by is null;
 end $$;
 
 alter table public.posts alter column author_id set not null;
