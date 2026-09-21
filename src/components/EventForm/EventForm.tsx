@@ -263,6 +263,19 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
       {!isOnline && isNewVenue && (
         <>
           <div className="cnf-form__group">
+            <label className="cnf-form__label" htmlFor="location_name">
+              Venue name *
+            </label>
+            <input
+              className="cnf-form__input"
+              type="text"
+              id="location_name"
+              name="location_name"
+              required
+            />
+          </div>
+
+          <div className="cnf-form__group">
             <label className="cnf-form__label" htmlFor="club_id">
               Club *
             </label>
