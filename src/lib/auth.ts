@@ -195,6 +195,21 @@ export function clearedAvatarHintCookie(): string {
   return `${AVATAR_HINT_COOKIE}=; ${SECURE_COOKIE}SameSite=Strict; Path=/; Max-Age=0`;
 }
 
+// Re-signs and re-sets the session cookie with a fresh token — needed
+// whenever a claim baked into it (currently just `username`) changes, so
+// the 30-day-old cookie doesn't keep serving a stale value until the next
+// login. Same cookie the login route sets via a raw Set-Cookie header;
+// Astro Actions use the cookies helper instead since it encodes the value.
+export function setSessionCookie(cookies: AstroCookies, token: string): void {
+  cookies.set("session", token, {
+    httpOnly: true,
+    secure: import.meta.env.PROD,
+    sameSite: "strict",
+    path: "/",
+    maxAge: Math.floor(SESSION_DURATION_MS / 1000),
+  });
+}
+
 // Astro Actions use the cookies helper (which encodes the value itself)
 // rather than building a raw Set-Cookie header string.
 export function setAvatarHintCookie(cookies: AstroCookies, member: AvatarHintMember): void {
