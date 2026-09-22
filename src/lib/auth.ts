@@ -28,10 +28,10 @@ export async function verifyPassword(password: string, stored: string): Promise<
   return hash.length === storedBuffer.length && timingSafeEqual(hash, storedBuffer);
 }
 
-export function createSessionToken(memberId: string, isAdmin: boolean): string {
+export function createSessionToken(memberId: string, isAdmin: boolean, username: string): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error("JWT_SECRET is not set");
-  return jwt.sign({ memberId, isAdmin }, secret, { expiresIn: SESSION_DURATION_STR });
+  return jwt.sign({ memberId, isAdmin, username }, secret, { expiresIn: SESSION_DURATION_STR });
 }
 
 const VERIFICATION_TOKEN_DURATION = "3d";
@@ -60,17 +60,13 @@ export function getSessionToken(request: Request): string | undefined {
   return cookie.match(/(?:^|;\s*)session=([^;]+)/)?.[1];
 }
 
-export function verifySessionToken(token: string): { memberId: string; isAdmin: boolean } | null {
+export function verifySessionToken(token: string): { memberId: string; isAdmin: boolean; username: string } | null {
   const secret = process.env.JWT_SECRET;
   if (!secret) return null;
   try {
-    const payload = jwt.verify(token, secret) as { memberId?: string; isAdmin: boolean };
-    // Pre-rollout session tokens carried `email` instead of `memberId`. JWT_SECRET
-    // doesn't rotate on deploy, so a cookie issued before this shipped still
-    // verifies but decodes with no memberId - treat that as invalid so the user
-    // gets a clean re-login instead of scattered "not authenticated" failures.
-    if (!payload.memberId) return null;
-    return payload as { memberId: string; isAdmin: boolean };
+    const payload = jwt.verify(token, secret) as { memberId?: string; isAdmin: boolean; username?: string };
+    if (!payload.memberId || !payload.username) return null;
+    return payload as { memberId: string; isAdmin: boolean; username: string };
   } catch {
     return null;
   }
@@ -197,6 +193,21 @@ export function avatarHintCookie(member: AvatarHintMember): string {
 
 export function clearedAvatarHintCookie(): string {
   return `${AVATAR_HINT_COOKIE}=; ${SECURE_COOKIE}SameSite=Strict; Path=/; Max-Age=0`;
+}
+
+// Re-signs and re-sets the session cookie with a fresh token — needed
+// whenever a claim baked into it (currently just `username`) changes, so
+// the 30-day-old cookie doesn't keep serving a stale value until the next
+// login. Same cookie the login route sets via a raw Set-Cookie header;
+// Astro Actions use the cookies helper instead since it encodes the value.
+export function setSessionCookie(cookies: AstroCookies, token: string): void {
+  cookies.set("session", token, {
+    httpOnly: true,
+    secure: import.meta.env.PROD,
+    sameSite: "strict",
+    path: "/",
+    maxAge: Math.floor(SESSION_DURATION_MS / 1000),
+  });
 }
 
 // Astro Actions use the cookies helper (which encodes the value itself)

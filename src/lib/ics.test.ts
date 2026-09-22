@@ -16,6 +16,7 @@ function makeEvent(overrides: Partial<EventIcsData> = {}): EventIcsData {
     isOnline: false,
     venue: { name: "Caffe San Marco", url: "https://maps.google.com/caffe" },
     meetingUrl: null,
+    meetPoint: null,
     slug: "philosophy-talk-free-will",
     description: "An evening discussion on whether free will exists.",
     summary: null,
@@ -30,6 +31,7 @@ const ALL_WITHOUT_DESCRIPTION: EventIcsData = {
   isOnline: false,
   venue: { name: "Venue", url: null },
   meetingUrl: null,
+  meetPoint: null,
   slug: "talk",
   description: null,
   summary: null,
@@ -167,6 +169,34 @@ describe("buildEventIcs", () => {
         makeEvent({ isOnline: false, venue: null, meetingUrl: null })
       );
       expect(ics).not.toContain("LOCATION:");
+    });
+
+    it("appends the meet point to the venue, dash-separated, for in-person events", () => {
+      const ics = buildEventIcs(
+        makeEvent({ venue: { name: "Venue", url: null }, meetPoint: "the entrance" })
+      );
+      expect(ics).toContain("LOCATION:Venue — the entrance");
+    });
+
+    it("uses just the meet point when there is no venue", () => {
+      const ics = buildEventIcs(
+        makeEvent({ venue: null, meetPoint: "the entrance" })
+      );
+      expect(ics).toContain("LOCATION:the entrance");
+    });
+
+    it("ignores meet point for online events", () => {
+      const ics = buildEventIcs(
+        makeEvent({
+          isOnline: true,
+          venue: null,
+          meetingUrl: "https://meet.jit.si/feel-philosophy",
+          meetPoint: "the entrance",
+        })
+      );
+      expect(ics).toContain(
+        "LOCATION:Online (https://meet.jit.si/feel-philosophy)"
+      );
     });
   });
 

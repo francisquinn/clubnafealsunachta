@@ -1,5 +1,5 @@
 import { defineAction, ActionError } from 'astro:actions';
-import { verifySessionToken, setAvatarHintCookie } from '../lib/auth';
+import { verifySessionToken, createSessionToken, setSessionCookie, setAvatarHintCookie } from '../lib/auth';
 import { validateUsername, validateFullName } from '../utils/validation';
 import { escapeLikePattern } from '../lib/username';
 import { supabaseAdmin } from '../lib/supabase';
@@ -63,6 +63,12 @@ export const updateUsername = defineAction({
     }
 
     triggerNetlifyBuild();
+
+    // Otherwise the session cookie keeps the old username for up to 30
+    // days: /profile redirects off it directly, and isOwnProfile compares
+    // it against the freshly-renamed member — both silently broke after a
+    // rename until the next login.
+    setSessionCookie(context.cookies, createSessionToken(payload.memberId, payload.isAdmin, username));
 
     // Otherwise AccountMenu's header avatar would show the old letter for
     // one more page load, until its own background /api/me fetch catches up.

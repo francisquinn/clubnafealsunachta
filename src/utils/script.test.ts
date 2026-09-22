@@ -34,6 +34,7 @@ describe("isEventExpired", () => {
       venue: { name: "Test Venue", url: "https://test.com" },
       social: { instagram: "https://instagram.com" },
       meetingUrl: null,
+      meetPoint: null,
       rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
     };
     expect(isEventExpired(pastEvent)).toBe(true);
@@ -50,6 +51,7 @@ describe("isEventExpired", () => {
       venue: { name: "Test Venue", url: "https://test.com" },
       social: { instagram: "https://instagram.com" },
       meetingUrl: null,
+      meetPoint: null,
       rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
     };
     expect(isEventExpired(futureEvent)).toBe(false);
@@ -68,6 +70,7 @@ describe("isEventExpired", () => {
       venue: null,
       social: { instagram: "https://instagram.com" },
       meetingUrl: "https://meet.example.com",
+      meetPoint: null,
       rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
     };
     expect(isEventExpired(liveEvent)).toBe(false);
