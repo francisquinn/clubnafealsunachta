@@ -297,10 +297,27 @@ button[aria-expanded="true"] + .cnf-dropdown__panel {
   color: hsl(var(--color-white));
   line-height: 1;
   user-select: none;
+  /* Pinned explicitly rather than left to inherit: this renders inside a
+     plain <button> in AccountMenu (the account-menu toggle), and buttons
+     don't inherit the page's font-family by default — that button was
+     silently falling back to Arial while every other usage (spans, divs)
+     correctly inherited Noto Sans. Different fonts have different
+     ascent/descent ratios, so the letter centered differently depending
+     on which font it happened to inherit. Matches html's site-wide
+     font/weight so the letter always renders the same regardless of
+     where this component is dropped in. */
+  font-family: "Noto Sans", sans-serif;
+  font-weight: 300;
 }
 
+/* Vertical-centering correction is per size, not a single em-scalable
+   value: measured 0 needed at --lg (28px) but ~0.8px needed at --sm
+   (12.8px, consistent across its 24px/32px box-height contexts) — browser
+   font hinting/rounding isn't linear across that size range even for the
+   same font. */
 .cnf-avatar--fallback.cnf-avatar--sm {
   font-size: 0.8rem;
+  padding-top: 0.06em;
 }
 
 /* AccountMenu's placeholder while the signed-in member's avatar is still
@@ -418,37 +435,6 @@ blockquote {
   50% {
     opacity: 0.35;
   }
-}
-
-/* Membership badge — small pill showing a club name on the profile page.
-   Mirrors the cnf-count pill style but with the green background for
-   visual prominence as a status indicator. */
-.cnf-membership-badges {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.5rem;
-}
-
-.cnf-membership-badge {
-  display: inline-block;
-  background-color: hsl(var(--color-green));
-  color: hsl(var(--color-beige));
-  padding: 0.2rem 0.6rem;
-  border-radius: 50px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.cnf-membership-badge--sm {
-  font-size: 0.75rem;
-  padding: 0.15rem 0.5rem;
-}
-
-.cnf-membership-badge--lg {
-  font-size: 0.85rem;
-  padding: 0.25rem 0.75rem;
 }
 
 .cnf-button {

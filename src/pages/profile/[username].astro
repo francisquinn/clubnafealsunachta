@@ -7,7 +7,6 @@ import { getDisplayName } from "../../lib/memberDisplay";
 import { getCollection } from "astro:content";
 import BlogEntry from "../../components/BlogEntry.astro";
 import Avatar from "../../components/Avatar/Avatar.astro";
-import MembershipBadge from "../../components/MembershipBadge/MembershipBadge";
 import "../../styles/profile.css";
 
 const { username } = Astro.params;
@@ -30,9 +29,9 @@ if (!profileUser) {
   Astro.response.status = 404;
 }
 
-// Public, visible to any visitor — not gated on isOwnProfile. Hide the line
-// on a lookup failure rather than showing an empty/wrong list, same posture
-// as the edit page's club-section fallback.
+// Public, visible to any visitor — not gated on isOwnProfile. Hide the
+// section on a lookup failure rather than showing an empty/wrong list, same
+// posture as the edit page's club-section fallback.
 let clubNames: string[] = [];
 if (profileUser && supabaseAdmin) {
   const { data: memberships, error: membershipsError } = await supabaseAdmin
@@ -74,35 +73,44 @@ const authoredPosts = profileUser
 ---
 
 <BaseLayout pageTitle={profileUser ? displayName : "Profile not found"}>
-  <section class="cnf-section">
-    {profileUser ? (
-      <>
+  {profileUser ? (
+    <>
+      <section class="cnf-section">
         <Avatar avatarUrl={profileUser.avatar_url} alt={displayName!} id={profileUser.id} size="lg" />
         <h1>{displayName}</h1>
         {showHandle && <p class="cnf-profile__handle">@{profileUser.username}</p>}
-        {clubNames.length > 0 && (
-          <MembershipBadge clubs={clubNames} size="lg" />
-        )}
         <p>Member since: {memberSince}</p>
         {isOwnProfile && (
           <p><a href="/profile/edit">Edit your info</a></p>
         )}
-        {authoredPosts.length > 0 && (
-          <>
-            <h2>Posts</h2>
-            <ul class="cnf-latest-blogs">
-              {authoredPosts.map((post) => (
-                <BlogEntry url={`/posts/${post.id}`} post={post.data} />
-              ))}
-            </ul>
-          </>
-        )}
-      </>
-    ) : (
-      <>
-        <h1>Profile not found</h1>
-        <p>No account exists with that username.</p>
-      </>
-    )}
-  </section>
+      </section>
+
+      {clubNames.length > 0 && (
+        <section class="cnf-section">
+          <h2>Memberships</h2>
+          <ul class="cnf-club-badges">
+            {clubNames.map((name) => (
+              <li class="cnf-club-badge">{name}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {authoredPosts.length > 0 && (
+        <section class="cnf-section">
+          <h2>Posts</h2>
+          <ul class="cnf-latest-blogs">
+            {authoredPosts.map((post) => (
+              <BlogEntry url={`/posts/${post.id}`} post={post.data} />
+            ))}
+          </ul>
+        </section>
+      )}
+    </>
+  ) : (
+    <section class="cnf-section">
+      <h1>Profile not found</h1>
+      <p>No account exists with that username.</p>
+    </section>
+  )}
 </BaseLayout>
