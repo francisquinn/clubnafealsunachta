@@ -14,6 +14,7 @@ export type EventIcsData = {
   isOnline: boolean;
   venue: { name: string | null; url: string | null } | null;
   meetingUrl: string | null;
+  meetPoint: string | null;
   slug: string;
   description: string | null;
   summary: string | null;
@@ -24,8 +25,8 @@ export type EventIcsData = {
 // Calendar link) and [eventSlug].ics.ts (the served .ics file) so the two
 // outputs can't quietly disagree on content if EventIcsData's fields change.
 export function toEventIcsData(event: EventCollection): EventIcsData {
-  const { name, date, endDate, isOnline, venue, meetingUrl, slug, description, summary } = event.data;
-  return { name, date, endDate, isOnline, venue, meetingUrl, slug, description, summary };
+  const { name, date, endDate, isOnline, venue, meetingUrl, meetPoint, slug, description, summary } = event.data;
+  return { name, date, endDate, isOnline, venue, meetingUrl, meetPoint, slug, description, summary };
 }
 
 function pad(n: number): string {
@@ -57,8 +58,11 @@ function buildEventLocation(event: EventIcsData): string {
   }
   const venueName = event.venue?.name?.trim() ?? "";
   const venueUrl = event.venue?.url?.trim() ?? null;
-  if (!venueName && !venueUrl) return "";
-  return venueUrl ? `${venueName} (${venueUrl})` : venueName;
+  const venue = !venueName && !venueUrl ? "" : venueUrl ? `${venueName} (${venueUrl})` : venueName;
+
+  const meetPoint = event.meetPoint?.trim() ?? "";
+  if (!meetPoint) return venue;
+  return venue ? `${venue} — ${meetPoint}` : meetPoint;
 }
 
 // Section 3.1: content lines longer than 75 octets are "folded" by inserting
