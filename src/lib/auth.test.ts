@@ -1,4 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import jwt from "jsonwebtoken";
+import {
+  createSessionToken,
+  verifySessionToken,
+  getAdminScope,
+  requireAdmin,
+  isClubInScope,
+} from "./auth";
 
 // #37: getAdminScope/requireAdmin resolve super-admin vs per-club scope by
 // querying members/club_admins live - mock the two tables independently so
@@ -22,8 +30,6 @@ vi.mock("./supabase", () => ({
     },
   },
 }));
-
-import { getAdminScope, requireAdmin, createSessionToken, isClubInScope } from "./auth";
 
 // Mocking ./supabase (above) also skips its `import "dotenv/config"` side
 // effect, so JWT_SECRET never gets loaded from .env - set it directly
@@ -74,7 +80,7 @@ describe("requireAdmin", () => {
 
   it("returns the scope for a super admin", async () => {
     state.members = { is_admin: true };
-    const token = createSessionToken("member-1", true);
+    const token = createSessionToken("member-1", true, "adminuser");
 
     const scope = await requireAdmin(makeRequest(`session=${token}`));
 
@@ -84,7 +90,7 @@ describe("requireAdmin", () => {
   it("returns the scope for a club-scoped (non-super) admin", async () => {
     state.members = { is_admin: false };
     state.clubAdmins = [{ club_id: 3 }];
-    const token = createSessionToken("member-2", false);
+    const token = createSessionToken("member-2", false, "clubadmin");
 
     const scope = await requireAdmin(makeRequest(`session=${token}`));
 
@@ -94,7 +100,7 @@ describe("requireAdmin", () => {
   it("returns null for a member with no super-admin flag and no club_admins rows", async () => {
     state.members = { is_admin: false };
     state.clubAdmins = [];
-    const token = createSessionToken("member-3", false);
+    const token = createSessionToken("member-3", false, "regularuser");
 
     expect(await requireAdmin(makeRequest(`session=${token}`))).toBeNull();
   });
@@ -120,5 +126,40 @@ describe("isClubInScope", () => {
   // the "no specific chapter" option, which only a super admin may pick.
   it("never lets a club-scoped admin touch a null (global) club", () => {
     expect(isClubInScope(clubScoped, null)).toBe(false);
+  });
+});
+
+describe("JWT payload includes username", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv, JWT_SECRET: "test-secret" };
+  });
+
+  it("createSessionToken includes username in payload", () => {
+    const token = createSessionToken("member-123", false, "testuser");
+    const decoded = jwt.verify(token, "test-secret") as { memberId: string; isAdmin: boolean; username: string };
+
+    expect(decoded.memberId).toBe("member-123");
+    expect(decoded.isAdmin).toBe(false);
+    expect(decoded.username).toBe("testuser");
+  });
+
+  it("verifySessionToken returns username from payload", () => {
+    const token = createSessionToken("member-123", false, "testuser");
+    const payload = verifySessionToken(token);
+
+    expect(payload).not.toBeNull();
+    expect(payload?.memberId).toBe("member-123");
+    expect(payload?.isAdmin).toBe(false);
+    expect(payload?.username).toBe("testuser");
+  });
+
+  it("verifySessionToken returns null for token without username (legacy)", () => {
+    const legacyToken = jwt.sign({ memberId: "member-123", isAdmin: false }, "test-secret", { expiresIn: "30d" });
+    const payload = verifySessionToken(legacyToken);
+
+    expect(payload).toBeNull();
   });
 });

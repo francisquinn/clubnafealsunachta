@@ -4,7 +4,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getSessionToken, verifySessionToken } from "../../lib/auth";
 import { supabaseAdmin } from "../../lib/supabase";
 import { getDisplayName } from "../../lib/memberDisplay";
-import { getCollection } from "astro:content";
 import BlogEntry from "../../components/BlogEntry.astro";
 import Avatar from "../../components/Avatar/Avatar.astro";
 import "../../styles/profile.css";
@@ -14,16 +13,10 @@ const { username } = Astro.params;
 const token = getSessionToken(Astro.request);
 const payload = token ? verifySessionToken(token) : null;
 
-// Independent lookups (profile being viewed vs. the logged-in viewer, if
-// any) — run in parallel rather than one after another.
-const [{ data: profileUser }, { data: currentMember }] = await Promise.all([
-  supabaseAdmin
-    ? supabaseAdmin.from("members").select("id, username, full_name, display_full_name, avatar_url, created_at").eq("username", username).single()
-    : Promise.resolve({ data: null }),
-  payload && supabaseAdmin
-    ? supabaseAdmin.from("members").select("username").eq("id", payload.memberId).single()
-    : Promise.resolve({ data: null }),
-]);
+// Single query for the profile being viewed
+const { data: profileUser } = await (supabaseAdmin
+  ? supabaseAdmin.from("members").select("id, username, full_name, display_full_name, avatar_url, created_at").eq("username", username).single()
+  : Promise.resolve({ data: null }));
 
 if (!profileUser) {
   Astro.response.status = 404;
@@ -56,6 +49,27 @@ if (profileUser && supabaseAdmin) {
   }
 }
 
+// Fetch only this user's posts directly from Supabase (1 query) instead of
+// loading all posts via getCollection and filtering in memory.
+let authoredPosts: { id: string; title: string; date: Date }[] = [];
+if (profileUser && supabaseAdmin) {
+  const { data: posts, error: postsError } = await supabaseAdmin
+    .from("posts")
+    .select("slug, title, date")
+    .eq("author_id", profileUser.id)
+    .order("date", { ascending: false });
+
+  if (postsError) {
+    console.error("Failed to load posts for profile page:", postsError.message);
+  } else {
+    authoredPosts = (posts ?? []).map((post) => ({
+      id: post.slug,
+      title: post.title,
+      date: new Date(post.date),
+    }));
+  }
+}
+
 const displayName = profileUser ? getDisplayName(profileUser) : null;
 const showHandle = profileUser ? displayName !== profileUser.username : false;
 
@@ -63,13 +77,7 @@ const memberSince = profileUser
   ? new Date(profileUser.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })
   : null;
 
-const isOwnProfile = Boolean(payload && profileUser && currentMember?.username === profileUser.username);
-
-const authoredPosts = profileUser
-  ? (await getCollection("blog"))
-      .filter((post) => post.data.author.username === profileUser.username)
-      .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-  : [];
+const isOwnProfile = Boolean(payload && profileUser && payload.username === profileUser.username);
 ---
 
 <BaseLayout pageTitle={profileUser ? displayName : "Profile not found"}>
@@ -101,7 +109,7 @@ const authoredPosts = profileUser
           <h2>Posts</h2>
           <ul class="cnf-latest-blogs">
             {authoredPosts.map((post) => (
-              <BlogEntry url={`/posts/${post.id}`} post={post.data} />
+              <BlogEntry url={`/posts/${post.id}`} post={post} />
             ))}
           </ul>
         </section>
