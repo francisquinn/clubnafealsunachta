@@ -1,0 +1,29 @@
+/* #92: event tag picker — .cnf-badge chips that toggle on and off. An
+   unselected chip is outlined only; a selected one takes the badge's normal
+   tint, so it previews exactly how the tag will show on the event page. */
+.cnf-tag-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cnf-tag-picker__chip {
+  font-family: inherit;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid color-mix(in srgb, hsl(var(--color-green)) 40%, transparent);
+  cursor: pointer;
+}
+
+.cnf-tag-picker__chip[aria-pressed="false"] {
+  background: none;
+}
+
+.cnf-tag-picker__chip[aria-pressed="true"] {
+  border-color: hsl(var(--color-green));
+}
+
+.cnf-tag-picker__chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

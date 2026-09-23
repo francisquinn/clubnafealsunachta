@@ -22,7 +22,12 @@ const sampleInitialData = {
   date: "2025-06-01T19:00",
   endDate: "2025-06-01T20:30",
   slug: "test-event",
+  tags: ["ethics"],
 };
+
+function pickTag(label: string) {
+  fireEvent.click(screen.getByRole("button", { name: label }));
+}
 
 async function waitForVenuesToLoad() {
   await waitFor(() => {
@@ -132,6 +137,7 @@ describe("EventForm (create mode)", () => {
     render(<EventForm mode="create" isSuperAdmin />);
 
     await waitForVenuesToLoad();
+    pickTag("ethics");
     fireEvent.submit(document.querySelector("form")!);
 
     await waitFor(() => {
@@ -144,6 +150,7 @@ describe("EventForm (create mode)", () => {
     render(<EventForm mode="create" isSuperAdmin />);
 
     await waitForVenuesToLoad();
+    pickTag("ethics");
     fireEvent.submit(document.querySelector("form")!);
 
     await waitFor(() => {
@@ -156,11 +163,22 @@ describe("EventForm (create mode)", () => {
     render(<EventForm mode="create" isSuperAdmin />);
 
     await waitForVenuesToLoad();
+    pickTag("ethics");
     fireEvent.submit(document.querySelector("form")!);
 
     await waitFor(() => {
       expect(screen.getByText(/event created successfully/i)).toBeInTheDocument();
     });
+  });
+
+  it("blocks submit and asks for a tag when none is picked", async () => {
+    render(<EventForm mode="create" isSuperAdmin />);
+
+    await waitForVenuesToLoad();
+    fireEvent.submit(document.querySelector("form")!);
+
+    expect(await screen.findByText("Pick at least one tag")).toBeInTheDocument();
+    expect(mockCreateEvent).not.toHaveBeenCalled();
   });
 
   it("renders a meet point field for in-person events", () => {
@@ -193,6 +211,15 @@ describe("EventForm (edit mode)", () => {
     render(<EventForm mode="edit" initialData={{ ...sampleInitialData, isOnline: true }} isSuperAdmin />);
     expect(screen.getByRole("checkbox", { name: /this event is online/i })).toBeChecked();
     expect(screen.getByLabelText(/meeting url/i)).toBeInTheDocument();
+  });
+
+  it("pre-selects the event's existing tags", () => {
+    render(
+      <EventForm mode="edit" initialData={{ ...sampleInitialData, tags: ["meaning-mortality", "ethics"] }} isSuperAdmin />
+    );
+    expect(screen.getByRole("button", { name: /meaning & mortality/i })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^ethics$/i })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^technology$/i })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("displays slug as read-only", () => {

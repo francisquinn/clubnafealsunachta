@@ -47,6 +47,7 @@ function makeEvent(name: string, date: Date, locationName = "Trieste"): EventCol
     meetingUrl: null,
     meetPoint: null,
     rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
+    tags: [],
   };
   return { id: name, data } as unknown as EventCollection;
 }
@@ -64,6 +65,7 @@ function makeOnlineEvent(name: string, date: Date): EventCollection {
     meetingUrl: "https://meet.jit.si/test",
     meetPoint: null,
     rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
+    tags: [],
   };
   return { id: name, data } as unknown as EventCollection;
 }
