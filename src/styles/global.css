@@ -381,6 +381,19 @@ blockquote {
   border-radius: 50px;
 }
 
+/* Small tinted pill for a label (event tags, club membership) — same green
+   tint as the active nav link. */
+.cnf-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: hsl(var(--color-green));
+  background: color-mix(in srgb, hsl(var(--color-green)) 15%, transparent);
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
 /* #97: "on air" indicator for an event currently in progress — a small
    pulsing dot plus label, no fill/pill background (dropped per Francis's
    2026-09-14 review pass — flush with the surrounding text instead). */

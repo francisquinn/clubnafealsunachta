@@ -29,6 +29,7 @@ export type Event = {
     maybe: number;
     not_going: number;
   };
+  tags: string[];
 };
 
 export interface BannerProps {

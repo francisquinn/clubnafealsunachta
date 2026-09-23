@@ -119,6 +119,13 @@
   color: hsl(var(--color-grey));
 }
 
+.cnf-event-page__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
 .cnf-event-page__details {
   display: flex;
   flex-wrap: wrap;

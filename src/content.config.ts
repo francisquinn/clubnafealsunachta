@@ -47,6 +47,7 @@ const event = defineCollection({
     }),
     meetingUrl: z.string().nullable(),
     meetPoint: z.string().nullable(),
+    tags: z.array(z.string()).default([]),
     creator: memberRefSchema,
     rsvpCounts: z.object({
       going: z.number(),

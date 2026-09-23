@@ -264,6 +264,14 @@ function form(fields: Record<string, string>): FormData {
   return data;
 }
 
+// FormData with one `tags` entry per tag, in order — how TagPicker posts them.
+function formWithTags(fields: Record<string, string>, tags: string[]): FormData {
+  const data = form(fields);
+  data.delete('tags');
+  for (const tag of tags) data.append('tags', tag);
+  return data;
+}
+
 const SUPER_ADMIN = { memberId: 'admin-1', isSuperAdmin: true, clubIds: [] as number[] };
 const CLUB_ADMIN = { memberId: 'admin-2', isSuperAdmin: false, clubIds: [3] };
 
@@ -278,6 +286,7 @@ const ONLINE_FORM = {
   slug: 'philosophy-night',
   is_online: 'true',
   meeting_url: 'https://meet.jit.si/x',
+  tags: 'ethics',
 };
 
 beforeEach(() => {
@@ -355,6 +364,35 @@ describe('createEvent', () => {
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
+  it('throws BAD_REQUEST when no tag is picked', async () => {
+    state.admin = SUPER_ADMIN;
+
+    await expect(createHandler(formWithTags(ONLINE_FORM, []), context())).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'Pick at least one tag',
+    });
+  });
+
+  it('throws BAD_REQUEST when only off-list tags are sent', async () => {
+    state.admin = SUPER_ADMIN;
+
+    await expect(createHandler(formWithTags(ONLINE_FORM, ['ethic', 'workshop']), context())).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'Pick at least one tag',
+    });
+  });
+
+  it("keeps tags in the list's order, dropping off-list tags, repeats, and anything past two", async () => {
+    state.admin = SUPER_ADMIN;
+
+    await createHandler(
+      formWithTags(ONLINE_FORM, ['relationships', 'workshop', 'relationships', 'ethics', 'technology']),
+      context()
+    );
+
+    expect(state.insertedEvent).toMatchObject({ tags: ['ethics', 'relationships'] });
+  });
+
   it('creates an online event, seeds a going RSVP for the host, and returns success', async () => {
     state.admin = SUPER_ADMIN;
     state.insertedEventRow = { id: 42 };
@@ -405,6 +443,7 @@ describe('createEvent', () => {
         slug: 'in-person-talk',
         is_online: 'false',
         venue_id: '5',
+        tags: 'ethics',
       }),
       context()
     );
@@ -562,6 +601,7 @@ describe('updateEvent', () => {
     slug: 'philosophy-night',
     is_online: 'true',
     meeting_url: 'https://meet.jit.si/y',
+    tags: 'ethics',
   };
 
   it('throws UNAUTHORIZED without a valid admin session', async () => {
@@ -611,6 +651,25 @@ describe('updateEvent', () => {
     expect(state.netlifyBuildCalled).toBe(true);
     // Only createEvent seeds a host RSVP — updating an event never should.
     expect(state.rsvpInsertPayload).toBeNull();
+  });
+
+  it('throws BAD_REQUEST when an update removes every tag', async () => {
+    state.admin = SUPER_ADMIN;
+    state.existingEvent = { club_id: null };
+
+    await expect(updateHandler(formWithTags(UPDATE_FORM, []), context())).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'Pick at least one tag',
+    });
+  });
+
+  it('saves the picked tags on update', async () => {
+    state.admin = SUPER_ADMIN;
+    state.existingEvent = { club_id: null };
+
+    await updateHandler(formWithTags(UPDATE_FORM, ['society-politics', 'ethics']), context());
+
+    expect(state.updatedEvent).toMatchObject({ tags: ['ethics', 'society-politics'] });
   });
 
   it('throws INTERNAL_SERVER_ERROR when the update fails', async () => {

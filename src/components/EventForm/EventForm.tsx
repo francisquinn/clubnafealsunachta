@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { actions } from "astro:actions";
 import Checkbox from "../Checkbox/Checkbox";
+import TagPicker from "../TagPicker/TagPicker";
 import { DEFAULT_CLUB_SLUG } from "../../lib/clubDefaults";
 import { slugify } from "../../lib/slugify";
+import { MIN_TAGS } from "../../lib/eventTags";
 
 type Club = { id: number; name: string };
 type Venue = { id: number; name: string; url: string | null };
@@ -25,6 +27,7 @@ export type EventFormInitialData = {
   meetup?: string;
   description?: string;
   summary?: string;
+  tags?: string[];
 };
 
 type EventFormProps = {
@@ -87,6 +90,12 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
     setErrorMessage("");
 
     const formData = new FormData(e.currentTarget);
+
+    if (formData.getAll("tags").length < MIN_TAGS) {
+      setStatus("error");
+      setErrorMessage("Pick at least one tag");
+      return;
+    }
 
     try {
       const action = mode === "edit" ? actions.updateEvent : actions.createEvent;
@@ -432,6 +441,8 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
           defaultValue={initialData?.summary ?? ""}
         />
       </div>
+
+      <TagPicker name="tags" defaultValue={initialData?.tags} />
 
       {status === "error" && (
         <div className="cnf-form__message--error">{errorMessage}</div>

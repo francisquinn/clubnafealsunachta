@@ -13,6 +13,7 @@ import { getDisplayName } from "../../../lib/memberDisplay";
 import Avatar from "../../../components/Avatar/Avatar.astro";
 import { getEventClubStaticPaths } from "../../../lib/clubs";
 import { DEFAULT_CLUB_SLUG } from "../../../lib/clubDefaults";
+import { getTagLabel, normalizeTags } from "../../../lib/eventTags";
 
 // #39: an event with a club gets exactly one URL, under that club's prefix. A
 // genuinely cross-chapter event (location null) has no club of its own, so —
@@ -49,6 +50,9 @@ const icsEventData = toEventIcsData(event);
 const icsHref = `/${clubSlug}/events/${event.data.slug}.ics`;
 const icsFilename = `${event.data.slug}.ics`;
 const googleCalendarUrl = buildGoogleCalendarUrl(icsEventData);
+// Normalized so tags always show alphabetically, and ones off the fixed list
+// (e.g. old free-text tags) are skipped.
+const tagLabels = normalizeTags(event.data.tags ?? []).flatMap((slug) => getTagLabel(slug) ?? []);
 ---
 
 <BaseLayout
@@ -92,6 +96,11 @@ const googleCalendarUrl = buildGoogleCalendarUrl(icsEventData);
       <div class="cnf-event-page__summary">
         <h2>Summary</h2>
         <p>{event.data.summary}</p>
+      </div>
+    )}
+    {tagLabels.length > 0 && (
+      <div class="cnf-event-page__tags">
+        {tagLabels.map((label) => <span class="cnf-badge">{label}</span>)}
       </div>
     )}
     <div class="cnf-event-page__details">

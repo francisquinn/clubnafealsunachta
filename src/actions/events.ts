@@ -7,6 +7,7 @@ import { DEFAULT_CLUB_SLUG, DEFAULT_CLUB_TIMEZONE } from '../lib/clubDefaults';
 import { localWallTimeToUtc } from '../lib/timezone';
 import { resolveUniqueSlug } from '../lib/slugDedup';
 import { upsertRsvp } from './rsvps';
+import { MIN_TAGS, normalizeTags, type EventTagSlug } from '../lib/eventTags';
 
 type ResolvedVenue = { id: number; name: string; url: string | null; club_id: number };
 
@@ -15,6 +16,16 @@ type ResolvedVenue = { id: number; name: string; url: string | null; club_id: nu
 function assertClubInScope(admin: AdminScope, club_id: number | null) {
   if (isClubInScope(admin, club_id)) return;
   throw new ActionError({ code: 'FORBIDDEN', message: 'You are not an admin of that club' });
+}
+
+// #92: tags arrive as one form field per picked tag. Only slugs from the
+// fixed list are kept, so a hand-edited request can't add a new one.
+function parseTags(formData: FormData): EventTagSlug[] {
+  const tags = normalizeTags(formData.getAll('tags').map(String));
+  if (tags.length < MIN_TAGS) {
+    throw new ActionError({ code: 'BAD_REQUEST', message: 'Pick at least one tag' });
+  }
+  return tags;
 }
 
 // Resolves the venue for a non-online event: an existing venue is looked up
@@ -108,6 +119,8 @@ export const createEvent = defineAction({
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });
     }
 
+    const tags = parseTags(formData);
+
     if (!/^[a-z0-9-]+$/.test(rawSlug)) {
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Slug must contain only lowercase letters, numbers and hyphens' });
     }
@@ -150,6 +163,7 @@ export const createEvent = defineAction({
         meetup: (formData.get('meetup') as string) || null,
         description: (formData.get('description') as string) || null,
         summary: (formData.get('summary') as string) || null,
+        tags,
       }])
       .select()
       .single();
@@ -232,6 +246,8 @@ export const updateEvent = defineAction({
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing required fields' });
     }
 
+    const tags = parseTags(formData);
+
     // See createEvent — same naive-local-to-UTC conversion, same reasoning.
     const date = localWallTimeToUtc(rawDate, DEFAULT_CLUB_TIMEZONE).toISOString();
     const end_date = localWallTimeToUtc(rawEndDate, DEFAULT_CLUB_TIMEZONE).toISOString();
@@ -270,6 +286,7 @@ export const updateEvent = defineAction({
         meetup: (formData.get('meetup') as string) || null,
         description: (formData.get('description') as string) || null,
         summary: (formData.get('summary') as string) || null,
+        tags,
       })
       .eq('slug', slug);
 

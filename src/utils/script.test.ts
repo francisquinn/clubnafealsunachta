@@ -36,6 +36,7 @@ describe("isEventExpired", () => {
       meetingUrl: null,
       meetPoint: null,
       rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
+      tags: [],
     };
     expect(isEventExpired(pastEvent)).toBe(true);
   });
@@ -53,6 +54,7 @@ describe("isEventExpired", () => {
       meetingUrl: null,
       meetPoint: null,
       rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
+      tags: [],
     };
     expect(isEventExpired(futureEvent)).toBe(false);
   });
@@ -72,6 +74,7 @@ describe("isEventExpired", () => {
       meetingUrl: "https://meet.example.com",
       meetPoint: null,
       rsvpCounts: { going: 0, maybe: 0, not_going: 0 },
+      tags: [],
     };
     expect(isEventExpired(liveEvent)).toBe(false);
   });
