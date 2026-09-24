@@ -4,10 +4,11 @@ interface DropdownProps {
   label: string;
   triggerRef: React.RefObject<HTMLElement | null>;
   collapsesOnDesktop?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
   children: React.ReactNode;
 }
 
-export default function Dropdown({ label, triggerRef, collapsesOnDesktop, children }: DropdownProps) {
+export default function Dropdown({ label, triggerRef, collapsesOnDesktop, onOpenChange, children }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const panelId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -29,7 +30,8 @@ export default function Dropdown({ label, triggerRef, collapsesOnDesktop, childr
 
   useEffect(() => {
     triggerRef.current?.setAttribute("aria-expanded", String(isOpen));
-  }, [isOpen, triggerRef]);
+    onOpenChange?.(isOpen);
+  }, [isOpen, triggerRef, onOpenChange]);
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {
