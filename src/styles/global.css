@@ -47,6 +47,16 @@ main {
   position: sticky;
   top: 0;
   z-index: 100;
+}
+
+/* The glass lives on a pseudo-element, not the header itself: a backdrop-filter
+   on the header would stop the mobile nav overlay (a descendant) from blurring
+   the page behind it, and would trap its position: fixed inside the header. */
+.cnf-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background-color: hsla(var(--color-beige), 0.5);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
@@ -117,12 +127,18 @@ select {
   flex-direction: column;
   justify-content: center;
   gap: 5px;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   padding: 0.5rem;
   background: none;
   border: none;
   cursor: pointer;
+}
+
+.cnf-nav__toggle:focus-visible {
+  outline: 2px solid hsl(var(--color-green));
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .cnf-nav__toggle-bar {
@@ -544,6 +560,87 @@ blockquote {
 
   to {
     transform: rotate(1turn);
+  }
+}
+
+/* Header menus (main nav, mobile overlay and desktop row alike, plus the
+   account dropdown) mark the current page with an underline, instead of the
+   shared .tab-active pill. */
+.cnf-dropdown__panel .cnf-nav__link.tab-active {
+  background: none;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  /* Offset is measured from the baseline: 0.25em clears Playfair's descent,
+     then 0.375rem (6px) matches the gap under the events page's active tab. */
+  text-underline-offset: calc(0.25em + 0.375rem);
+}
+
+/* On desktop the links wrapper is transparent to layout, so the links stay
+   flex items of the inline row. */
+.cnf-nav__links {
+  display: contents;
+}
+
+/* Mobile nav: full-screen glass overlay behind the header's logo, avatar
+   and toggle (z-index -1 keeps it inside the header's stacking context, above
+   the header's own glass but below its content). */
+@media (max-width: 575.98px) {
+  .cnf-dropdown__panel--collapsible {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    gap: 0;
+    margin: 0;
+    padding: 87px 0 0;
+    background-color: hsla(var(--color-beige), 0.7);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    box-shadow: none;
+    border-radius: 0;
+    transform: none;
+    transition: opacity 0.15s ease, visibility 0s linear 0.15s;
+  }
+
+  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible {
+    transform: none;
+    transition: opacity 0.15s ease;
+  }
+
+  /* Page scroll is locked while open, so on short screens (small phones in
+     landscape) the links scroll inside the overlay instead. The scroll area
+     starts below the header, so they never slide up behind the logo. */
+  .cnf-nav__links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    height: 100%;
+    padding-bottom: 1rem;
+    overflow-y: auto;
+  }
+
+  .cnf-dropdown__panel--collapsible .cnf-nav__link {
+    font-size: 2rem;
+    padding: 0.75rem 1rem;
+    opacity: 0;
+    transform: translateY(0.75rem);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link {
+    opacity: 1;
+    transform: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(1) { transition-delay: 0.02s; }
+  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(2) { transition-delay: 0.04s; }
+  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(3) { transition-delay: 0.06s; }
+  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(4) { transition-delay: 0.08s; }
+  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(5) { transition-delay: 0.1s; }
+
+  html:has(.cnf-nav__toggle[aria-expanded="true"]) {
+    overflow: hidden;
   }
 }
 

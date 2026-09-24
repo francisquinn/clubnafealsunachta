@@ -108,7 +108,8 @@
 }
 
 .cnf-events__tab {
-  padding: 0.5rem;
+  /* 6px under the text for the active tab's line, matching the nav underline */
+  padding: 0.5rem 0.5rem 0.375rem;
   cursor: pointer;
 }
 
