@@ -156,6 +156,9 @@ select {
 
 .cnf-nav__toggle[aria-expanded="true"] .cnf-nav__toggle-bar:nth-child(2) {
   opacity: 0;
+  /* Collapsing it too, not just fading: Safari can leave a faded bar faintly
+     drawn, and its ends then poke out either side of the X. */
+  transform: scaleX(0);
 }
 
 .cnf-nav__toggle[aria-expanded="true"] .cnf-nav__toggle-bar:nth-child(3) {
@@ -575,6 +578,17 @@ blockquote {
   text-underline-offset: calc(0.25em + 0.375rem);
 }
 
+@keyframes cnf-nav-link-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* On desktop the links wrapper is transparent to layout, so the links stay
    flex items of the inline row. */
 .cnf-nav__links {
@@ -619,25 +633,22 @@ blockquote {
     overflow-y: auto;
   }
 
+  /* Links rise in from below, About first, on open. On close they stay put
+     and simply fade out with the overlay. */
   .cnf-dropdown__panel--collapsible .cnf-nav__link {
     font-size: 2rem;
     padding: 0.75rem 1rem;
-    opacity: 0;
-    transform: translateY(0.75rem);
-    transition: opacity 0.2s ease, transform 0.2s ease;
   }
 
   button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link {
-    opacity: 1;
-    transform: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    animation: cnf-nav-link-in 0.2s ease both;
   }
 
-  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(1) { transition-delay: 0.02s; }
-  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(2) { transition-delay: 0.04s; }
-  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(3) { transition-delay: 0.06s; }
-  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(4) { transition-delay: 0.08s; }
-  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(5) { transition-delay: 0.1s; }
+  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(1) { animation-delay: 0.02s; }
+  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(2) { animation-delay: 0.04s; }
+  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(3) { animation-delay: 0.06s; }
+  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(4) { animation-delay: 0.08s; }
+  button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(5) { animation-delay: 0.1s; }
 
   html:has(.cnf-nav__toggle[aria-expanded="true"]) {
     overflow: hidden;
