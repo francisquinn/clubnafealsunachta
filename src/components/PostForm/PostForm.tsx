@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { actions } from "astro:actions";
 import { slugify } from "../../lib/slugify";
+import { MAX_COVER_BYTES } from "../../lib/postCover";
 
 export type PostFormInitialData = {
   title: string;
   slug: string;
   date: string;
   body: string;
+  coverImageUrl: string | null;
 };
 
 type PostFormProps = {
@@ -35,6 +37,15 @@ export default function PostForm({ mode, initialData }: PostFormProps) {
     setErrorMessage("");
 
     const formData = new FormData(e.currentTarget);
+
+    // The server re-checks this; catching it here avoids sending a
+    // too-big file only to have it rejected.
+    const cover = formData.get("cover_image");
+    if (cover instanceof File && cover.size > MAX_COVER_BYTES) {
+      setStatus("error");
+      setErrorMessage("Cover image must be 5MB or smaller");
+      return;
+    }
 
     try {
       const action = mode === "edit" ? actions.updatePost : actions.createPost;
@@ -129,6 +140,29 @@ export default function PostForm({ mode, initialData }: PostFormProps) {
           defaultValue={initialData?.date}
           required
         />
+      </div>
+
+      <div className="cnf-form__group">
+        <label className="cnf-form__label" htmlFor="cover_image">
+          Cover image
+        </label>
+        {initialData?.coverImageUrl && (
+          <img
+            className="cnf-form__cover-preview"
+            src={initialData.coverImageUrl}
+            alt="Current cover"
+          />
+        )}
+        <input
+          className="cnf-form__input"
+          type="file"
+          id="cover_image"
+          name="cover_image"
+          accept="image/*"
+        />
+        <small className="cnf-form__hint">
+          {mode === "edit" ? "Optional. Leave empty to keep the current cover." : "Optional."} Landscape works best (16:9); up to 5MB.
+        </small>
       </div>
 
       <div className="cnf-form__group">

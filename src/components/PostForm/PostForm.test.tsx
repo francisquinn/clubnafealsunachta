@@ -18,6 +18,7 @@ const sampleInitialData = {
   slug: "test-post",
   date: "2026-01-01",
   body: "This is the body of the post.",
+  coverImageUrl: null,
 };
 
 describe("PostForm (create mode)", () => {
