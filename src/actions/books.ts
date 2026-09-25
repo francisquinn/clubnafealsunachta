@@ -3,34 +3,9 @@ import { supabaseAdmin } from '../lib/supabase';
 import { requireAdmin } from '../lib/auth';
 import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
 import { resolveUniqueSlug } from '../lib/slugDedup';
+import { uploadImageIfPresent } from '../lib/storageUpload';
 
 const COVERS_BUCKET = 'book-covers';
-
-// Uploads a cover image to the book-covers bucket, keyed by the book's slug
-// (upsert: a re-upload on edit just overwrites the same object instead of
-// leaving the old file orphaned). Returns the public URL, or null if no
-// file was actually chosen — an empty file input still shows up in
-// FormData, just with size 0.
-async function uploadCoverIfPresent(
-  formData: FormData,
-  slug: string
-): Promise<string | null> {
-  const file = formData.get('cover_image');
-  if (!(file instanceof File) || file.size === 0) {
-    return null;
-  }
-
-  const { error } = await supabaseAdmin!.storage
-    .from(COVERS_BUCKET)
-    .upload(slug, file, { upsert: true, contentType: file.type });
-
-  if (error) {
-    throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: `Cover upload failed: ${error.message}` });
-  }
-
-  const { data } = supabaseAdmin!.storage.from(COVERS_BUCKET).getPublicUrl(slug);
-  return data.publicUrl;
-}
 
 export const createBook = defineAction({
   accept: 'form',
@@ -57,7 +32,7 @@ export const createBook = defineAction({
     }
 
     const slug = await resolveUniqueSlug(supabaseAdmin, 'books', rawSlug);
-    const cover_image_url = await uploadCoverIfPresent(formData, slug);
+    const cover_image_url = await uploadImageIfPresent(formData, 'cover_image', COVERS_BUCKET, slug);
 
     const { error } = await supabaseAdmin
       .from('books')
@@ -98,7 +73,7 @@ export const updateBook = defineAction({
 
     // No new file chosen leaves cover_image_url out of the update entirely,
     // so the existing cover survives untouched.
-    const newCoverUrl = await uploadCoverIfPresent(formData, slug);
+    const newCoverUrl = await uploadImageIfPresent(formData, 'cover_image', COVERS_BUCKET, slug);
 
     const { data: updated, error } = await supabaseAdmin
       .from('books')

@@ -18,6 +18,7 @@ const blog = defineCollection({
     title: z.string(),
     date: z.coerce.date(),
     author: memberRefSchema,
+    coverImageUrl: z.string().nullable(),
   }),
 });
 

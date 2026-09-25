@@ -14,7 +14,7 @@ if (!supabaseAdmin) {
 
 const { data: post, error } = await supabaseAdmin
   .from("posts")
-  .select("id, title, slug, date, body")
+  .select("id, title, slug, date, body, cover_image_url")
   .eq("slug", slug!)
   .single();
 
@@ -29,6 +29,7 @@ const initialData: PostFormInitialData = {
   slug: post.slug,
   date: dateStr,
   body: post.body,
+  coverImageUrl: post.cover_image_url,
 };
 ---
 
