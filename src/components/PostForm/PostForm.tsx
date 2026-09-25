@@ -139,7 +139,7 @@ export default function PostForm({ mode, initialData }: PostFormProps) {
           className="cnf-form__input"
           id="body"
           name="body"
-          rows={20}
+          rows={10}
           defaultValue={initialData?.body}
           required
         />

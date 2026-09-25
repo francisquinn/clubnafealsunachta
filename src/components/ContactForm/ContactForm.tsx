@@ -87,7 +87,7 @@ export default function ContactForm() {
           id="message"
           name="message"
           className="cnf-form__input"
-          rows={6}
+          rows={10}
           value={message}
           onChange={(e) => { setMessage(e.target.value); setErrorMessage(null); }}
           required

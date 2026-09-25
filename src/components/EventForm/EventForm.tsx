@@ -424,7 +424,7 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
           className="cnf-form__input"
           id="description"
           name="description"
-          rows={4}
+          rows={10}
           defaultValue={initialData?.description ?? ""}
         />
       </div>
@@ -437,7 +437,7 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
           className="cnf-form__input"
           id="summary"
           name="summary"
-          rows={3}
+          rows={10}
           defaultValue={initialData?.summary ?? ""}
         />
       </div>
