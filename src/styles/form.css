@@ -65,6 +65,7 @@ legend {
 
 textarea.cnf-form__input {
   resize: vertical;
+  width: 100%;
 }
 
 select.cnf-form__input {
