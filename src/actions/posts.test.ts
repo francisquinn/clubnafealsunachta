@@ -15,6 +15,9 @@ const state = vi.hoisted(() => {
     postUpdateError: null as Error | null,
     postUpdateSlug: null as string | null,
     postUpdateResult: null as unknown as { slug: string } | null | undefined,
+    updatedPost: null as Record<string, unknown> | null,
+    // uploadImageIfPresent — the URL it hands back (null = no file chosen)
+    coverUrl: null as string | null,
     // posts select+eq+maybeSingle (createPost's #94 slug-dedup check) —
     // checked live against the value .eq('slug', ...) was called with.
     takenSlugs: new Set<string>(),
@@ -63,8 +66,9 @@ vi.mock('../lib/supabase', () => {
                   : Promise.resolve({ data: state.takenSlugs.has(value) ? { id: 1 } : null, error: null }),
             }),
           }),
-          update: () => ({
+          update: (payload: Record<string, unknown>) => ({
             eq: (column: string, value: string) => {
+              state.updatedPost = payload;
               if (column === 'slug') state.postUpdateSlug = value;
               return {
                 select: () => ({
@@ -83,6 +87,10 @@ vi.mock('../lib/supabase', () => {
   };
 });
 
+vi.mock('../lib/storageUpload', () => ({
+  uploadImageIfPresent: vi.fn(() => Promise.resolve(state.coverUrl)),
+}));
+
 vi.mock('../lib/mailchimp', () => ({
   sendMailchimpPostEmail: vi.fn().mockResolvedValue(undefined),
 }));
@@ -94,6 +102,7 @@ vi.mock('../lib/netlifyBuildHook', () => ({
 import { createPost, updatePost } from './posts';
 import { sendMailchimpPostEmail } from '../lib/mailchimp';
 import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
+import { uploadImageIfPresent } from '../lib/storageUpload';
 
 const createAction = createPost as unknown as {
   handler: (formData: FormData, context: { request: Request }) => Promise<{ success: boolean }>;
@@ -124,6 +133,8 @@ beforeEach(() => {
   state.postUpdateError = null;
   state.postUpdateSlug = null;
   state.postUpdateResult = undefined;
+  state.updatedPost = null;
+  state.coverUrl = 'https://storage.example/post-covers/default';
   state.takenSlugs = new Set<string>();
   state.slugCheckError = null;
   vi.mocked(sendMailchimpPostEmail).mockClear();
@@ -178,6 +189,24 @@ describe('createPost', () => {
 
   // #94: a taken slug is resolved to a free one (-2, -3, ...) rather than
   // rejected — mirrors createEvent's dedup behavior.
+  it('saves the uploaded cover URL, keyed by the post slug', async () => {
+    state.admin = SUPER_ADMIN;
+    state.coverUrl = 'https://storage.example/post-covers/hello-world';
+    await createAction.handler(basePostFormData(), makeContext());
+    expect(uploadImageIfPresent).toHaveBeenCalledWith(expect.any(FormData), 'cover_image', 'post-covers', 'hello-world', expect.objectContaining({ maxBytes: 5 * 1024 * 1024, resizeWidth: 1600 }));
+    expect(state.insertedPost?.cover_image_url).toBe('https://storage.example/post-covers/hello-world');
+  });
+
+  it('rejects a post with no cover image', async () => {
+    state.admin = SUPER_ADMIN;
+    state.coverUrl = null;
+    await expect(createAction.handler(basePostFormData(), makeContext())).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'A cover image is required',
+    });
+    expect(state.insertedPost).toBeNull();
+  });
+
   it('appends -2 to the slug when it is already taken', async () => {
     state.admin = SUPER_ADMIN;
     state.takenSlugs = new Set(['hello-world']);
@@ -228,6 +257,22 @@ describe('updatePost', () => {
     });
     expect(state.postUpdateSlug).toBe('hello-world');
     expect(triggerNetlifyBuild).toHaveBeenCalledTimes(1);
+  });
+
+  it('replaces the cover when a new image is uploaded', async () => {
+    state.admin = SUPER_ADMIN;
+    state.postUpdateResult = { slug: 'hello-world' };
+    state.coverUrl = 'https://storage.example/post-covers/hello-world';
+    await updateAction.handler(basePostFormData(), makeContext());
+    expect(state.updatedPost?.cover_image_url).toBe('https://storage.example/post-covers/hello-world');
+  });
+
+  it('leaves the existing cover untouched when no new image is chosen', async () => {
+    state.admin = SUPER_ADMIN;
+    state.coverUrl = null;
+    state.postUpdateResult = { slug: 'hello-world' };
+    await updateAction.handler(basePostFormData(), makeContext());
+    expect(state.updatedPost).not.toHaveProperty('cover_image_url');
   });
 
   it('rejects with NOT_FOUND when no post row comes back', async () => {

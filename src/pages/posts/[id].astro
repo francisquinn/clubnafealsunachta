@@ -27,12 +27,24 @@ const { Content } = await render(post);
     font-size: 1rem;
     color: hsl(var(--color-grey));
   }
+
+  /* Blog post content images — responsive, lazy-loaded, centered */
+  .cnf-post__cover,
+  .cnf-post__content :global(img) {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1.5rem auto;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-card);
+  }
 </style>
 
 <BaseLayout
   pageTitle={post.data.title}
   description={`${post.data.title} — Club na Fealsúnachta blog.`}
   ogType="article"
+  ogImage={post.data.coverImageUrl ?? undefined}
 >
   <section class="cnf-section">
     <h1>{post.data.title}</h1>
@@ -40,7 +52,12 @@ const { Content } = await render(post);
       <Avatar avatarUrl={post.data.author.avatar_url} alt={getDisplayName(post.data.author)} id={post.data.author.id} size="sm" />
       <a href={`/profile/${post.data.author.username}`}>{getDisplayName(post.data.author)}</a> &#8226; {formatBlogDate(post.data.date)}
     </div>
-    <Content />
+    {post.data.coverImageUrl && (
+      <img class="cnf-post__cover" src={post.data.coverImageUrl} alt="" />
+    )}
+    <div class="cnf-post__content">
+      <Content />
+    </div>
   </section>
   <Banner
     title="Fancy supporting the club?"

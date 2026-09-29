@@ -1,4 +1,5 @@
 ---
+import "../styles/event.css";
 import { formatBlogDate } from "../utils/script";
 const { url, post } = Astro.props;
 ---
@@ -8,27 +9,64 @@ const { url, post } = Astro.props;
     list-style-type: none;
   }
 
-  .cnf-post {
-    margin-bottom: 1.75rem;
+  /* The li is the grid item and stretches to the row's tallest card; the card
+     fills it so cards in one row share a height. */
+  .cnf-post__card {
+    height: 100%;
   }
 
-  .cnf-post__date {
-    display: block;
-    padding-top: 0.5rem;
-    color: hsl(var(--color-grey));
-    font-size: 1rem;
+  /* Title at the top, date pinned to the bottom of the panel. */
+  .cnf-post__info {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.5rem;
   }
 
-  h2 {
+  .cnf-post__poster--cover {
+    padding: 0;
+  }
+
+  .cnf-post__cover {
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .cnf-post__title {
     margin: 0;
+    color: hsl(var(--color-green));
+    font-family: "Uncial Antiqua";
+    font-size: 1.5rem;
   }
 </style>
 
 <li>
-  <article class="cnf-post">
-    <a href={url}>
-      <h2>{post.title}</h2>
-    </a>
-    <span class="cnf-post__date">{formatBlogDate(post.date)}</span>
+  <article class="cnf-event cnf-post__card">
+    {
+      post.coverImageUrl ? (
+        <div class="cnf-event__poster cnf-post__poster--cover">
+          <img class="cnf-post__cover" src={post.coverImageUrl} alt="" loading="lazy" />
+        </div>
+      ) : (
+        <div class="cnf-event__poster">
+          <a class="cnf-event__link" href={url}>
+            <h2 class="cnf-post__title">{post.title}</h2>
+          </a>
+        </div>
+      )
+    }
+    <div class="cnf-event__info cnf-post__info">
+      {
+        post.coverImageUrl && (
+          <a class="cnf-event__link" href={url}>
+            <h2 class="cnf-post__title">{post.title}</h2>
+          </a>
+        )
+      }
+      <span class="cnf-event__date">{formatBlogDate(post.date)}</span>
+    </div>
   </article>
 </li>

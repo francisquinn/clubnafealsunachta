@@ -1,18 +1,28 @@
 ---
 import { getCollection } from "astro:content";
-import BlogEntry from "./BlogEntry.astro";
+import BlogPost from "./BlogPost.astro";
 const latestBlogEntries = (await getCollection("blog"))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-  .slice(0, 3);
+  .slice(0, 2);
 ---
 
 <section class="cnf-section">
-  <h2>Latest blog posts</h2>
-  <ul class="cnf-latest-blogs">
+  <div class="cnf-section__header">
+    <h2>Latest blog posts</h2>
+    <a href="/blog">See all posts</a>
+  </div>
+  <ul class="cnf-events--grid cnf-latest-posts__list">
     {
       latestBlogEntries.map((post) => (
-        <BlogEntry url={`/posts/${post.id}`} post={post.data} />
+        <BlogPost url={`/posts/${post.id}`} post={post.data} />
       ))
     }
   </ul>
 </section>
+
+<style>
+  .cnf-latest-posts__list {
+    margin: 0;
+    padding: 0;
+  }
+</style>
