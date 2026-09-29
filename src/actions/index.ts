@@ -4,6 +4,7 @@ import { createBook, updateBook } from './books';
 import { createMember } from './members';
 import { signup } from './signup';
 import { changePassword } from './changePassword';
+import { requestPasswordReset, resetPassword } from './passwordReset';
 import { updateUsername } from './updateUsername';
 import { updateClubMemberships } from './clubMembers';
 import { getEventRsvps, setEventRsvp } from './rsvps';
@@ -21,6 +22,8 @@ export const server = {
   createMember,
   signup,
   changePassword,
+  requestPasswordReset,
+  resetPassword,
   updateUsername,
   updateClubMemberships,
   getEventRsvps,

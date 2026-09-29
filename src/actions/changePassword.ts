@@ -1,5 +1,5 @@
 import { defineAction, ActionError } from 'astro:actions';
-import { verifySessionToken, verifyPassword, hashPassword } from '../lib/auth';
+import { verifySession, verifyPassword, hashPassword } from '../lib/auth';
 import { validatePassword } from '../utils/validation';
 import { supabaseAdmin } from '../lib/supabase';
 
@@ -7,7 +7,7 @@ export const changePassword = defineAction({
   accept: 'form',
   handler: async (formData, context) => {
     const token = context.cookies.get('session')?.value;
-    const payload = token ? verifySessionToken(token) : null;
+    const payload = await verifySession(token);
     if (!payload) {
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }

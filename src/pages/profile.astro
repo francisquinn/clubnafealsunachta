@@ -1,9 +1,9 @@
 ---
 export const prerender = false;
-import { getSessionToken, verifySessionToken } from "../lib/auth";
+import { getSessionToken, verifySession } from "../lib/auth";
 
 const token = getSessionToken(Astro.request);
-const payload = token ? verifySessionToken(token) : null;
+const payload = await verifySession(token);
 
 if (!payload) {
   return Astro.redirect("/");

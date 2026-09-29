@@ -64,3 +64,17 @@ describe("middleware CSRF check", () => {
     expect(result).toBe("next-response");
   });
 });
+
+describe("middleware admin gate", () => {
+  it("sends a logged-out visitor to the homepage with the login modal flag", async () => {
+    const next = vi.fn();
+    const redirect = vi.fn().mockReturnValue("redirect-response");
+    const context = { ...makeContext("https://clubnafealsunachta.com/admin/events"), redirect };
+
+    const result = await onRequest(context as Parameters<typeof onRequest>[0], next);
+
+    expect(redirect).toHaveBeenCalledWith("/?login=1");
+    expect(next).not.toHaveBeenCalled();
+    expect(result).toBe("redirect-response");
+  });
+});

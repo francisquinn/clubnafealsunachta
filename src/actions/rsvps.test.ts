@@ -96,7 +96,7 @@ vi.mock('../lib/auth', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../lib/auth')>();
   return {
     ...actual,
-    verifySessionToken: (token: string | undefined) =>
+    verifySession: async (token: string | undefined) =>
       token === 'session-member-1' ? { memberId: 'member-1', isAdmin: false } : null,
   };
 });

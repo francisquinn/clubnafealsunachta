@@ -91,6 +91,12 @@ select.cnf-form__input {
   box-shadow: var(--box-shadow-card);
 }
 
+/* Plain paragraph inside a .cnf-form: the grid's gap already spaces it, and
+   grid items' margins don't collapse, so the global p margin would double it. */
+.cnf-form__intro {
+  margin: 0;
+}
+
 .cnf-form__hint {
   margin: 0;
   color: hsl(var(--color-grey));

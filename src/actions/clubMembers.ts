@@ -1,5 +1,5 @@
 import { defineAction, ActionError } from 'astro:actions';
-import { verifySessionToken } from '../lib/auth';
+import { verifySession } from '../lib/auth';
 import { supabaseAdmin } from '../lib/supabase';
 import { addClubTag, removeClubTag } from '../lib/mailchimp';
 
@@ -43,7 +43,7 @@ export const updateClubMemberships = defineAction({
   accept: 'form',
   handler: async (formData, context) => {
     const token = context.cookies.get('session')?.value;
-    const payload = token ? verifySessionToken(token) : null;
+    const payload = await verifySession(token);
     if (!payload) {
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }
