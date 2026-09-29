@@ -1,4 +1,4 @@
-import { randomBytes, scrypt, timingSafeEqual } from "crypto";
+import { createHash, randomBytes, scrypt, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import type { AstroCookies } from "astro";
 import jwt from "jsonwebtoken";
@@ -55,21 +55,91 @@ export function verifyVerificationToken(token: string): { email: string } | null
   }
 }
 
+const PASSWORD_RESET_TOKEN_DURATION = "1h";
+
+// Ties a reset token to the password it was issued against: the token embeds
+// a fingerprint of the current hash, so once the password changes (by this
+// reset or any other route) every outstanding link stops verifying. Gives
+// single-use links without a token table. The fingerprint is a truncated
+// SHA-256 of the hash, so the token doesn't leak the (salted) hash itself.
+function passwordFingerprint(passwordHash: string): string {
+  return createHash("sha256").update(passwordHash).digest("hex").slice(0, 16);
+}
+
+export function createPasswordResetToken(memberId: string, passwordHash: string): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error("JWT_SECRET is not set");
+  return jwt.sign(
+    { memberId, fp: passwordFingerprint(passwordHash), purpose: "reset-password" },
+    secret,
+    { expiresIn: PASSWORD_RESET_TOKEN_DURATION },
+  );
+}
+
+// Signature/expiry/purpose only - the caller still has to load the member and
+// pass their current hash to isPasswordResetTokenCurrent before trusting it.
+export function verifyPasswordResetToken(token: string): { memberId: string; fp: string } | null {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) return null;
+  try {
+    const payload = jwt.verify(token, secret) as { memberId?: string; fp?: string; purpose?: string };
+    if (payload.purpose !== "reset-password" || !payload.memberId || !payload.fp) return null;
+    return { memberId: payload.memberId, fp: payload.fp };
+  } catch {
+    return null;
+  }
+}
+
+export function isPasswordResetTokenCurrent(fp: string, passwordHash: string): boolean {
+  return fp === passwordFingerprint(passwordHash);
+}
+
 export function getSessionToken(request: Request): string | undefined {
   const cookie = request.headers.get("cookie") ?? "";
   return cookie.match(/(?:^|;\s*)session=([^;]+)/)?.[1];
 }
 
-export function verifySessionToken(token: string): { memberId: string; isAdmin: boolean; username: string } | null {
+export type SessionPayload = { memberId: string; isAdmin: boolean; username: string; iat?: number };
+
+// Signature/expiry only. Anything that gates access should use verifySession
+// (or requireAdmin), which also checks the member hasn't revoked sessions.
+export function verifySessionToken(token: string): SessionPayload | null {
   const secret = process.env.JWT_SECRET;
   if (!secret) return null;
   try {
-    const payload = jwt.verify(token, secret) as { memberId?: string; isAdmin: boolean; username?: string };
+    const payload = jwt.verify(token, secret) as { memberId?: string; isAdmin: boolean; username?: string; iat?: number };
     if (!payload.memberId || !payload.username) return null;
-    return payload as { memberId: string; isAdmin: boolean; username: string };
+    return payload as SessionPayload;
   } catch {
     return null;
   }
+}
+
+// A session issued before the member's sessions_valid_after cutoff has been
+// revoked. JWT iat is whole seconds, so compare against the cutoff truncated
+// to the second - a session issued in the same second as the cutoff (i.e. the
+// login straight after a reset) stays valid.
+export function isSessionRevoked(iat: number | undefined, sessionsValidAfter: string | null | undefined): boolean {
+  if (!sessionsValidAfter) return false;
+  if (iat === undefined) return true;
+  return iat < Math.floor(new Date(sessionsValidAfter).getTime() / 1000);
+}
+
+// Full session check for anything that gates access: a valid signature isn't
+// enough, the member must still exist and not have revoked sessions issued
+// before now (see sessions_valid_after). Fails closed - no Supabase client or
+// no matching member means no session.
+export async function verifySession(token: string | undefined): Promise<SessionPayload | null> {
+  const payload = token ? verifySessionToken(token) : null;
+  if (!payload || !supabaseAdmin) return null;
+
+  const { data: member } = await supabaseAdmin
+    .from("members")
+    .select("sessions_valid_after")
+    .eq("id", payload.memberId)
+    .single();
+  if (!member || isSessionRevoked(payload.iat, member.sessions_valid_after)) return null;
+  return payload;
 }
 
 // A member's admin scope: a super admin (members.is_admin) manages every
@@ -90,12 +160,21 @@ export type AdminScope = { memberId: string; isSuperAdmin: boolean; clubIds: num
 // missing Supabase client, a query error, or no matching row (memberId
 // always comes from a verified token, but data can still be deleted or
 // misconfigured) all resolve to no rights at all.
-export async function getAdminScope(memberId: string): Promise<AdminScope> {
+//
+// When the caller is resolving scope for a session (requireAdmin), pass its
+// iat: the same members row also carries sessions_valid_after, so a revoked
+// session resolves to no rights without a second lookup of the same row.
+export async function getAdminScope(memberId: string, session?: { iat?: number }): Promise<AdminScope> {
   const none = { memberId, isSuperAdmin: false, clubIds: [] };
   if (!supabaseAdmin) return none;
 
-  const { data: member } = await supabaseAdmin.from("members").select("is_admin").eq("id", memberId).single();
+  const { data: member } = await supabaseAdmin
+    .from("members")
+    .select("is_admin, sessions_valid_after")
+    .eq("id", memberId)
+    .single();
   if (!member) return none;
+  if (session && isSessionRevoked(session.iat, member.sessions_valid_after)) return none;
   if (member.is_admin) return { memberId, isSuperAdmin: true, clubIds: [] };
 
   const { data: clubAdmins } = await supabaseAdmin.from("club_admins").select("club_id").eq("member_id", memberId);
@@ -115,7 +194,7 @@ export async function requireAdmin(request: Request): Promise<AdminScope | null>
   const payload = token ? verifySessionToken(token) : null;
   if (!payload) return null;
 
-  const scope = await getAdminScope(payload.memberId);
+  const scope = await getAdminScope(payload.memberId, payload);
   if (!scope.isSuperAdmin && scope.clubIds.length === 0) return null;
   return scope;
 }

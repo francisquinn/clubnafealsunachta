@@ -43,12 +43,12 @@ vi.mock("astro:actions", () => {
 });
 
 vi.mock("../lib/auth", () => ({
-  verifySessionToken: () => state.payload,
+  verifySession: async (token?: string) => (token ? state.payload : null),
 }));
 
 // Mocking ../lib/supabase (below) also skips its `import "dotenv/config"`
 // side effect, so SUPABASE_* / JWT_SECRET never load from .env — none of
-// them are read here (verifySessionToken is mocked, supabaseAdmin is
+// them are read here (verifySession is mocked, supabaseAdmin is
 // replaced), so that's fine.
 vi.mock("../lib/supabase", () => ({
   supabaseAdmin: {

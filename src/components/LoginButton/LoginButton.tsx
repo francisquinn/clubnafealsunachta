@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import Modal from "../Modal/Modal";
 import LoginForm from "../LoginForm/LoginForm";
+import ForgotPasswordForm from "../ForgotPasswordForm/ForgotPasswordForm";
 import SignupForm from "../SignupForm/SignupForm";
 import { fetchSessionInfo, refreshSessionInfo } from "../../utils/session";
 
-type View = "login" | "signup";
+type View = "login" | "signup" | "forgot";
 
 // The visible Login/Logout toggle is plain static markup in Header.astro, shown/hidden
 // by a synchronous inline script (see BaseLayout's <head>) that reads a cookie hint
@@ -27,6 +28,16 @@ export default function LoginButton() {
 
     const trigger = document.getElementById("cnf-login-trigger");
     trigger?.addEventListener("click", openModal);
+
+    // Middleware sends logged-out visitors to a gated page here as /?login=1.
+    // Open the modal for them, then drop the param so a refresh (or a shared
+    // link) doesn't reopen it.
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("login")) {
+      openModal();
+      url.searchParams.delete("login");
+      window.history.replaceState(null, "", url);
+    }
 
     applySessionInfo(fetchSessionInfo());
 
@@ -62,13 +73,18 @@ export default function LoginButton() {
       {view === "login" ? (
         <>
           <h2>Login</h2>
-          <LoginForm defaultIdentifier={prefillEmail} onSuccess={handleLoginSuccess} />
+          <LoginForm defaultIdentifier={prefillEmail} onSuccess={handleLoginSuccess} onForgotPassword={() => setView("forgot")} />
           <p className="cnf-modal__footer">
             Not a member yet?{" "}
             <button type="button" className="cnf-modal__link" onClick={() => setView("signup")}>
               Become a member
             </button>
           </p>
+        </>
+      ) : view === "forgot" ? (
+        <>
+          <h2>Forgot password</h2>
+          <ForgotPasswordForm onBackToLogin={() => setView("login")} />
         </>
       ) : (
         <>

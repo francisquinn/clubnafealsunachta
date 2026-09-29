@@ -15,5 +15,5 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   if (await requireAdmin(context.request)) return next();
 
-  return context.redirect("/login");
+  return context.redirect("/?login=1");
 });

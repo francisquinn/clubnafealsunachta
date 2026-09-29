@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getSessionToken, verifySessionToken } from "../../lib/auth";
+import { getSessionToken, verifySession } from "../../lib/auth";
 import { supabaseAdmin } from "../../lib/supabase";
 import { getDisplayName } from "../../lib/memberDisplay";
 import BlogEntry from "../../components/BlogEntry.astro";
@@ -11,7 +11,7 @@ import "../../styles/profile.css";
 const { username } = Astro.params;
 
 const token = getSessionToken(Astro.request);
-const payload = token ? verifySessionToken(token) : null;
+const payload = await verifySession(token);
 
 // Single query for the profile being viewed
 const { data: profileUser } = await (supabaseAdmin

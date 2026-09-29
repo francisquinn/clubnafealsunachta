@@ -4,9 +4,11 @@ import "../../styles/form.css";
 interface LoginFormProps {
   defaultIdentifier?: string;
   onSuccess?: () => void;
+  // Swaps the login modal to its forgot-password view.
+  onForgotPassword?: () => void;
 }
 
-export default function LoginForm({ defaultIdentifier = "", onSuccess = () => { window.location.href = "/profile"; } }: LoginFormProps) {
+export default function LoginForm({ defaultIdentifier = "", onSuccess = () => { window.location.href = "/profile"; }, onForgotPassword }: LoginFormProps) {
   const [identifier, setIdentifier] = useState(defaultIdentifier);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -69,6 +71,11 @@ export default function LoginForm({ defaultIdentifier = "", onSuccess = () => { 
           required
           autoComplete="current-password"
         />
+        {onForgotPassword && (
+          <p className="cnf-form__hint">
+            <button type="button" className="cnf-modal__link" onClick={onForgotPassword}>Forgot your password?</button>
+          </p>
+        )}
       </div>
 
       <button type="submit" disabled={loading} aria-busy={loading} className={`cnf-form__submit cnf-button cnf-button__gold${loading ? " cnf-button--loading" : ""}`}>

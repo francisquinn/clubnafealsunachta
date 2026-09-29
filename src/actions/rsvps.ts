@@ -1,6 +1,6 @@
 import { defineAction, ActionError } from 'astro:actions';
 import { supabaseAdmin } from '../lib/supabase';
-import { verifySessionToken } from '../lib/auth';
+import { verifySession } from '../lib/auth';
 import { unwrapRelation } from '../lib/supabaseRelations';
 import { getDisplayName } from '../lib/memberDisplay';
 import {
@@ -129,7 +129,7 @@ export const getEventRsvps = defineAction({
     const eventId = await resolveEventId(slug);
 
     const token = context.cookies.get('session')?.value;
-    const payload = token ? verifySessionToken(token) : null;
+    const payload = await verifySession(token);
     const memberId = payload?.memberId ?? null;
 
     const rows = await fetchRsvpRows(eventId);
@@ -151,7 +151,7 @@ export const setEventRsvp = defineAction({
     }
 
     const token = context.cookies.get('session')?.value;
-    const payload = token ? verifySessionToken(token) : null;
+    const payload = await verifySession(token);
     if (!payload) {
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }

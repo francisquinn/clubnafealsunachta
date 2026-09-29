@@ -166,6 +166,15 @@ export function renderVerificationEmail(verifyUrl: string): string {
   });
 }
 
+export function renderPasswordResetEmail(resetUrl: string): string {
+  return renderEmailHtml({
+    label: "Locked out?",
+    title: "Reset your password",
+    bodyHtml: `<p style="margin:0;">We got a request to reset the password on your Club na Fealsúnachta account. Use the button below to choose a new one.</p><p style="margin:16px 0 0;font-size:13px;color:#999999;">This link expires in 1 hour and only works once. If you didn't ask for this, you can safely ignore this email.</p>`,
+    cta: { text: "Reset password", url: resetUrl },
+  });
+}
+
 export function renderContactMessageEmail({ name, email, message }: {
   name: string;
   email: string;

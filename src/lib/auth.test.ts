@@ -6,6 +6,8 @@ import {
   getAdminScope,
   requireAdmin,
   isClubInScope,
+  verifySession,
+  isSessionRevoked,
 } from "./auth";
 
 // #37: getAdminScope/requireAdmin resolve super-admin vs per-club scope by
@@ -13,7 +15,7 @@ import {
 // each test controls exactly what comes back, same shape as the real
 // supabase-js chain (`.from().select().eq()[.single()]`).
 const state = vi.hoisted(() => ({
-  members: null as { is_admin: boolean } | null,
+  members: null as { is_admin: boolean; sessions_valid_after?: string | null } | null,
   clubAdmins: [] as { club_id: number }[],
 }));
 
@@ -161,5 +163,53 @@ describe("JWT payload includes username", () => {
     const payload = verifySessionToken(legacyToken);
 
     expect(payload).toBeNull();
+  });
+});
+// Session revocation: a password reset stamps members.sessions_valid_after,
+// and any session token issued before it must stop working everywhere.
+describe("session revocation", () => {
+  const iat = (iso: string) => Math.floor(new Date(iso).getTime() / 1000);
+
+  it("isSessionRevoked: no cutoff never revokes", () => {
+    expect(isSessionRevoked(iat("2026-01-01T00:00:00Z"), null)).toBe(false);
+    expect(isSessionRevoked(undefined, undefined)).toBe(false);
+  });
+
+  it("isSessionRevoked: revokes tokens issued before the cutoff, keeps ones at or after it", () => {
+    const cutoff = "2026-06-01T12:00:00.900Z";
+    expect(isSessionRevoked(iat("2026-06-01T11:59:59Z"), cutoff)).toBe(true);
+    // Same second as the cutoff (login straight after a reset) stays valid.
+    expect(isSessionRevoked(iat("2026-06-01T12:00:00Z"), cutoff)).toBe(false);
+    expect(isSessionRevoked(iat("2026-06-01T12:00:05Z"), cutoff)).toBe(false);
+  });
+
+  it("isSessionRevoked: a token with no iat is revoked once a cutoff exists", () => {
+    expect(isSessionRevoked(undefined, "2026-06-01T12:00:00Z")).toBe(true);
+  });
+
+  it("verifySession accepts a fresh token for a member with no cutoff", async () => {
+    state.members = { is_admin: false, sessions_valid_after: null };
+    const payload = await verifySession(createSessionToken("member-1", false, "alice"));
+    expect(payload?.memberId).toBe("member-1");
+  });
+
+  it("verifySession rejects a token issued before the member's cutoff", async () => {
+    const token = createSessionToken("member-1", false, "alice");
+    state.members = { is_admin: false, sessions_valid_after: new Date(Date.now() + 60_000).toISOString() };
+    expect(await verifySession(token)).toBeNull();
+  });
+
+  it("verifySession rejects when the member no longer exists, or the token is bad", async () => {
+    state.members = null;
+    expect(await verifySession(createSessionToken("member-1", false, "alice"))).toBeNull();
+    state.members = { is_admin: false };
+    expect(await verifySession("garbage")).toBeNull();
+    expect(await verifySession(undefined)).toBeNull();
+  });
+
+  it("requireAdmin denies a revoked admin session", async () => {
+    const token = createSessionToken("member-1", true, "alice");
+    state.members = { is_admin: true, sessions_valid_after: new Date(Date.now() + 60_000).toISOString() };
+    expect(await requireAdmin(makeRequest(`session=${token}`))).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import { defineAction, ActionError } from 'astro:actions';
-import { verifySessionToken, createSessionToken, setSessionCookie, setAvatarHintCookie } from '../lib/auth';
+import { verifySession, createSessionToken, setSessionCookie, setAvatarHintCookie } from '../lib/auth';
 import { validateUsername, validateFullName } from '../utils/validation';
 import { escapeLikePattern } from '../lib/username';
 import { supabaseAdmin } from '../lib/supabase';
@@ -9,7 +9,7 @@ export const updateUsername = defineAction({
   accept: 'form',
   handler: async (formData, context) => {
     const token = context.cookies.get('session')?.value;
-    const payload = token ? verifySessionToken(token) : null;
+    const payload = await verifySession(token);
     if (!payload) {
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }
