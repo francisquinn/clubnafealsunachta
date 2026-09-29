@@ -12,7 +12,7 @@ const pageTitle = "Blog";
   <section class="cnf-section">
     <h1>{pageTitle}</h1>
     <p>Welcome to the Club na Fealsúnachta blog page!</p>
-    <ul>
+    <ul class="cnf-events--grid cnf-blog__list">
       {
         posts.map((post) => (
           <BlogPost url={`/posts/${post.id}`} post={post.data} />
@@ -21,3 +21,10 @@ const pageTitle = "Blog";
     </ul>
   </section>
 </BaseLayout>
+
+<style>
+  .cnf-blog__list {
+    margin: 0;
+    padding: 0;
+  }
+</style>

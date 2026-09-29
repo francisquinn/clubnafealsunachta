@@ -35,6 +35,7 @@ export function postsLoader(): Loader {
             title: post.title,
             date: new Date(post.date),
             author,
+            coverImageUrl: post.cover_image_url ?? null,
           },
           body: post.body,
           rendered,

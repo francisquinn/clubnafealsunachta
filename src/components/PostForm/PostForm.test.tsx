@@ -18,6 +18,7 @@ const sampleInitialData = {
   slug: "test-post",
   date: "2026-01-01",
   body: "This is the body of the post.",
+  coverImageUrl: null,
 };
 
 describe("PostForm (create mode)", () => {
@@ -32,6 +33,11 @@ describe("PostForm (create mode)", () => {
     expect(screen.getByLabelText(/date/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/body/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^create$/i })).toBeInTheDocument();
+  });
+
+  it("requires a cover image", () => {
+    render(<PostForm mode="create" />);
+    expect(screen.getByLabelText(/cover image/i)).toBeRequired();
   });
 
   // #94: the slug field is pre-filled from the title as it's typed, until
@@ -139,5 +145,18 @@ describe("PostForm (edit mode)", () => {
     await waitFor(() => {
       expect(screen.getByText(/post updated successfully/i)).toBeInTheDocument();
     });
+  });
+});
+
+describe("PostForm cover requirement (edit mode)", () => {
+  it("only requires a new cover when the post has none yet", () => {
+    const { unmount } = render(
+      <PostForm mode="edit" initialData={{ ...sampleInitialData, coverImageUrl: "https://example.com/cover.jpg" }} />
+    );
+    expect(screen.getByLabelText(/cover image/i)).not.toBeRequired();
+    unmount();
+
+    render(<PostForm mode="edit" initialData={sampleInitialData} />);
+    expect(screen.getByLabelText(/cover image/i)).toBeRequired();
   });
 });
