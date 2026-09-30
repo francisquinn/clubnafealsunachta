@@ -4,7 +4,9 @@
   # no diff in the listed paths. Test files live under src/, so they are
   # excluded explicitly. If CACHED_COMMIT_REF is empty (first build) the diff
   # errors out, which falls through to a normal build.
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- src public package.json package-lock.json astro.config.mjs tsconfig.json netlify.toml ':!src/**/*.test.*' ':!src/__mocks__'"
+  # Builds from the Netlify build hook (posts, events, books, display names)
+  # rebuild the same commit, so the diff is always empty. Never skip those.
+  ignore = "[ -n \"$INCOMING_HOOK_TITLE\" ] && exit 1; git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- src public package.json package-lock.json astro.config.mjs tsconfig.json netlify.toml ':!src/**/*.test.*' ':!src/__mocks__'"
 
 # Only production (main) builds. Previews and branch deploys are skipped so
 # they don't burn build minutes. Mirrors the dashboard setting, so it still
