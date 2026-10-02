@@ -5,6 +5,11 @@ import { sniffImageType } from './imageType';
 const OBJECT_URL_MARKER = '/storage/v1/object/public/';
 const RENDER_URL_SEGMENT = '/storage/v1/render/image/public/';
 
+// The resize is optional, so it must never hold up the save: on 2026-09-29 a
+// stalled render request kept a post edit hanging for ~55s (function killed
+// before the row update, so the cover never saved). Past this, keep the original.
+const RESIZE_TIMEOUT_MS = 5000;
+
 type UploadLimits = {
   // Shown in error messages, e.g. "Cover image must be 5MB or smaller".
   label: string;
@@ -16,15 +21,20 @@ type UploadLimits = {
 
 // Supabase's render endpoint for a public object URL, scaled to `width` with
 // height following the aspect ratio. Falls back to the URL untouched if it
-// isn't a public object URL (not expected in practice).
-export function resizedImageUrl(publicUrl: string, width: number): string {
+// isn't a public object URL (not expected in practice). Any existing query
+// string (the ?v= cache-buster on stored URLs) is dropped first, so the
+// width params aren't appended after it.
+export function resizedImageUrl(storedUrl: string, width: number, cacheBuster?: string): string {
+  const queryIndex = storedUrl.indexOf('?');
+  const publicUrl = queryIndex === -1 ? storedUrl : storedUrl.slice(0, queryIndex);
   const markerIndex = publicUrl.indexOf(OBJECT_URL_MARKER);
-  if (markerIndex === -1) return publicUrl;
+  if (markerIndex === -1) return storedUrl;
+  const versionQuery = cacheBuster ? `&v=${encodeURIComponent(cacheBuster)}` : '';
   return (
     publicUrl.slice(0, markerIndex) +
     RENDER_URL_SEGMENT +
     publicUrl.slice(markerIndex + OBJECT_URL_MARKER.length) +
-    `?width=${width}&resize=contain`
+    `?width=${width}&resize=contain${versionQuery}`
   );
 }
 
@@ -73,12 +83,15 @@ export async function uploadImageIfPresent(
   }
 
   const { data } = supabaseAdmin!.storage.from(bucket).getPublicUrl(slug);
+  const cacheBuster = crypto.randomUUID();
 
   // Best-effort, like the avatar re-store: if the resize fails the original
   // stays in place rather than failing the whole save.
   if (limits) {
     try {
-      const resizeResponse = await fetch(resizedImageUrl(data.publicUrl, limits.resizeWidth));
+      const resizeResponse = await fetch(resizedImageUrl(data.publicUrl, limits.resizeWidth, cacheBuster), {
+        signal: AbortSignal.timeout(RESIZE_TIMEOUT_MS),
+      });
       if (resizeResponse.ok) {
         const resizedBlob = await resizeResponse.blob();
         await supabaseAdmin!.storage
@@ -92,5 +105,9 @@ export async function uploadImageIfPresent(
     }
   }
 
-  return data.publicUrl;
+  // The object key never changes, so a re-upload keeps the same public URL
+  // and the Supabase CDN / browsers keep serving the old image (#127). A
+  // version param makes each upload a distinct URL, so the rebuilt static
+  // pages actually fetch the new file.
+  return `${data.publicUrl}?v=${cacheBuster}`;
 }

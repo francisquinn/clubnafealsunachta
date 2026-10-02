@@ -5,7 +5,10 @@ import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
 import { resolveUniqueSlug } from '../lib/slugDedup';
 import { uploadImageIfPresent } from '../lib/storageUpload';
 
+import { MAX_BOOK_COVER_BYTES, BOOK_COVER_RESIZE_WIDTH } from '../lib/bookCover';
+
 const COVERS_BUCKET = 'book-covers';
+const COVER_LIMITS = { label: 'Cover image', maxBytes: MAX_BOOK_COVER_BYTES, resizeWidth: BOOK_COVER_RESIZE_WIDTH };
 
 export const createBook = defineAction({
   accept: 'form',
@@ -32,7 +35,7 @@ export const createBook = defineAction({
     }
 
     const slug = await resolveUniqueSlug(supabaseAdmin, 'books', rawSlug);
-    const cover_image_url = await uploadImageIfPresent(formData, 'cover_image', COVERS_BUCKET, slug);
+    const cover_image_url = await uploadImageIfPresent(formData, 'cover_image', COVERS_BUCKET, slug, COVER_LIMITS);
 
     const { error } = await supabaseAdmin
       .from('books')
@@ -45,7 +48,7 @@ export const createBook = defineAction({
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
     }
 
-    triggerNetlifyBuild();
+    await triggerNetlifyBuild();
 
     return { success: true };
   }
@@ -73,7 +76,7 @@ export const updateBook = defineAction({
 
     // No new file chosen leaves cover_image_url out of the update entirely,
     // so the existing cover survives untouched.
-    const newCoverUrl = await uploadImageIfPresent(formData, 'cover_image', COVERS_BUCKET, slug);
+    const newCoverUrl = await uploadImageIfPresent(formData, 'cover_image', COVERS_BUCKET, slug, COVER_LIMITS);
 
     const { data: updated, error } = await supabaseAdmin
       .from('books')
@@ -95,7 +98,7 @@ export const updateBook = defineAction({
       throw new ActionError({ code: 'NOT_FOUND', message: 'Book not found' });
     }
 
-    triggerNetlifyBuild();
+    await triggerNetlifyBuild();
 
     return { success: true };
   }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { actions } from "astro:actions";
 import { slugify } from "../../lib/slugify";
+import { MAX_BOOK_COVER_BYTES } from "../../lib/bookCover";
 
 export type BookFormInitialData = {
   title: string;
@@ -36,6 +37,15 @@ export default function BookForm({ mode, initialData }: BookFormProps) {
     setErrorMessage("");
 
     const formData = new FormData(e.currentTarget);
+
+    // The server re-checks this; catching it here avoids sending a
+    // too-big file only to have it rejected.
+    const cover = formData.get("cover_image");
+    if (cover instanceof File && cover.size > MAX_BOOK_COVER_BYTES) {
+      setStatus("error");
+      setErrorMessage("Cover image must be 5MB or smaller");
+      return;
+    }
 
     try {
       const action = mode === "edit" ? actions.updateBook : actions.createBook;
@@ -151,7 +161,7 @@ export default function BookForm({ mode, initialData }: BookFormProps) {
           accept="image/*"
         />
         <small className="cnf-form__hint">
-          {mode === "edit" ? "Optional. Leave empty to keep the current cover." : "Optional."}
+          {mode === "edit" ? "Optional. Leave empty to keep the current cover. " : "Optional. "}Up to 5MB.
         </small>
       </div>
 
