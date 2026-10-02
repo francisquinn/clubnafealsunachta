@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import "@testing-library/jest-dom";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import AccountMenu from "./AccountMenu";
 import { getCachedMember, setCachedMember } from "../../utils/session";
 
@@ -48,6 +48,34 @@ describe("AccountMenu", () => {
 
     expect(document.querySelector(".cnf-avatar--skeleton")).toBeInTheDocument();
     expect(document.querySelector(".cnf-avatar--fallback")).not.toBeInTheDocument();
+  });
+
+  // #128: a failed lookup on the server isn't "logged out" - keep showing the
+  // cached member instead of falling back to the generic "Account" avatar.
+  // "bob" (B) vs the generic fallback (A, from "Account") tells them apart.
+  describe("when /api/me answers", () => {
+    const BOB = { ...MEMBER, id: "member-2", username: "bob" };
+    const avatar = () => document.querySelector(".cnf-avatar--fallback");
+
+    it("keeps the cached member if the server could not verify the session (degraded)", async () => {
+      setCachedMember(BOB);
+      mockFetchSessionInfo.mockResolvedValue({ loggedIn: true, isAdmin: false, member: null, degraded: true });
+
+      render(<AccountMenu pathname="/" />);
+
+      await waitFor(() => expect(mockFetchSessionInfo).toHaveBeenCalled());
+      await new Promise((r) => setTimeout(r, 0));
+      expect(avatar()).toHaveTextContent("B");
+    });
+
+    it("drops the cached member if the server says there is no member (not degraded)", async () => {
+      setCachedMember(BOB);
+      mockFetchSessionInfo.mockResolvedValue({ loggedIn: false, isAdmin: false, member: null });
+
+      render(<AccountMenu pathname="/" />);
+
+      await waitFor(() => expect(avatar()).toHaveTextContent("A"));
+    });
   });
 
   // Otherwise a different member logging in next on the same (shared/kiosk)

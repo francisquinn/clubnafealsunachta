@@ -23,7 +23,7 @@ export default function AccountMenu({ pathname }: AccountMenuProps) {
   useEffect(() => {
     fetchSessionInfo().then((data) => {
       setIsAdmin(!!data.isAdmin);
-      setMember(data.member ?? null);
+      if (!data.degraded) setMember(data.member ?? null);
       setLoaded(true);
     });
   }, []);
