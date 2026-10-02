@@ -3,8 +3,9 @@ import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { resizedImageUrl } from "../lib/storageUpload";
 import { BOOK_COVER_RESIZE_WIDTH } from "../lib/bookCover";
+import { sortBooksByTitle } from "../lib/bookOrder";
 
-const books = await getCollection("books");
+const books = sortBooksByTitle(await getCollection("books"));
 
 const pageTitle = "Library";
 
