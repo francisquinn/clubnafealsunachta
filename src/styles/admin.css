@@ -82,10 +82,20 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
+
+  /* Action cell has no data-label: drop the empty label slot */
+  .cnf-admin-table td:not([data-label])::before {
+    display: none;
+  }
 }
 
 @media (max-width: 768px) {
   .cnf-admin-shell {
     flex-direction: column;
+  }
+
+  /* Room between the stacked nav and the page title / CTA */
+  .cnf-admin-content {
+    padding-top: 1rem;
   }
 }

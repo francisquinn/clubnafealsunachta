@@ -18,10 +18,21 @@ const { pathname } = Astro.url;
       width: 100%;
       min-height: unset;
       flex-direction: row;
-      padding: 0.5rem 1rem;
+      /* Left padding is the page gutter (1rem) minus the link's own 0.75rem,
+         so the first link's text lines up with the page title. */
+      padding: 0.5rem 1rem 0.5rem 0.25rem;
       border-right: none;
       border-bottom: 1px solid hsl(var(--color-grey) / 0.2);
       gap: 0.5rem;
+
+      /* The link row is wider than the viewport: scroll it inside the
+         sidebar (not the page) and hide the bar. */
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .cnf-admin-sidebar::-webkit-scrollbar {
+      display: none;
     }
   }
 
