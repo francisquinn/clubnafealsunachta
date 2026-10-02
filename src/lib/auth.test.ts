@@ -297,8 +297,8 @@ describe("transient lookup errors", () => {
       await verifySession(token());
 
       expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy.mock.calls[0][0]).toContain("verifySession members");
-      expect(spy.mock.calls[0][0]).toContain("57014");
+      expect(spy.mock.calls[0]?.[0]).toContain("verifySession members");
+      expect(spy.mock.calls[0]?.[0]).toContain("57014");
       spy.mockRestore();
     });
 
