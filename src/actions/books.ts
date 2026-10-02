@@ -45,7 +45,7 @@ export const createBook = defineAction({
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
     }
 
-    triggerNetlifyBuild();
+    await triggerNetlifyBuild();
 
     return { success: true };
   }
@@ -95,7 +95,7 @@ export const updateBook = defineAction({
       throw new ActionError({ code: 'NOT_FOUND', message: 'Book not found' });
     }
 
-    triggerNetlifyBuild();
+    await triggerNetlifyBuild();
 
     return { success: true };
   }

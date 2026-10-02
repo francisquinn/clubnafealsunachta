@@ -69,6 +69,12 @@ describe('resizedImageUrl', () => {
     );
   });
 
+  it('adds the upload cache-buster to the resized URL', () => {
+    expect(resizedImageUrl('https://x.supabase.co/storage/v1/object/public/post-covers/a', 1600, 'upload-123')).toBe(
+      'https://x.supabase.co/storage/v1/render/image/public/post-covers/a?width=1600&resize=contain&v=upload-123'
+    );
+  });
+
   it('leaves any other URL untouched', () => {
     expect(resizedImageUrl('/about.jpg', 1600)).toBe('/about.jpg');
   });
@@ -106,9 +112,11 @@ describe('uploadImageIfPresent', () => {
   it('re-stores the resized copy over the original', async () => {
     fetchMock.mockResolvedValue(new Response(new Blob([new Uint8Array(5)], { type: 'image/jpeg' })));
     const url = await uploadImageIfPresent(formWith(jpeg()), 'cover_image', 'post-covers', 'a', LIMITS);
-    expect(url).toBe('https://x.supabase.co/storage/v1/object/public/post-covers/a');
+    // Versioned so a re-upload to the same key isn't served from cache (#127).
+    expect(url).toMatch(/^https:\/\/x\.supabase\.co\/storage\/v1\/object\/public\/post-covers\/a\?v=[0-9a-f-]+$/);
+    const cacheBuster = new URL(url!).searchParams.get('v');
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://x.supabase.co/storage/v1/render/image/public/post-covers/a?width=1600&resize=contain'
+      `https://x.supabase.co/storage/v1/render/image/public/post-covers/a?width=1600&resize=contain&v=${cacheBuster}`
     );
     expect(state.uploads.map((u) => u.size)).toEqual([JPEG_BYTES.length, 5]);
   });
