@@ -107,4 +107,17 @@ describe("cached member (AccountMenu's flash-avoidance)", () => {
 
     expect(getCachedMember()).toBeNull();
   });
+
+  it("fetchSessionInfo keeps the cached member when the server could not verify the session (degraded)", async () => {
+    localStorage.setItem("cnf-cached-member", JSON.stringify(MEMBER));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve({ json: () => Promise.resolve({ loggedIn: true, isAdmin: false, member: null, degraded: true }) }))
+    );
+    const { fetchSessionInfo, getCachedMember } = await importFresh();
+
+    await fetchSessionInfo();
+
+    expect(getCachedMember()).toEqual(MEMBER);
+  });
 });
