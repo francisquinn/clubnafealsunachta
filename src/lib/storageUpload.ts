@@ -5,6 +5,11 @@ import { sniffImageType } from './imageType';
 const OBJECT_URL_MARKER = '/storage/v1/object/public/';
 const RENDER_URL_SEGMENT = '/storage/v1/render/image/public/';
 
+// The resize is optional, so it must never hold up the save: on 2026-09-29 a
+// stalled render request kept a post edit hanging for ~55s (function killed
+// before the row update, so the cover never saved). Past this, keep the original.
+const RESIZE_TIMEOUT_MS = 5000;
+
 type UploadLimits = {
   // Shown in error messages, e.g. "Cover image must be 5MB or smaller".
   label: string;
@@ -84,7 +89,9 @@ export async function uploadImageIfPresent(
   // stays in place rather than failing the whole save.
   if (limits) {
     try {
-      const resizeResponse = await fetch(resizedImageUrl(data.publicUrl, limits.resizeWidth, cacheBuster));
+      const resizeResponse = await fetch(resizedImageUrl(data.publicUrl, limits.resizeWidth, cacheBuster), {
+        signal: AbortSignal.timeout(RESIZE_TIMEOUT_MS),
+      });
       if (resizeResponse.ok) {
         const resizedBlob = await resizeResponse.blob();
         await supabaseAdmin!.storage
