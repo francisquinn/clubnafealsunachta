@@ -1,0 +1,39 @@
+name: CI
+
+# Tests only. `astro check` can't run here yet: it syncs the content collections,
+# and those loaders need Supabase credentials (see the follow-up issue).
+
+on:
+  # No path filter on pull requests: if `test` is a required check, a PR that
+  # skipped the workflow would sit on "waiting for status" and never merge.
+  pull_request:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'astro.config.mjs'
+      - 'tsconfig.json'
+      - 'vitest.config.ts'
+      - '.github/workflows/ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx vitest run
