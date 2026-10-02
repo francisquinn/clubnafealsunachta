@@ -11,7 +11,7 @@ interface NavMenuProps {
 // doesn't false-positive on e.g. a user-generated /profile/eventsguy.
 const CLUB_EVENTS_PATH = /^\/([^/]+)\/events(\/|$)/;
 
-// Must match the max-width of the overlay's media query in global.css.
+// Must match the max-width of the overlay's media query in nav.css.
 const OVERLAY_QUERY = "(max-width: 575.98px)";
 
 export default function NavMenu({ pathname }: NavMenuProps) {
