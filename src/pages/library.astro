@@ -1,10 +1,22 @@
 ---
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { resizedImageUrl } from "../lib/storageUpload";
+import { BOOK_COVER_RESIZE_WIDTH } from "../lib/bookCover";
 
 const books = await getCollection("books");
 
 const pageTitle = "Library";
+
+// Covers render through Supabase's resizer rather than as full-size uploads
+// (#141). Two widths for 1x/2x screens; cards are half the column on mobile
+// and a third from 768px up.
+const SRCSET_WIDTHS = [400, BOOK_COVER_RESIZE_WIDTH];
+const COVER_SIZES = "(min-width: 768px) 33vw, 50vw";
+// First row (3 columns on desktop) is above the fold, so it loads eagerly.
+const EAGER_COVERS = 3;
+const coverSrcset = (url: string) =>
+  SRCSET_WIDTHS.map((width) => `${resizedImageUrl(url, width)} ${width}w`).join(", ");
 ---
 
 <style>
@@ -29,6 +41,9 @@ const pageTitle = "Library";
 
   .cnf-book__cover {
     width: 100%;
+    height: auto;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
     border-radius: 4px;
     box-shadow: var(--box-shadow-card);
     display: block;
@@ -58,7 +73,7 @@ const pageTitle = "Library";
     )}
 
     <ul>
-      {books.map((book) => (
+      {books.map((book, index) => (
         <li>
           {book.data.coverImageUrl && (
             book.data.goodreadsUrl ? (
@@ -70,17 +85,25 @@ const pageTitle = "Library";
               >
                 <img
                   class="cnf-book__cover"
-                  src={book.data.coverImageUrl}
+                  src={resizedImageUrl(book.data.coverImageUrl, BOOK_COVER_RESIZE_WIDTH)}
+                  srcset={coverSrcset(book.data.coverImageUrl)}
+                  sizes={COVER_SIZES}
+                  width={BOOK_COVER_RESIZE_WIDTH}
+                  height={BOOK_COVER_RESIZE_WIDTH * 1.5}
                   alt={`${book.data.title} by ${book.data.author} — more on Goodreads`}
-                  loading="lazy"
+                  loading={index < EAGER_COVERS ? "eager" : "lazy"}
                 />
               </a>
             ) : (
               <img
                 class="cnf-book__cover"
-                src={book.data.coverImageUrl}
+                src={resizedImageUrl(book.data.coverImageUrl, BOOK_COVER_RESIZE_WIDTH)}
+                srcset={coverSrcset(book.data.coverImageUrl)}
+                sizes={COVER_SIZES}
+                width={BOOK_COVER_RESIZE_WIDTH}
+                height={BOOK_COVER_RESIZE_WIDTH * 1.5}
                 alt={`Cover of ${book.data.title} by ${book.data.author}`}
-                loading="lazy"
+                loading={index < EAGER_COVERS ? "eager" : "lazy"}
               />
             )
           )}

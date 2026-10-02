@@ -116,7 +116,8 @@ describe('uploadImageIfPresent', () => {
     expect(url).toMatch(/^https:\/\/x\.supabase\.co\/storage\/v1\/object\/public\/post-covers\/a\?v=[0-9a-f-]+$/);
     const cacheBuster = new URL(url!).searchParams.get('v');
     expect(fetchMock).toHaveBeenCalledWith(
-      `https://x.supabase.co/storage/v1/render/image/public/post-covers/a?width=1600&resize=contain&v=${cacheBuster}`
+      `https://x.supabase.co/storage/v1/render/image/public/post-covers/a?width=1600&resize=contain&v=${cacheBuster}`,
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
     );
     expect(state.uploads.map((u) => u.size)).toEqual([JPEG_BYTES.length, 5]);
   });
@@ -124,6 +125,14 @@ describe('uploadImageIfPresent', () => {
   it('keeps the original when the resize request fails', async () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     fetchMock.mockResolvedValue(new Response('nope', { status: 500 }));
+    await expect(uploadImageIfPresent(formWith(jpeg()), 'cover_image', 'post-covers', 'a', LIMITS)).resolves.toBeTruthy();
+    expect(state.uploads).toHaveLength(1);
+    spy.mockRestore();
+  });
+
+  it('keeps the original when the resize request times out', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    fetchMock.mockRejectedValue(new DOMException('The operation timed out.', 'TimeoutError'));
     await expect(uploadImageIfPresent(formWith(jpeg()), 'cover_image', 'post-covers', 'a', LIMITS)).resolves.toBeTruthy();
     expect(state.uploads).toHaveLength(1);
     spy.mockRestore();
