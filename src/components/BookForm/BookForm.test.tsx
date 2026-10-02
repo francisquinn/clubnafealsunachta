@@ -62,6 +62,19 @@ describe("BookForm (create mode)", () => {
     expect(slugInput.value).toBe("custom-slug");
   });
 
+  it("rejects a cover over 5MB without calling the action", async () => {
+    render(<BookForm mode="create" />);
+    const bigCover = new File([new Uint8Array(5 * 1024 * 1024 + 1)], "cover.jpg", { type: "image/jpeg" });
+    // jsdom can't attach a File to a file input, so hand it to the form data directly.
+    const getSpy = vi.spyOn(FormData.prototype, "get").mockImplementation((name) => (name === "cover_image" ? bigCover : null));
+
+    fireEvent.submit(document.querySelector("form")!);
+
+    expect(await screen.findByText("Cover image must be 5MB or smaller")).toBeInTheDocument();
+    expect(mockCreateBook).not.toHaveBeenCalled();
+    getSpy.mockRestore();
+  });
+
   it("disables submit button while submitting", async () => {
     mockCreateBook.mockReturnValue(new Promise(() => {}));
     render(<BookForm mode="create" />);
