@@ -149,8 +149,9 @@ legend + .cnf-form__hint {
 
 .cnf-form__message--error {
   color: hsl(var(--color-red));
-  background: hsl(var(--color-red) / 0.1);
-  border-radius: var(--border-radius);
+  background: hsla(var(--color-red), 0.1);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
 }
 
 

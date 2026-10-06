@@ -10,7 +10,6 @@ const { pathname } = Astro.url;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    border-right: 1px solid hsl(var(--color-grey) / 0.2);
   }
 
   @media (max-width: 768px) {
@@ -21,8 +20,6 @@ const { pathname } = Astro.url;
       /* Left padding is the page gutter (1rem) minus the link's own 0.75rem,
          so the first link's text lines up with the page title. */
       padding: 0.5rem 1rem 0.5rem 0.25rem;
-      border-right: none;
-      border-bottom: 1px solid hsl(var(--color-grey) / 0.2);
       gap: 0.5rem;
 
       /* The link row is wider than the viewport: scroll it inside the
