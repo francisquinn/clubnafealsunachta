@@ -212,10 +212,6 @@
 
 .cnf-rsvp__error {
   margin: 0 0 1rem;
-  color: hsl(var(--color-red));
-  background: hsla(var(--color-red), 0.1);
-  border-radius: 4px;
-  padding: 0.5rem 0.75rem;
 }
 
 .cnf-rsvp__lists {

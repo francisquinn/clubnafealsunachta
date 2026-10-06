@@ -108,6 +108,17 @@ blockquote {
   color: hsl(var(--color-grey));
 }
 
+/* Inline error messages: one look for form errors and the RSVP error. Lives
+   here, not in form.css or event.css, because neither stylesheet is loaded on
+   every page that shows one of these. */
+.cnf-form__message--error,
+.cnf-rsvp__error {
+  color: hsl(var(--color-red));
+  background: hsla(var(--color-red), 0.1);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+}
+
 .tab-active {
   background: color-mix(in srgb, hsl(var(--color-green)) 15%, transparent);
   border-radius: var(--border-radius);
