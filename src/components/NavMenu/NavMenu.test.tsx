@@ -5,7 +5,7 @@ import NavMenu from "./NavMenu";
 import { DEFAULT_CLUB_SLUG } from "../../lib/clubDefaults";
 
 // Layout and animation (full-screen overlay on mobile, inline row on desktop,
-// staggered fade, underline for the current page) live in global.css, which
+// staggered fade, underline for the current page) live in nav.css, which
 // jsdom doesn't load — these tests cover the behaviour and the hooks the CSS
 // relies on: aria-expanded on the toggle, the collapsible panel class, and
 // tab-active on the current page's link.

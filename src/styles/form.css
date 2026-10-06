@@ -147,12 +147,6 @@ legend + .cnf-form__hint {
   display: none;
 }
 
-.cnf-form__message--error {
-  color: hsl(var(--color-red));
-  background: hsl(var(--color-red) / 0.1);
-  border-radius: var(--border-radius);
-}
-
 
 @media (min-width: 576px) {
   .cnf-form__submit {

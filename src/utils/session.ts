@@ -10,6 +10,8 @@ export interface SessionInfo {
   loggedIn: boolean;
   isAdmin: boolean;
   member: CachedMember | null;
+  // Server couldn't verify the session (transient lookup failure) - keep local state as is.
+  degraded?: boolean;
 }
 
 const MEMBER_CACHE_KEY = "cnf-cached-member";
@@ -56,7 +58,9 @@ function request(): Promise<SessionInfo> {
       // beyond just the explicit write/clear points in AccountForm and the
       // logout form — catches any other way the session or member data
       // could have drifted (expired session, changed elsewhere, etc).
-      if (data.member) {
+      if (data.degraded) {
+        // Unknown, not logged out: leave the cached member alone.
+      } else if (data.member) {
         setCachedMember(data.member);
       } else {
         clearCachedMember();

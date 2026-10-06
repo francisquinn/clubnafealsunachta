@@ -1,5 +1,5 @@
 // #70 follow-up: avatars only ever render at 32-64px (.cnf-avatar--sm/--lg
-// in global.css), but the stored avatar_url points at whatever full-
+// in avatar.css), but the stored avatar_url points at whatever full-
 // resolution file the member uploaded (up to 5MB) - every page rendering
 // their avatar was downloading that full file just to shrink it into a
 // tiny circle. Supabase Storage can resize on the fly via its render

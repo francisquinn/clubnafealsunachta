@@ -1,0 +1,112 @@
+.cnf-button {
+  position: relative;
+  padding: 1rem 1.5rem;
+  border-radius: var(--border-radius);
+  border: none;
+  cursor: pointer;
+  font-family: "Noto Sans", sans-serif;
+  font-size: 1.125rem;
+  font-weight: 400;
+  transition: transition 0.1s ease;
+  text-decoration: none;
+}
+
+.cnf-button--compact {
+  padding: 0.5rem 1rem;
+}
+
+/* Reads as a plain text link (matches the real <a> styling above) rather
+   than a button — for actions that need a click handler instead of an href. */
+.cnf-button--link {
+  background-color: transparent;
+  padding: 0;
+  color: hsl(var(--color-green));
+  font-weight: inherit;
+  text-decoration: underline;
+}
+
+.cnf-button__primary {
+  background-color: hsl(var(--color-green));
+}
+
+.cnf-button__secondary {
+  color: hsl(var(--color-green));
+  background-color: hsl(var(--color-beige));
+  border: 2px solid hsl(var(--color-green));
+}
+
+.cnf-button__gold {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in hsl, hsl(var(--color-gold)) 80%, white),
+    hsl(var(--color-gold))
+  );
+}
+
+.cnf-button__gold {
+  background-color: hsl(var(--color-gold));
+}
+
+.cnf-button__link {
+  background-color: transparent;
+  color: hsl(var(--color-green));
+}
+
+.cnf-button__emoji {
+  font-size: 1.5rem;
+  line-height: 1rem;
+}
+
+.cnf-button__primary .cnf-button__text,
+.cnf-button__gold .cnf-button__text {
+  color: hsl(var(--color-beige));
+}
+
+.cnf-button--loading .cnf-button__text {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.cnf-button--loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  border: 3px solid transparent;
+  border-top-color: hsl(var(--color-white));
+  border-radius: 50%;
+  animation: button-loading-spinner 1s ease infinite;
+}
+
+/* .cnf-button__secondary's background is light (beige) — the default white
+   spinner is barely visible on it, unlike on the dark primary/gold buttons
+   it was designed for. */
+.cnf-button__secondary.cnf-button--loading::after {
+  border-top-color: hsl(var(--color-green));
+}
+
+.cnf-button:active {
+  transform: scale(0.95);
+  box-shadow: none;
+}
+
+.cnf-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+@keyframes button-loading-spinner {
+  from {
+    transform: rotate(0turn);
+  }
+
+  to {
+    transform: rotate(1turn);
+  }
+}

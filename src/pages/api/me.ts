@@ -4,6 +4,8 @@ import {
   getSessionToken,
   verifySessionToken,
   isSessionRevoked,
+  isTransientLookupError,
+  lookupWithRetry,
   loggedInHintCookie,
   clearedLoggedInHintCookie,
   avatarHintCookie,
@@ -25,11 +27,23 @@ export const GET: APIRoute = async ({ request }) => {
   // showing a logged-in state that every gated page would then reject.
   let member: AvatarHintMember | null = null;
   if (payload && supabaseAdmin) {
-    const { data } = await supabaseAdmin
-      .from("members")
-      .select("id, username, full_name, display_full_name, avatar_url, sessions_valid_after")
-      .eq("id", payload.memberId)
-      .single();
+    const { data, error } = await lookupWithRetry(() =>
+      supabaseAdmin!
+        .from("members")
+        .select("id, username, full_name, display_full_name, avatar_url, sessions_valid_after")
+        .eq("id", payload!.memberId)
+        .single(),
+      "api/me members",
+    );
+    // The lookup itself failed (not "no such member"): we can't tell whether
+    // the session is still good, so don't tear down the client's logged-in
+    // state - leave the hint cookies and cached member alone and let the
+    // next page load re-check. Display-only; every gate re-verifies itself.
+    if (isTransientLookupError(error)) {
+      return new Response(JSON.stringify({ loggedIn: true, isAdmin: !!payload.isAdmin, member: null, degraded: true }), {
+        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+      });
+    }
     if (data && !isSessionRevoked(payload.iat, data.sessions_valid_after)) {
       const { sessions_valid_after: _validAfter, ...visible } = data;
       member = visible;
