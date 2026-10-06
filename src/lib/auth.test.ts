@@ -16,17 +16,31 @@ import {
 // supabase-js chain (`.from().select().eq()[.single()]`).
 const state = vi.hoisted(() => ({
   members: null as { is_admin: boolean; sessions_valid_after?: string | null } | null,
+  // Queue of errors the next members lookups return (one per call), to simulate transient failures.
+  memberErrors: [] as ({ code: string } | null)[],
+  memberCalls: 0,
   clubAdmins: [] as { club_id: number }[],
+  // Same idea for the club_admins lookup.
+  clubAdminErrors: [] as ({ code: string } | null)[],
+  clubAdminCalls: 0,
 }));
 
 vi.mock("./supabase", () => ({
   supabaseAdmin: {
     from: (table: string) => {
       if (table === "members") {
-        return { select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: state.members }) }) }) };
+        return { select: () => ({ eq: () => ({ single: () => {
+          state.memberCalls++;
+          const error = state.memberErrors.shift() ?? null;
+          return Promise.resolve(error ? { data: null, error } : { data: state.members, error: null });
+        } }) }) };
       }
       if (table === "club_admins") {
-        return { select: () => ({ eq: () => Promise.resolve({ data: state.clubAdmins }) }) };
+        return { select: () => ({ eq: () => {
+          state.clubAdminCalls++;
+          const error = state.clubAdminErrors.shift() ?? null;
+          return Promise.resolve(error ? { data: null, error } : { data: state.clubAdmins, error: null });
+        } }) };
       }
       throw new Error(`unexpected table: ${table}`);
     },
@@ -45,6 +59,10 @@ function makeRequest(cookie: string): Request {
 beforeEach(() => {
   state.members = null;
   state.clubAdmins = [];
+  state.memberErrors = [];
+  state.memberCalls = 0;
+  state.clubAdminErrors = [];
+  state.clubAdminCalls = 0;
 });
 
 describe("getAdminScope", () => {
@@ -211,5 +229,97 @@ describe("session revocation", () => {
     const token = createSessionToken("member-1", true, "alice");
     state.members = { is_admin: true, sessions_valid_after: new Date(Date.now() + 60_000).toISOString() };
     expect(await requireAdmin(makeRequest(`session=${token}`))).toBeNull();
+  });
+});
+
+// #128: a transient Supabase failure must not read as "member gone" and log a
+// valid session out - but real auth failures must still fail closed.
+describe("transient lookup errors", () => {
+  const token = () => createSessionToken("m1", true, "alice");
+
+  it("requireAdmin survives a single transient members lookup error (retries)", async () => {
+    state.members = { is_admin: true };
+    state.memberErrors = [{ code: "57014" }];
+
+    const scope = await requireAdmin(makeRequest(`session=${token()}`));
+
+    expect(scope).toMatchObject({ isSuperAdmin: true });
+    expect(state.memberCalls).toBe(2);
+  });
+
+  it("verifySession survives a single transient lookup error", async () => {
+    state.members = { is_admin: false, sessions_valid_after: null };
+    state.memberErrors = [{ code: "57014" }];
+
+    expect(await verifySession(token())).not.toBeNull();
+  });
+
+  it("still fails closed when the lookup keeps failing", async () => {
+    state.members = { is_admin: true };
+    state.memberErrors = [{ code: "57014" }, { code: "57014" }];
+
+    expect(await requireAdmin(makeRequest(`session=${token()}`))).toBeNull();
+  });
+
+  it("does not retry a definitive 'no such member' and denies", async () => {
+    state.memberErrors = [{ code: "PGRST116" }];
+
+    expect(await verifySession(token())).toBeNull();
+    expect(state.memberCalls).toBe(1);
+  });
+
+  it("a revoked session is still denied after a transient retry", async () => {
+    state.members = { is_admin: true, sessions_valid_after: new Date(Date.now() + 60_000).toISOString() };
+    state.memberErrors = [{ code: "57014" }];
+
+    expect(await requireAdmin(makeRequest(`session=${token()}`))).toBeNull();
+  });
+
+  it("a club admin survives a single transient club_admins lookup error (retries)", async () => {
+    state.members = { is_admin: false };
+    state.clubAdmins = [{ club_id: 7 }];
+    state.clubAdminErrors = [{ code: "57014" }];
+
+    const scope = await requireAdmin(makeRequest(`session=${token()}`));
+
+    expect(scope).toMatchObject({ isSuperAdmin: false, clubIds: [7] });
+    expect(state.clubAdminCalls).toBe(2);
+  });
+
+  describe("logging", () => {
+    const logs = () => vi.spyOn(console, "error").mockImplementation(() => {});
+
+    it("logs which lookup failed and its error code when a retry recovers", async () => {
+      const spy = logs();
+      state.members = { is_admin: false, sessions_valid_after: null };
+      state.memberErrors = [{ code: "57014" }];
+
+      await verifySession(token());
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.mock.calls[0]?.[0]).toContain("verifySession members");
+      expect(spy.mock.calls[0]?.[0]).toContain("57014");
+      spy.mockRestore();
+    });
+
+    it("logs both attempts when the retry fails too", async () => {
+      const spy = logs();
+      state.memberErrors = [{ code: "57014" }, { code: "57014" }];
+
+      await verifySession(token());
+
+      expect(spy).toHaveBeenCalledTimes(2);
+      spy.mockRestore();
+    });
+
+    it("does not log a definitive 'no such member'", async () => {
+      const spy = logs();
+      state.memberErrors = [{ code: "PGRST116" }];
+
+      await verifySession(token());
+
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
+    });
   });
 });

@@ -115,6 +115,49 @@ export function verifySessionToken(token: string): SessionPayload | null {
   }
 }
 
+// PostgREST reports ".single() matched no rows" as PGRST116 - a definitive
+// "no such member", as opposed to the lookup itself failing (network blip,
+// Netlify cold start, upstream 5xx). Only the latter is transient.
+const NO_ROWS_CODE = "PGRST116";
+
+export function isTransientLookupError(error: { code?: string } | null | undefined): boolean {
+  return !!error && error.code !== NO_ROWS_CODE;
+}
+
+const LOOKUP_RETRY_DELAY_MS = 150;
+
+// Runs a member lookup, retrying once if it failed for a transient reason, so
+// a single Supabase hiccup doesn't read as "member gone" and bounce a valid
+// session to /login (#128). Still fails closed: if the retry also errors,
+// callers see the error (data is null) and deny access - only a definitive
+// answer from the database ever grants it. Thrown network errors are
+// normalised into the same { data: null, error } shape.
+export async function lookupWithRetry<R extends { data: unknown; error: { code?: string; message?: string } | null }>(
+  run: () => PromiseLike<R>,
+  label: string,
+): Promise<R> {
+  const attempt = async (): Promise<R> => {
+    try {
+      return await run();
+    } catch (e) {
+      return { data: null, error: { code: "LOOKUP_THREW", message: String(e) } } as unknown as R;
+    }
+  };
+  // Logged so a "keeps logging me out" report (#128) can be matched against the
+  // function logs: how often lookups fail, with which code, and whether the
+  // retry recovered. Only the label and the error code/message - no member data.
+  const logFailure = (result: R, tryNo: number) =>
+    console.error(`[auth] ${label} lookup failed (try ${tryNo}/2): ${result.error?.code ?? "?"} ${result.error?.message ?? ""}`);
+
+  const first = await attempt();
+  if (!isTransientLookupError(first.error)) return first;
+  logFailure(first, 1);
+  await new Promise((resolve) => setTimeout(resolve, LOOKUP_RETRY_DELAY_MS));
+  const second = await attempt();
+  if (isTransientLookupError(second.error)) logFailure(second, 2);
+  return second;
+}
+
 // A session issued before the member's sessions_valid_after cutoff has been
 // revoked. JWT iat is whole seconds, so compare against the cutoff truncated
 // to the second - a session issued in the same second as the cutoff (i.e. the
@@ -133,11 +176,10 @@ export async function verifySession(token: string | undefined): Promise<SessionP
   const payload = token ? verifySessionToken(token) : null;
   if (!payload || !supabaseAdmin) return null;
 
-  const { data: member } = await supabaseAdmin
-    .from("members")
-    .select("sessions_valid_after")
-    .eq("id", payload.memberId)
-    .single();
+  const { data: member } = await lookupWithRetry(() =>
+    supabaseAdmin!.from("members").select("sessions_valid_after").eq("id", payload.memberId).single(),
+    "verifySession members",
+  );
   if (!member || isSessionRevoked(payload.iat, member.sessions_valid_after)) return null;
   return payload;
 }
@@ -168,16 +210,18 @@ export async function getAdminScope(memberId: string, session?: { iat?: number }
   const none = { memberId, isSuperAdmin: false, clubIds: [] };
   if (!supabaseAdmin) return none;
 
-  const { data: member } = await supabaseAdmin
-    .from("members")
-    .select("is_admin, sessions_valid_after")
-    .eq("id", memberId)
-    .single();
+  const { data: member } = await lookupWithRetry(() =>
+    supabaseAdmin!.from("members").select("is_admin, sessions_valid_after").eq("id", memberId).single(),
+    "getAdminScope members",
+  );
   if (!member) return none;
   if (session && isSessionRevoked(session.iat, member.sessions_valid_after)) return none;
   if (member.is_admin) return { memberId, isSuperAdmin: true, clubIds: [] };
 
-  const { data: clubAdmins } = await supabaseAdmin.from("club_admins").select("club_id").eq("member_id", memberId);
+  const { data: clubAdmins } = await lookupWithRetry(() =>
+    supabaseAdmin!.from("club_admins").select("club_id").eq("member_id", memberId),
+    "getAdminScope club_admins",
+  );
   return { memberId, isSuperAdmin: false, clubIds: (clubAdmins ?? []).map((row) => row.club_id) };
 }
 

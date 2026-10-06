@@ -34,7 +34,7 @@
 .cnf-admin-table td {
   text-align: left;
   padding: 0.6rem 0.75rem;
-  border-bottom: 1px solid hsl(var(--color-grey) / 0.2);
+  border-bottom: 1px solid hsla(var(--color-grey), 0.2);
 }
 
 .cnf-admin-table th {
@@ -60,7 +60,7 @@
 
   .cnf-admin-table tr {
     margin-bottom: 1rem;
-    border: 1px solid hsl(var(--color-grey) / 0.2);
+    border: 1px solid hsla(var(--color-grey), 0.2);
     border-radius: 6px;
     padding: 0.75rem;
   }
@@ -82,10 +82,20 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
+
+  /* Action cell has no data-label: drop the empty label slot */
+  .cnf-admin-table td:not([data-label])::before {
+    display: none;
+  }
 }
 
 @media (max-width: 768px) {
   .cnf-admin-shell {
     flex-direction: column;
+  }
+
+  /* Room between the stacked nav and the page title / CTA */
+  .cnf-admin-content {
+    padding-top: 1rem;
   }
 }
