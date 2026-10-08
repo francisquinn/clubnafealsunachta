@@ -5,16 +5,7 @@ const state = vi.hoisted(() => ({
   uploadError: null as Error | null,
 }));
 
-vi.mock('astro:actions', () => {
-  class MockActionError extends Error {
-    code: string;
-    constructor(params: { message?: string; code: string }) {
-      super(params.message);
-      this.code = params.code;
-    }
-  }
-  return { ActionError: MockActionError };
-});
+vi.mock('astro:actions', async () => (await import('../test/astroActions')).mockActionModule());
 
 vi.mock('./supabase', () => ({
   supabaseAdmin: {

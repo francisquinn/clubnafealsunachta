@@ -12,16 +12,20 @@ const state: {
 
 let mockEvents: unknown[] = [];
 
-vi.mock("./supabase", () => ({
-  supabase: null,
-  supabaseAdmin: {
-    from: (table: string) => {
-      if (table !== "clubs") throw new Error(`Unexpected table: ${table}`);
-      state.fromCalls += 1;
-      return { select: () => Promise.resolve({ data: state.clubsList, error: state.clubsError }) };
+vi.mock("./supabase", async () => {
+  const { stubFrom, stubQuery } = await import("../test/supabaseStub");
+  return {
+    supabase: null,
+    supabaseAdmin: {
+      from: stubFrom({
+        clubs: () => {
+          state.fromCalls += 1;
+          return stubQuery(() => ({ data: state.clubsList, error: state.clubsError }));
+        },
+      }),
     },
-  },
-}));
+  };
+});
 
 vi.mock("astro:content", () => ({
   getCollection: () => Promise.resolve(mockEvents),
