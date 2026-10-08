@@ -1,7 +1,8 @@
 name: CI
 
-# Tests only. `astro check` can't run here yet: it syncs the content collections,
-# and those loaders need Supabase credentials (see the follow-up issue).
+# Tests and `astro check`. `astro check` syncs the content collections, whose
+# loaders need Supabase credentials, so that step sets SKIP_CONTENT_FETCH=1 to
+# make them return empty collections instead.
 
 on:
   # No path filter on pull requests: if `test` is a required check, a PR that
@@ -37,3 +38,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx vitest run
+      - run: npx astro check
+        env:
+          SKIP_CONTENT_FETCH: '1'

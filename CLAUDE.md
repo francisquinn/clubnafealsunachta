@@ -11,7 +11,7 @@ npx astro check
 ```
 
 - `npm test` runs vitest with happy-dom. Some tests may be failing — fix pre-existing failures when encountered, or note them in the commit message.
-- `astro check` runs TypeScript type checking. Requires Supabase credentials to be available for full checking.
+- `astro check` runs TypeScript type checking. Needs either Supabase credentials or `SKIP_CONTENT_FETCH=1` (the content loaders then return empty collections). CI uses the flag; never set it on Netlify.
 
 ## Structure
 
