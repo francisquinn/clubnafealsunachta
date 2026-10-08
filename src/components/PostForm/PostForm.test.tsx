@@ -6,12 +6,9 @@ import PostForm from "./PostForm";
 const mockCreatePost = vi.fn();
 const mockUpdatePost = vi.fn();
 
-vi.mock("astro:actions", () => ({
-  actions: {
-    createPost: (...args: unknown[]) => mockCreatePost(...args),
-    updatePost: (...args: unknown[]) => mockUpdatePost(...args),
-  },
-}));
+vi.mock("astro:actions", async () =>
+  (await import("../../test/astroActions")).mockActions(() => ({ createPost: mockCreatePost, updatePost: mockUpdatePost })),
+);
 
 const sampleInitialData = {
   title: "Test Post",

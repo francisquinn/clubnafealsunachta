@@ -7,12 +7,9 @@ import type { RsvpCounts, RsvpLists, RsvpState } from "../../lib/rsvpTypes";
 const mockGetEventRsvps = vi.fn();
 const mockSetEventRsvp = vi.fn();
 
-vi.mock("astro:actions", () => ({
-  actions: {
-    getEventRsvps: (input: unknown) => mockGetEventRsvps(input),
-    setEventRsvp: (input: unknown) => mockSetEventRsvp(input),
-  },
-}));
+vi.mock("astro:actions", async () =>
+  (await import("../../test/astroActions")).mockActions(() => ({ getEventRsvps: mockGetEventRsvps, setEventRsvp: mockSetEventRsvp })),
+);
 
 const baseCounts: RsvpCounts = { going: 2, maybe: 1, not_going: 0 };
 

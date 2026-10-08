@@ -9,14 +9,14 @@ const mockChangePassword = vi.fn();
 const mockUpdateClubMemberships = vi.fn();
 const mockUploadAvatar = vi.fn();
 
-vi.mock("astro:actions", () => ({
-  actions: {
-    updateUsername: (...args: unknown[]) => mockUpdateUsername(...args),
-    changePassword: (...args: unknown[]) => mockChangePassword(...args),
-    updateClubMemberships: (...args: unknown[]) => mockUpdateClubMemberships(...args),
-    uploadAvatar: (...args: unknown[]) => mockUploadAvatar(...args),
-  },
-}));
+vi.mock("astro:actions", async () =>
+  (await import("../../test/astroActions")).mockActions(() => ({
+    updateUsername: mockUpdateUsername,
+    changePassword: mockChangePassword,
+    updateClubMemberships: mockUpdateClubMemberships,
+    uploadAvatar: mockUploadAvatar,
+  })),
+);
 
 const TRESTE = { id: 1, name: "Trieste" };
 const DUBLIN = { id: 2, name: "Dublin" };

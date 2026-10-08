@@ -8,14 +8,14 @@ const mockUpdateEvent = vi.fn();
 const mockGetClubs = vi.fn();
 const mockGetVenues = vi.fn();
 
-vi.mock("astro:actions", () => ({
-  actions: {
-    createEvent: (...args: unknown[]) => mockCreateEvent(...args),
-    updateEvent: (...args: unknown[]) => mockUpdateEvent(...args),
-    getClubs: (...args: unknown[]) => mockGetClubs(...args),
-    getVenues: (...args: unknown[]) => mockGetVenues(...args),
-  },
-}));
+vi.mock("astro:actions", async () =>
+  (await import("../../test/astroActions")).mockActions(() => ({
+    createEvent: mockCreateEvent,
+    updateEvent: mockUpdateEvent,
+    getClubs: mockGetClubs,
+    getVenues: mockGetVenues,
+  })),
+);
 
 const sampleInitialData = {
   name: "Test Event",

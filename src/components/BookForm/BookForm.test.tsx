@@ -6,12 +6,9 @@ import BookForm from "./BookForm";
 const mockCreateBook = vi.fn();
 const mockUpdateBook = vi.fn();
 
-vi.mock("astro:actions", () => ({
-  actions: {
-    createBook: (...args: unknown[]) => mockCreateBook(...args),
-    updateBook: (...args: unknown[]) => mockUpdateBook(...args),
-  },
-}));
+vi.mock("astro:actions", async () =>
+  (await import("../../test/astroActions")).mockActions(() => ({ createBook: mockCreateBook, updateBook: mockUpdateBook })),
+);
 
 const sampleInitialData = {
   title: "Meditations",

@@ -12,21 +12,19 @@ const state = vi.hoisted(() => ({
   calls: 0,
 }));
 
-vi.mock("../../lib/supabase", () => ({
-  supabaseAdmin: {
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          single: () => {
-            state.calls++;
-            const error = state.errors.shift() ?? null;
-            return Promise.resolve(error ? { data: null, error } : { data: state.member, error: null });
-          },
+vi.mock("../../lib/supabase", async () => {
+  const { stubQuery } = await import("../../test/supabaseStub");
+  return {
+    supabaseAdmin: {
+      from: () =>
+        stubQuery(() => {
+          state.calls++;
+          const error = state.errors.shift() ?? null;
+          return error ? { data: null, error } : { data: state.member, error: null };
         }),
-      }),
-    }),
-  },
-}));
+    },
+  };
+});
 
 process.env.JWT_SECRET ??= "test-secret";
 
