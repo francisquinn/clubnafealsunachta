@@ -1,5 +1,5 @@
 import { defineAction, ActionError } from 'astro:actions';
-import { verifySession, verifyPassword, hashPassword } from '../lib/auth';
+import { verifySession, verifyPassword, hashPassword, createSessionToken, setSessionCookie } from '../lib/auth';
 import { validatePassword } from '../utils/validation';
 import { supabaseAdmin } from '../lib/supabase';
 
@@ -50,14 +50,24 @@ export const changePassword = defineAction({
 
     const password_hash = await hashPassword(newPassword);
 
-    const { error } = await supabaseAdmin
+    // sessions_valid_after logs out every other session, as a password reset
+    // does. It also revokes this one, so re-issue it straight after. Guarding
+    // on the old hash means two concurrent changes can't both succeed.
+    const { data: updated, error } = await supabaseAdmin
       .from('members')
-      .update({ password_hash })
-      .eq('id', payload.memberId);
+      .update({ password_hash, sessions_valid_after: new Date().toISOString() })
+      .eq('id', payload.memberId)
+      .eq('password_hash', member.password_hash)
+      .select('id');
 
     if (error) {
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to update password' });
     }
+    if (!updated || updated.length === 0) {
+      throw new ActionError({ code: 'UNAUTHORIZED', message: 'Current password is incorrect' });
+    }
+
+    setSessionCookie(context.cookies, createSessionToken(payload.memberId, payload.isAdmin, payload.username));
 
     return { success: true };
   },
