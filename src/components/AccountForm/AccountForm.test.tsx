@@ -184,6 +184,32 @@ describe("AccountForm", () => {
     expect(submittedFormData().getAll("club_id")).toEqual(["1", "2"]);
   });
 
+  // changePassword revokes the old session and re-issues it, so the other
+  // actions must only start once it has finished (see AccountForm).
+  it("finishes the password change before saving the username and club settings", async () => {
+    let finishPassword!: (value: unknown) => void;
+    mockChangePassword.mockReturnValue(new Promise((resolve) => (finishPassword = resolve)));
+    mockUpdateUsername.mockResolvedValue({ data: { success: true } });
+    mockUpdateClubMemberships.mockResolvedValue({ data: { success: true, club_ids: [1] } });
+    renderForm({ clubs: [TRESTE], initialClubIds: [1] });
+
+    fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "OldPassword1" } });
+    fireEvent.change(screen.getByLabelText(/^new password$/i), { target: { value: "NewPassword1" } });
+    fireEvent.change(screen.getByLabelText(/confirm new password/i), { target: { value: "NewPassword1" } });
+    fireEvent.submit(document.querySelector("form")!);
+
+    await waitFor(() => expect(mockChangePassword).toHaveBeenCalledTimes(1));
+    expect(mockUpdateUsername).not.toHaveBeenCalled();
+    expect(mockUpdateClubMemberships).not.toHaveBeenCalled();
+
+    finishPassword({ data: { success: true } });
+    await waitFor(() => {
+      expect(screen.getByText(/your info, password, and club settings have been updated/i)).toBeInTheDocument();
+    });
+    expect(mockUpdateUsername).toHaveBeenCalledTimes(1);
+    expect(mockUpdateClubMemberships).toHaveBeenCalledTimes(1);
+  });
+
   it("reports the username as saved and explains the password failure when only the password action errors", async () => {
     mockUpdateUsername.mockResolvedValue({ data: { success: true } });
     mockChangePassword.mockResolvedValue({ error: { message: "Current password is incorrect" } });
