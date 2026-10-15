@@ -135,9 +135,12 @@ export default function AccountForm({
       // the old photo, or vice versa. Sequencing them (avatar first) means
       // updateUsername's read/cookie-write always reflects both changes.
       const avatarResult = wantsAvatarUpload ? await actions.uploadAvatar(formData) : null;
-      const [usernameResult, passwordResult, clubsResult] = await Promise.all([
+      // changePassword revokes every session issued before it and re-issues
+      // this one, so it runs first: the others then verify against the fresh
+      // cookie, and updateUsername's re-signed cookie (new username) lands last.
+      const passwordResult = wantsPasswordChange ? await actions.changePassword(formData) : null;
+      const [usernameResult, clubsResult] = await Promise.all([
         actions.updateUsername(formData),
-        wantsPasswordChange ? actions.changePassword(formData) : Promise.resolve(null),
         hasClubs ? actions.updateClubMemberships(formData) : Promise.resolve(null),
       ]);
 

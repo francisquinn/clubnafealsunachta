@@ -11,20 +11,7 @@ const state = vi.hoisted(() => {
   };
 });
 
-vi.mock('astro:actions', () => {
-  class MockActionError extends Error {
-    code: string;
-    constructor(params: { message?: string; code: string }) {
-      super(params.message);
-      this.name = 'ActionError';
-      this.code = params.code;
-    }
-  }
-  return {
-    defineAction: (definition: { accept?: string; handler: unknown }) => definition,
-    ActionError: MockActionError,
-  };
-});
+vi.mock('astro:actions', async () => (await import('../test/astroActions')).mockActionModule());
 
 vi.mock('../lib/memberAccount', () => ({
   createAccount: vi.fn().mockResolvedValue(undefined),

@@ -25,27 +25,27 @@ const state = vi.hoisted(() => ({
   clubAdminCalls: 0,
 }));
 
-vi.mock("./supabase", () => ({
-  supabaseAdmin: {
-    from: (table: string) => {
-      if (table === "members") {
-        return { select: () => ({ eq: () => ({ single: () => {
-          state.memberCalls++;
-          const error = state.memberErrors.shift() ?? null;
-          return Promise.resolve(error ? { data: null, error } : { data: state.members, error: null });
-        } }) }) };
-      }
-      if (table === "club_admins") {
-        return { select: () => ({ eq: () => {
-          state.clubAdminCalls++;
-          const error = state.clubAdminErrors.shift() ?? null;
-          return Promise.resolve(error ? { data: null, error } : { data: state.clubAdmins, error: null });
-        } }) };
-      }
-      throw new Error(`unexpected table: ${table}`);
+vi.mock("./supabase", async () => {
+  const { stubFrom, stubQuery } = await import("../test/supabaseStub");
+  return {
+    supabaseAdmin: {
+      from: stubFrom({
+        members: () =>
+          stubQuery(() => {
+            state.memberCalls++;
+            const error = state.memberErrors.shift() ?? null;
+            return error ? { data: null, error } : { data: state.members, error: null };
+          }),
+        club_admins: () =>
+          stubQuery(() => {
+            state.clubAdminCalls++;
+            const error = state.clubAdminErrors.shift() ?? null;
+            return error ? { data: null, error } : { data: state.clubAdmins, error: null };
+          }),
+      }),
     },
-  },
-}));
+  };
+});
 
 // Mocking ./supabase (above) also skips its `import "dotenv/config"` side
 // effect, so JWT_SECRET never gets loaded from .env - set it directly

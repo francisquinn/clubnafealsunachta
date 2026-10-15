@@ -27,20 +27,7 @@ const state = vi.hoisted(() => ({
   tagError: null as Error | null,
 }));
 
-vi.mock("astro:actions", () => {
-  class MockActionError extends Error {
-    code: string;
-    constructor(params: { message?: string; code: string }) {
-      super(params.message);
-      this.name = "ActionError";
-      this.code = params.code;
-    }
-  }
-  return {
-    defineAction: (definition: { accept: string; handler: unknown }) => definition,
-    ActionError: MockActionError,
-  };
-});
+vi.mock("astro:actions", async () => (await import("../test/astroActions")).mockActionModule());
 
 vi.mock("../lib/auth", () => ({
   verifySession: async (token?: string) => (token ? state.payload : null),
@@ -50,67 +37,49 @@ vi.mock("../lib/auth", () => ({
 // side effect, so SUPABASE_* / JWT_SECRET never load from .env — none of
 // them are read here (verifySession is mocked, supabaseAdmin is
 // replaced), so that's fine.
-vi.mock("../lib/supabase", () => ({
-  supabaseAdmin: {
-    from: (table: string) => {
-      if (table === "clubs") {
-        return {
-          select: (fields: string) => {
-            // #55: club validation is `select('id').in(...)`; the Mailchimp
-            // tag sync reads every club with `select('id, slug')` (awaited
-            // directly). Branch on the field list to serve each shape.
-            if (fields === "id, slug") {
-              return Promise.resolve({ data: state.allClubs, error: state.allClubsError });
+vi.mock("../lib/supabase", async () => {
+  const { stubFrom, stubQuery } = await import("../test/supabaseStub");
+  const callArgs = (calls: { method: string; args: unknown[] }[], method: string) =>
+    calls.find((call) => call.method === method)?.args ?? [];
+  return {
+    supabaseAdmin: {
+      from: stubFrom({
+        // #55: club validation is `select('id').in(...)`; the Mailchimp tag
+        // sync reads every club with `select('id, slug')`. Branch on the
+        // field list to serve each shape.
+        clubs: () =>
+          stubQuery((calls) => {
+            if (callArgs(calls, "select")[0] === "id, slug") {
+              return { data: state.allClubs, error: state.allClubsError };
             }
+            const ids = (callArgs(calls, "in")[1] ?? []) as number[];
             return {
-              in: (_column: string, ids: number[]) =>
-                Promise.resolve({
-                  data: ids.filter((id) => state.existingClubIds.includes(id)).map((id) => ({ id })),
-                  error: state.clubsQueryError,
-                }),
+              data: ids.filter((id) => state.existingClubIds.includes(id)).map((id) => ({ id })),
+              error: state.clubsQueryError,
             };
-          },
-        };
-      }
-      if (table === "members") {
-        return {
-          select: () => ({
-            eq: () => ({
-              single: () =>
-                Promise.resolve({
-                  data: state.memberEmail ? { email: state.memberEmail } : null,
-                  error: state.memberEmailError,
-                }),
-            }),
           }),
-        };
-      }
-      if (table === "club_members") {
-        return {
-          upsert: (rows: { member_id: string; club_id: number }[]) => {
-            state.insertRows = rows;
-            return Promise.resolve({ error: state.insertError });
-          },
-          delete: () => ({
-            eq: (_column: string, memberId: string) => {
-              state.deleteMemberId = memberId;
-              const deleteChain = {
-                not: (_column2: string, _operation: string, opValue: string) => {
-                  state.deleteNotOp = opValue;
-                  return Promise.resolve({ error: state.deleteError });
-                },
-              };
-              // Awaitable (no .not when every club is being unselected) and
-              // chainable (.not returns the final error result).
-              return Object.assign(deleteChain, Promise.resolve({ error: state.deleteError }));
-            },
+        members: () =>
+          stubQuery(() => ({
+            data: state.memberEmail ? { email: state.memberEmail } : null,
+            error: state.memberEmailError,
+          })),
+        club_members: () =>
+          stubQuery((calls) => {
+            if (calls.some((call) => call.method === "upsert")) {
+              state.insertRows = callArgs(calls, "upsert")[0] as { member_id: string; club_id: number }[];
+              return { error: state.insertError };
+            }
+            // delete().eq() is awaitable as-is (every club unselected) or
+            // followed by .not().
+            state.deleteMemberId = callArgs(calls, "eq")[1] as string;
+            const notArgs = callArgs(calls, "not");
+            if (notArgs.length) state.deleteNotOp = notArgs[2] as string;
+            return { error: state.deleteError };
           }),
-        };
-      }
-      throw new Error(`unexpected table: ${table}`);
+      }),
     },
-  },
-}));
+  };
+});
 
 vi.mock("../lib/mailchimp", () => ({
   addClubTag: vi.fn(async () => {

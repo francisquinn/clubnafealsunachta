@@ -6,12 +6,9 @@ import SignupForm from "./SignupForm";
 const mockSignup = vi.fn();
 const mockCreateMember = vi.fn();
 
-vi.mock("astro:actions", () => ({
-  actions: {
-    signup: (...args: unknown[]) => mockSignup(...args),
-    createMember: (...args: unknown[]) => mockCreateMember(...args),
-  },
-}));
+vi.mock("astro:actions", async () =>
+  (await import("../../test/astroActions")).mockActions(() => ({ signup: mockSignup, createMember: mockCreateMember })),
+);
 
 function fillValidForm() {
   fireEvent.change(screen.getByLabelText(/username/i), { target: { value: "validuser" } });
