@@ -1,6 +1,5 @@
-// #97: shared "on air" indicator — one markup source for EventCard and the
-// event detail page, so the two can't drift out of visual sync. Pure/no
-// state, so it renders fine from an Astro page with no client directive too.
+// #97: the "on air" indicator on event cards. Cards only: the prerendered
+// event page would freeze a live check at build time (#137).
 export default function LiveBadge() {
   return (
     <span className="cnf-live-badge">
