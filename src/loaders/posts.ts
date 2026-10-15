@@ -1,11 +1,17 @@
 import type { Loader } from 'astro/loaders';
 import { supabaseAdmin } from '../lib/supabase';
+import { shouldSkipContentFetch } from './skipFetch';
 import { unwrapRelation } from '../lib/supabaseRelations';
 
 export function postsLoader(): Loader {
   return {
     name: 'posts',
     load: async ({ store, renderMarkdown }) => {
+      if (shouldSkipContentFetch()) {
+        store.clear();
+        return;
+      }
+
       if (!supabaseAdmin) {
         throw new Error('Supabase is not configured — set SUPABASE_PROJECT_URL and SUPABASE_SECRET_KEY');
       }
