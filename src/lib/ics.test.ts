@@ -131,6 +131,23 @@ describe("buildEventIcs", () => {
     expect(ics).toContain("SUMMARY:Philosophy Talk: Free Will");
   });
 
+  it("adds a display alarm 15 minutes before the start, inside the VEVENT", () => {
+    const ics = buildEventIcs(makeEvent());
+    const alarm = ics.match(/BEGIN:VALARM\r\n([\s\S]*?)\r\nEND:VALARM/)?.[1];
+    expect(alarm?.split("\r\n")).toEqual([
+      "ACTION:DISPLAY",
+      "TRIGGER:-PT15M",
+      "DESCRIPTION:Philosophy Talk: Free Will",
+    ]);
+    expect(ics.indexOf("END:VALARM")).toBeLessThan(ics.indexOf("END:VEVENT"));
+    expect(ics.split("BEGIN:VALARM")).toHaveLength(2);
+  });
+
+  it("escapes the event name in the alarm description", () => {
+    const ics = buildEventIcs(makeEvent({ name: "Free Will, Fate; Chance" }));
+    expect(ics).toContain("TRIGGER:-PT15M\r\nDESCRIPTION:Free Will\\, Fate\\; Chance\r\n");
+  });
+
   describe("location", () => {
     it("uses 'Online' with the meeting URL for online events", () => {
       const ics = buildEventIcs(
@@ -224,7 +241,9 @@ describe("buildEventIcs", () => {
 
     it("omits DESCRIPTION when both are absent", () => {
       const ics = buildEventIcs(ALL_WITHOUT_DESCRIPTION);
-      expect(ics).not.toContain("DESCRIPTION:");
+      // The alarm carries its own DESCRIPTION; only the event's is omitted.
+      const eventOnly = ics.replace(/BEGIN:VALARM[\s\S]*?END:VALARM\r\n/, "");
+      expect(eventOnly).not.toContain("DESCRIPTION:");
     });
   });
 

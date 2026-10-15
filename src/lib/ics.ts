@@ -6,6 +6,7 @@
 import type { EventCollection } from "../types/types";
 
 const MAX_LINE_OCTETS = 75;
+const REMINDER_MINUTES = 15;
 
 export type EventIcsData = {
   name: string;
@@ -121,6 +122,13 @@ export function buildEventIcs(event: EventIcsData): string {
     `SUMMARY:${escapeIcsText(event.name)}`,
     ...(location ? [`LOCATION:${escapeIcsText(location)}`] : []),
     ...(description ? [`DESCRIPTION:${escapeIcsText(description)}`] : []),
+    // Section 3.6.6: a DISPLAY alarm needs ACTION, TRIGGER and DESCRIPTION.
+    // Apple Calendar and Outlook pick it up as a reminder before the start.
+    "BEGIN:VALARM",
+    "ACTION:DISPLAY",
+    `TRIGGER:-PT${REMINDER_MINUTES}M`,
+    `DESCRIPTION:${escapeIcsText(event.name)}`,
+    "END:VALARM",
     "END:VEVENT",
     "END:VCALENDAR",
   ];
@@ -133,7 +141,10 @@ export function buildEventIcs(event: EventIcsData): string {
 // Google Calendar users at all. Reuses the same UTC instants and combined
 // description/location as the .ics (formatIcsDateTime's Z-suffixed format
 // happens to be exactly what Google's `dates` param wants), just plain
-// URI-encoded rather than ICS-escaped.
+// URI-encoded rather than ICS-escaped. The render link has no parameter for
+// reminders, and Google ignores VALARM in imported and subscribed calendars
+// too, so Google users always get their own default notification instead of
+// the .ics's 15-minute alarm.
 export function buildGoogleCalendarUrl(event: EventIcsData): string {
   const { start, end } = getEventBounds(event);
   const location = buildEventLocation(event);
