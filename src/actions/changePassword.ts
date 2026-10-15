@@ -64,7 +64,12 @@ export const changePassword = defineAction({
       throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to update password' });
     }
     if (!updated || updated.length === 0) {
-      throw new ActionError({ code: 'UNAUTHORIZED', message: 'Current password is incorrect' });
+      // Another change won the race. It also revoked this session, so the
+      // user has to log in again with whichever password it set.
+      throw new ActionError({
+        code: 'UNAUTHORIZED',
+        message: 'Your password was just changed elsewhere. Log in again with the new password.',
+      });
     }
 
     setSessionCookie(context.cookies, createSessionToken(payload.memberId, payload.isAdmin, payload.username));

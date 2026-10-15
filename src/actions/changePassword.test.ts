@@ -127,7 +127,10 @@ describe('changePassword', () => {
 
     state.updatedRows = [];
     const { result, set } = run(valid);
-    await expect(result).rejects.toMatchObject({ code: 'UNAUTHORIZED', message: 'Current password is incorrect' });
+    await expect(result).rejects.toMatchObject({
+      code: 'UNAUTHORIZED',
+      message: 'Your password was just changed elsewhere. Log in again with the new password.',
+    });
     expect(set).not.toHaveBeenCalled();
   });
 
