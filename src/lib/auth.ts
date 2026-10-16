@@ -6,6 +6,7 @@ import { supabaseAdmin } from "./supabase";
 import { getAvatarColor, getAvatarLetter } from "./avatarColor";
 import { getDisplayName } from "./memberDisplay";
 import { getAvatarDisplayUrl } from "./avatarTransform";
+import { ONLINE_CLUB_SLUG } from "./clubDefaults";
 
 const scryptAsync = promisify(scrypt);
 
@@ -191,7 +192,9 @@ export async function verifySession(token: string | undefined): Promise<SessionP
 // admin status was fully revoked, or - shouldn't happen once #37 ships with
 // no self-serve grant path - a member row with no super-admin flag and no
 // club_admins rows at all).
-export type AdminScope = { memberId: string; isSuperAdmin: boolean; clubIds: number[] };
+// onlineUnavailable (#177): the Online chapter lookup failed, so Online is
+// missing from clubIds for now — see getAdminScope.
+export type AdminScope = { memberId: string; isSuperAdmin: boolean; clubIds: number[]; onlineUnavailable?: true };
 
 // Resolves a member's full admin scope: super-admin status plus, if not a
 // super admin, the specific clubs they administer via club_admins. The
@@ -201,7 +204,9 @@ export type AdminScope = { memberId: string; isSuperAdmin: boolean; clubIds: num
 // request instead of waiting out the token's 30-day expiry. Fails closed - a
 // missing Supabase client, a query error, or no matching row (memberId
 // always comes from a verified token, but data can still be deleted or
-// misconfigured) all resolve to no rights at all.
+// misconfigured) all resolve to no rights at all. The one exception is the
+// Online chapter lookup (#177), which only drops Online, flagged as
+// onlineUnavailable.
 //
 // When the caller is resolving scope for a session (requireAdmin), pass its
 // iat: the same members row also carries sessions_valid_after, so a revoked
@@ -222,7 +227,22 @@ export async function getAdminScope(memberId: string, session?: { iat?: number }
     supabaseAdmin!.from("club_admins").select("club_id").eq("member_id", memberId),
     "getAdminScope club_admins",
   );
-  return { memberId, isSuperAdmin: false, clubIds: (clubAdmins ?? []).map((row) => row.club_id) };
+  const clubIds = (clubAdmins ?? []).map((row) => row.club_id);
+  if (clubIds.length === 0) return { memberId, isSuperAdmin: false, clubIds };
+
+  // #177: every club admin can run online events, so the Online chapter is
+  // in every club admin's scope without needing its own club_admins row. A
+  // failed lookup leaves Online out but flags it (onlineUnavailable), so the
+  // event actions can report the real error instead of a baffling "not an
+  // admin of that club", while the rest of admin keeps working. A missing row
+  // (migration not run yet) just leaves it out.
+  const { data: onlineClub, error: onlineClubError } = await lookupWithRetry(() =>
+    supabaseAdmin!.from("clubs").select("id").eq("slug", ONLINE_CLUB_SLUG).maybeSingle(),
+    "getAdminScope online club",
+  );
+  if (onlineClubError) return { memberId, isSuperAdmin: false, clubIds, onlineUnavailable: true };
+  if (onlineClub && !clubIds.includes(onlineClub.id)) clubIds.push(onlineClub.id);
+  return { memberId, isSuperAdmin: false, clubIds };
 }
 
 // Single admin-gate check shared by middleware and every admin-only action.

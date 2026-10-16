@@ -35,7 +35,7 @@ values
    'An evening on free will.',
    null,
    '00000000-0000-0000-0000-000000000002', true,
-   (select id from public.clubs where slug = 'trieste')),
+   (select id from public.clubs where slug = 'online')),
   ('The ethics of technology',
    now() + interval '21 days', now() + interval '21 days' + interval '2 hours',
    'the-ethics-of-technology',

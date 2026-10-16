@@ -103,4 +103,46 @@ describe('eventsLoader', () => {
     const callArgs = store.set.mock.calls[0]?.[0];
     expect(callArgs?.data).toHaveProperty('meetPoint');
   });
+
+  // #177: online events belong to their club (the Online chapter) like any
+  // other event — no longer forced to location null (shown under every
+  // chapter) as the #60 stopgap did.
+  it('gives an online event its club as location', async () => {
+    const onlineClub = { id: 2, name: 'Online', slug: 'online' };
+    mockGetAllClubs.mockResolvedValueOnce([onlineClub] as never);
+    const mockEvent = {
+      id: 2,
+      name: 'Online Event',
+      date: '2025-06-01T19:00:00.000Z',
+      end_date: '2025-06-01T20:30:00.000Z',
+      is_online: true,
+      club_id: 2,
+      slug: 'online-event',
+      description: null,
+      summary: null,
+      instagram: null,
+      facebook: null,
+      meetup: null,
+      meeting_url: 'https://meet.jit.si/test',
+      meet_point: null,
+      tags: [],
+      created_by: 'user-1',
+      venues: null,
+      members: { id: 'user-1', username: 'testuser', full_name: null, display_full_name: false, avatar_url: null },
+    };
+    mockSupabaseAdmin.from.mockImplementation((table: string): any => {
+      if (table === 'events') {
+        return { select: () => ({ order: () => Promise.resolve({ data: [mockEvent], error: null }) }) };
+      }
+      if (table === 'rsvps') {
+        return { select: () => Promise.resolve({ data: [], error: null }) };
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    const store = { clear: vi.fn(), set: vi.fn() };
+    await eventsLoader().load({ store } as any);
+
+    expect(store.set.mock.calls[0]?.[0]?.data.location).toEqual(onlineClub);
+  });
 });

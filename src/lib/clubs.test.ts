@@ -135,3 +135,21 @@ describe("getClubEventsStaticPaths", () => {
     expect(paths).toEqual([{ params: { clubSlug: "trieste" }, props: { club: state.clubsList[0], events: [] } }]);
   });
 });
+
+describe("sortChaptersForPicker", () => {
+  it("lists city chapters alphabetically with Online last, keeping only name and slug", async () => {
+    const { sortChaptersForPicker } = await importClubs();
+
+    expect(
+      sortChaptersForPicker([
+        { id: 9, name: "Online", slug: "online" },
+        { id: 2, name: "Trieste", slug: "trieste" },
+        { id: 3, name: "Dublin", slug: "dublin" },
+      ])
+    ).toEqual([
+      { name: "Dublin", slug: "dublin" },
+      { name: "Trieste", slug: "trieste" },
+      { name: "Online", slug: "online" },
+    ]);
+  });
+});

@@ -8,25 +8,12 @@ import type { EventCollection } from "../../types/types";
 import { DEFAULT_CLUB_TIMEZONE } from "../../lib/clubDefaults";
 
 export default function EventList(props: EventListProps) {
-  const cityNames = [...new Set(
-    props.events.map((e) => e.data.location?.name).filter(Boolean) as string[]
-  )];
-  const locationNames = props.events.some((e) => e.data.isOnline)
-    ? [...cityNames, "Online"]
-    : cityNames;
   const [showUpcoming, setShowUpcoming] = useState<boolean>(true);
-  const nextUpcoming = props.events
-    .filter((e) => !isEventExpired(e.data))
-    .sort((a, b) => a.data.date.getTime() - b.data.date.getTime())[0];
-  const defaultLocation = nextUpcoming?.data.isOnline
-    ? "Online"
-    : (nextUpcoming?.data.location?.name ?? locationNames[0] ?? "");
-  const [selectedLocation, setSelectedLocation] = useState<string>(defaultLocation);
-
-  const onlineEvents = props.events.filter((e) => e.data.isOnline);
-  const locationEvents = selectedLocation === "Online"
-    ? onlineEvents
-    : props.events.filter((e) => e.data.location?.name === selectedLocation);
+  // #177: each [clubSlug]/events page already holds just that chapter's
+  // events (Online included, now that it's a chapter), so there's nothing
+  // to filter here — the picker switches chapter by going to its page.
+  const currentClub = props.clubs.find((club) => club.slug === props.clubSlug);
+  const locationEvents = props.events;
 
   const upcomingEvents = locationEvents.filter(
     (event) => !isEventExpired(event.data)
@@ -35,12 +22,17 @@ export default function EventList(props: EventListProps) {
     .filter((event) => isEventExpired(event.data))
     .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 
-  function renderLocationSelector(): JSX.Element {
+  function renderClubSelector(): JSX.Element {
     return (
       <Selector
-        options={locationNames}
-        value={selectedLocation}
-        onChange={setSelectedLocation}
+        label="Select a chapter"
+        options={props.clubs.map((club) => ({ value: club.slug, label: club.name }))}
+        value={currentClub?.slug ?? ""}
+        onChange={(slug) => {
+          if (slug !== props.clubSlug) {
+            window.location.assign(`/${slug}/events/`);
+          }
+        }}
       />
     );
   }
@@ -75,7 +67,7 @@ export default function EventList(props: EventListProps) {
       </div>;
     }
     return <div className="cnf-events--grid">
-      {pastEvents.length > 0 ? renderPastEvents() : <p>No past events in {selectedLocation}.</p>}
+      {pastEvents.length > 0 ? renderPastEvents() : <p>No past events in {currentClub?.name ?? "this chapter"}.</p>}
     </div>;
   }
 
@@ -94,7 +86,7 @@ export default function EventList(props: EventListProps) {
 
   return (
     <>
-      {renderLocationSelector()}
+      {renderClubSelector()}
       {renderNavigation()}
       {renderEvents()}
     </>
@@ -103,5 +95,6 @@ export default function EventList(props: EventListProps) {
 
 type EventListProps = {
   events: EventCollection[];
-  clubSlug?: string;
+  clubSlug: string;
+  clubs: { name: string; slug: string }[];
 };
