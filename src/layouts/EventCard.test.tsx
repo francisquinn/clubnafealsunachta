@@ -26,25 +26,10 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
 }
 
 describe("EventCard", () => {
-  it("shows the chapter and the going count", () => {
+  it("shows the chapter under the date, with no RSVP count", () => {
     render(<EventCard event={makeEvent({ rsvpCounts: { going: 12, maybe: 3, not_going: 1 } })} />);
-    expect(screen.getByText("Trieste · 12 going")).toBeInTheDocument();
-  });
-
-  it("shows the count even when nobody is going yet", () => {
-    render(<EventCard event={makeEvent()} />);
-    expect(screen.getByText("Trieste · 0 going")).toBeInTheDocument();
-  });
-
-  it("prefers the live count over the built-in one", () => {
-    render(<EventCard event={makeEvent({ rsvpCounts: { going: 2, maybe: 0, not_going: 0 } })} goingCount={9} />);
-    expect(screen.getByText("Trieste · 9 going")).toBeInTheDocument();
-  });
-
-  it("says went for a past event", () => {
-    const date = new Date("2020-01-01T18:00:00Z");
-    render(<EventCard event={makeEvent({ date, endDate: new Date(date.getTime() + 90 * 60 * 1000), rsvpCounts: { going: 8, maybe: 0, not_going: 0 } })} />);
-    expect(screen.getByText("Trieste · 8 went")).toBeInTheDocument();
+    expect(screen.getByText("Trieste")).toBeInTheDocument();
+    expect(screen.queryByText(/going|went/)).not.toBeInTheDocument();
   });
 
   it("links only the title, with no venue, meeting or social links", () => {
