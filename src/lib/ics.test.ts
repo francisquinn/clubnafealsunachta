@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  buildCalendarFeedIcs,
   buildEventIcs,
   buildGoogleCalendarUrl,
   escapeIcsText,
@@ -283,6 +284,35 @@ describe("buildEventIcs", () => {
     const unfolded = ics.split("\r\n").map((l) => l.replace(/^ /, "")).join("");
     expect(unfolded).toContain(`SUMMARY:${longName}`);
     expect(unfolded).toContain(`DESCRIPTION:${longDescription}`);
+  });
+});
+
+describe("buildCalendarFeedIcs", () => {
+  it("wraps every event in one VCALENDAR with the feed name and refresh hints", () => {
+    const ics = buildCalendarFeedIcs("Club na Fealsúnachta · Trieste", [
+      makeEvent(),
+      makeEvent({ slug: "second-talk", name: "Second Talk" }),
+    ]);
+    expect(ics.split("BEGIN:VCALENDAR")).toHaveLength(2);
+    // Its own line, not just the tail of X-WR-CALNAME.
+    expect(ics).toContain("\r\nNAME:Club na Fealsúnachta · Trieste\r\n");
+    expect(ics).toContain("X-WR-CALNAME:Club na Fealsúnachta · Trieste");
+    expect(ics).toContain("REFRESH-INTERVAL;VALUE=DURATION:PT12H");
+    expect(ics).toContain("X-PUBLISHED-TTL:PT12H");
+    expect(ics.split("BEGIN:VEVENT")).toHaveLength(3);
+    expect(ics).toMatch(/\r\nEND:VCALENDAR\r\n$/);
+  });
+
+  it("uses the same VEVENT as the single-event file, so UIDs match", () => {
+    const event = makeEvent();
+    const vevent = (ics: string) =>
+      ics.match(/BEGIN:VEVENT[\s\S]*END:VEVENT/)?.[0].replace(/DTSTAMP:\S+/, "");
+    expect(vevent(buildCalendarFeedIcs("Feed", [event]))).toBe(vevent(buildEventIcs(event)));
+  });
+
+  it("escapes the calendar name", () => {
+    const ics = buildCalendarFeedIcs("Club, Trieste; Online", []);
+    expect(ics).toContain("X-WR-CALNAME:Club\\, Trieste\\; Online");
   });
 });
 

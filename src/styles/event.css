@@ -162,6 +162,26 @@
   right: auto;
 }
 
+/* #80: the subscribe line under the events list. */
+.cnf-events__subscribe {
+  margin-top: 2rem;
+  font-size: 1rem;
+  color: hsl(var(--color-grey));
+}
+
+.cnf-events__subscribe-icon {
+  width: 0.875em;
+  height: 0.875em;
+  margin-right: 0.4em;
+  vertical-align: -0.05em;
+  color: hsl(var(--color-green));
+}
+
+/* global.css sizes every link at 1.125rem; match the line instead. */
+.cnf-events__subscribe a {
+  font-size: inherit;
+}
+
 .cnf-event-page__calendar-link {
   display: inline-flex;
   gap: 0.4rem;

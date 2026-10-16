@@ -81,3 +81,28 @@ export async function getEventClubStaticPaths(): Promise<EventClubPath[]> {
     }))
   );
 }
+
+export type ClubEventsPath = {
+  params: { clubSlug: string };
+  props: { club: Club; events: EventCollection[] };
+};
+
+// The getStaticPaths shared by events.astro and the events.ics feed (#80) —
+// one entry per club with that club's events, so the list page and the
+// calendar feed always agree on which events a club shows. Every club gets
+// a path, including one with zero events yet.
+export async function getClubEventsStaticPaths(): Promise<ClubEventsPath[]> {
+  const [clubs, events] = await Promise.all([
+    getAllClubs(),
+    getCollection('event') as Promise<EventCollection[]>,
+  ]);
+  const clubSlugs = clubs.map((c) => c.slug);
+
+  return clubs.map((club) => ({
+    params: { clubSlug: club.slug },
+    props: {
+      club,
+      events: events.filter((event) => clubSlugsForEvent(event.data.location, clubSlugs).includes(club.slug)),
+    },
+  }));
+}
