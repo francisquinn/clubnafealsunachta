@@ -1,6 +1,7 @@
 import { getCollection } from 'astro:content';
 import { supabaseAdmin } from './supabase';
 import type { EventCollection } from '../types/types';
+import { ONLINE_CLUB_SLUG } from './clubDefaults';
 
 export type Club = { id: number; name: string; slug: string };
 
@@ -50,6 +51,14 @@ export async function getAllClubs(): Promise<Club[]> {
     });
   }
   return clubsPromise;
+}
+
+// #177: the events-page chapter picker's options — city chapters
+// alphabetically, Online last.
+export function sortChaptersForPicker(clubs: Club[]): { name: string; slug: string }[] {
+  return clubs
+    .map(({ name, slug }) => ({ name, slug }))
+    .sort((a, b) => Number(a.slug === ONLINE_CLUB_SLUG) - Number(b.slug === ONLINE_CLUB_SLUG) || a.name.localeCompare(b.name));
 }
 
 // #39: the set of club slugs a given event belongs under — the club it's

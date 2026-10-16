@@ -7,7 +7,7 @@ import "../../styles/select.css";
 import EventList from "../../components/EventList/EventList";
 import SubscribeCalendarLinks from "../../components/SubscribeCalendarLinks/SubscribeCalendarLinks";
 import Banner from "../../layouts/Banner.astro";
-import { getClubEventsStaticPaths } from "../../lib/clubs";
+import { getAllClubs, getClubEventsStaticPaths, sortChaptersForPicker } from "../../lib/clubs";
 
 // #39: clubs and events are resolved once for the whole build, and each
 // club page gets its own pre-filtered list. Shared with the events.ics feed
@@ -18,12 +18,15 @@ const { clubSlug } = Astro.params;
 const { club, events: sortedEvents } = Astro.props;
 // Absolute, since calendar apps fetch the feed from outside the site.
 const feedUrl = new URL(`/${clubSlug}/events.ics`, Astro.site).href;
+// #177: the chapter picker's options. getAllClubs is memoized per build, so
+// this is no extra query.
+const clubs = sortChaptersForPicker(await getAllClubs());
 ---
 
 <BaseLayout pageTitle={pageTitle}>
   <section class="cnf-section">
     <h1>{pageTitle}</h1>
-    <EventList events={sortedEvents} clubSlug={clubSlug} client:load />
+    <EventList events={sortedEvents} clubSlug={clubSlug!} clubs={clubs} client:load />
     <SubscribeCalendarLinks feedUrl={feedUrl} chapterName={club.name} />
   </section>
   <Banner
