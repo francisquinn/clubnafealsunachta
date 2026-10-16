@@ -1,8 +1,14 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import "@testing-library/jest-dom";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import EventList from "./EventList";
 import type { EventCollection, Event } from "../../types/types";
+
+const mockGetGoingCounts = vi.fn();
+
+vi.mock("astro:actions", async () =>
+  (await import("../../test/astroActions")).mockActions(() => ({ getGoingCounts: mockGetGoingCounts })),
+);
 
 vi.mock("../Selector/Selector", () => ({
   default: ({ options, value, onChange }: { options: { value: string; label: string }[]; value: string; onChange: (v: string) => void }) => (
@@ -13,13 +19,15 @@ vi.mock("../Selector/Selector", () => ({
 }));
 
 vi.mock("../UpcomingEvent", () => ({
-  default: ({ events }: { events: { name: string }[] }) => (
-    <div data-testid="upcoming-event">{events?.[0]?.name}</div>
+  default: ({ events, goingCounts }: { events: { name: string; slug: string }[]; goingCounts?: Record<string, number> | null }) => (
+    <div data-testid="upcoming-event" data-going={String(goingCounts?.[events[0]?.slug ?? ""] ?? "none")}>{events?.[0]?.name}</div>
   ),
 }));
 
 vi.mock("../../layouts/EventCard", () => ({
-  default: ({ event }: { event: { name: string } }) => <div data-testid="past-event">{event.name}</div>,
+  default: ({ event, goingCount }: { event: { name: string }; goingCount?: number }) => (
+    <div data-testid="past-event" data-going={String(goingCount ?? "none")}>{event.name}</div>
+  ),
 }));
 
 vi.mock("../../styles/event.css", () => ({}));
@@ -81,6 +89,11 @@ const CLUBS = [
   { name: "Online", slug: "online" },
 ];
 
+beforeEach(() => {
+  mockGetGoingCounts.mockReset();
+  mockGetGoingCounts.mockReturnValue(new Promise(() => {}));
+});
+
 function renderList(events: EventCollection[], clubSlug = "trieste") {
   return render(<EventList events={events} clubSlug={clubSlug} clubs={CLUBS} />);
 }
@@ -131,6 +144,52 @@ describe("EventList", () => {
       renderList(events);
       fireEvent.click(screen.getByText("Past"));
       expect(screen.getByText(/no past events in Trieste/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("live going counts (#180)", () => {
+    it("fetches the upcoming counts in one call and passes them down", async () => {
+      mockGetGoingCounts.mockResolvedValue({ data: { "event-a": 12, "event-b": 3 }, error: undefined });
+      renderList([makeEvent("Event A", futureDate1), makeEvent("Event B", futureDate2), makeEvent("Past Event", pastDate1)]);
+
+      expect(mockGetGoingCounts).toHaveBeenCalledTimes(1);
+      expect(mockGetGoingCounts).toHaveBeenCalledWith({ slugs: ["event-a", "event-b"] });
+      await waitFor(() => expect(screen.getByText("Event A")).toHaveAttribute("data-going", "12"));
+    });
+
+    it("waits for the Past tab before fetching the past counts, then fetches them once", async () => {
+      mockGetGoingCounts.mockImplementation(async ({ slugs }: { slugs: string[] }) => ({
+        data: Object.fromEntries(slugs.map((slug) => [slug, slug === "past-event" ? 8 : 1])),
+        error: undefined,
+      }));
+      renderList([makeEvent("Event A", futureDate1), makeEvent("Past Event", pastDate1)]);
+      expect(mockGetGoingCounts).not.toHaveBeenCalledWith({ slugs: ["past-event"] });
+
+      fireEvent.click(screen.getByText("Past"));
+      expect(mockGetGoingCounts).toHaveBeenLastCalledWith({ slugs: ["past-event"] });
+      await waitFor(() => expect(screen.getByTestId("past-event")).toHaveAttribute("data-going", "8"));
+
+      fireEvent.click(screen.getByText("Upcoming"));
+      fireEvent.click(screen.getByText("Past"));
+      expect(mockGetGoingCounts).toHaveBeenCalledTimes(2);
+    });
+
+    it("leaves the cards on their built-in count, and logs it, if the request itself fails", async () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockGetGoingCounts.mockRejectedValue(new TypeError("Failed to fetch"));
+      renderList([makeEvent("Event A", futureDate1)]);
+      await waitFor(() => expect(warn).toHaveBeenCalledWith(expect.any(String), expect.any(TypeError)));
+      expect(screen.getByTestId("upcoming-event")).toHaveAttribute("data-going", "none");
+      warn.mockRestore();
+    });
+
+    it("leaves the cards on their built-in count, and logs it, if the call fails", async () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockGetGoingCounts.mockResolvedValue({ data: undefined, error: new Error("boom") });
+      renderList([makeEvent("Event A", futureDate1)]);
+      await waitFor(() => expect(warn).toHaveBeenCalled());
+      expect(screen.getByTestId("upcoming-event")).toHaveAttribute("data-going", "none");
+      warn.mockRestore();
     });
   });
 
