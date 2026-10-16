@@ -27,6 +27,8 @@ const clubs = sortChaptersForPicker(await getAllClubs());
   <section class="cnf-section">
     <h1>{pageTitle}</h1>
     <EventList events={sortedEvents} clubSlug={clubSlug!} clubs={clubs} client:load />
+  </section>
+  <section class="cnf-section">
     <SubscribeCalendarLinks feedUrl={feedUrl} chapterName={club.name} />
   </section>
   <Banner

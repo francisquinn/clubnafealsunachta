@@ -3,7 +3,7 @@ import { supabaseAdmin } from '../lib/supabase';
 import { shouldSkipContentFetch } from './skipFetch';
 import { unwrapRelation } from '../lib/supabaseRelations';
 import { getAllClubs } from '../lib/clubs';
-import { isRsvpStatus, type RsvpCounts } from '../lib/rsvpTypes';
+import type { RsvpCounts } from '../lib/rsvpTypes';
 
 export function eventsLoader(): Loader {
   return {
@@ -26,7 +26,7 @@ export function eventsLoader(): Loader {
           .select('*, venues(name, url), members!events_created_by_fkey(id, username, full_name, display_full_name, avatar_url)')
           .order('date', { ascending: true }),
         getAllClubs(),
-        supabaseAdmin.from('rsvps').select('event_id, status'),
+        supabaseAdmin.rpc('event_rsvp_counts'),
       ]);
 
       if (eventsResult.error) {
@@ -38,16 +38,15 @@ export function eventsLoader(): Loader {
       // maybe". Tolerated rather than fatal when the rsvps table isn't
       // deployed yet — a migration-pending build shouldn't take the whole
       // site down, and the client-side island refreshes live counts once the
-      // table exists.
+      // table exists. #182: counted in the database (event_rsvp_counts, one
+      // row per event with RSVPs), since one row per RSVP was cut short by
+      // the Data API's 1000-row limit.
       const rsvpCountsByEvent = new Map<number, RsvpCounts>();
       if (rsvpsResult.error) {
         console.error(`Failed to fetch RSVP counts from Supabase: ${rsvpsResult.error.message}`);
       } else {
-        for (const row of rsvpsResult.data ?? []) {
-          if (!isRsvpStatus(row.status)) continue;
-          const counts = rsvpCountsByEvent.get(row.event_id) ?? { going: 0, maybe: 0, not_going: 0 };
-          counts[row.status] += 1;
-          rsvpCountsByEvent.set(row.event_id, counts);
+        for (const row of (rsvpsResult.data ?? []) as ({ event_id: number } & RsvpCounts)[]) {
+          rsvpCountsByEvent.set(row.event_id, { going: row.going, maybe: row.maybe, not_going: row.not_going });
         }
       }
 

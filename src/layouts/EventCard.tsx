@@ -1,5 +1,5 @@
 import type { Event } from "../types/types";
-import { formatEventDate, formatEventEndTime, getEventLiveState } from "../utils/script";
+import { formatEventDate, getEventLiveState } from "../utils/script";
 import { DEFAULT_CLUB_SLUG } from "../lib/clubDefaults";
 import LiveBadge from "../components/LiveBadge/LiveBadge";
 
@@ -8,11 +8,7 @@ export default function EventCard({
   dateFormatter = formatEventDate,
   responsive = false,
   clubSlug,
-  // #100: only the default (upcoming/live) dateFormatter shows a time of
-  // day at all — EventList's past-events list passes a day-only
-  // formatBlogDate, where appending an end time would read as a mismatched
-  // fragment ("Sep 4, 2026–20:00"). Callers of that formatter opt out.
-  showEndTime = true,
+  goingCount,
 }: EventCardProps) {
   // #39: events are routed under /[clubSlug]/events/[eventSlug]. A caller
   // rendering within a club-scoped page (e.g. /trieste/events) passes its
@@ -20,7 +16,13 @@ export default function EventCard({
   // links correctly; outside that context it falls back to the event's own
   // club, defaulting to the one club that exists today.
   const href = `/${clubSlug ?? event.location?.slug ?? DEFAULT_CLUB_SLUG}/events/${event.slug}`;
-  const isLive = getEventLiveState(event) === "live";
+  const liveState = getEventLiveState(event);
+  const isLive = liveState === "live";
+  // #180: goingCount is the live count from useGoingCounts; until it arrives
+  // (or if it fails) the card shows the build-time one.
+  const going = goingCount ?? event.rsvpCounts.going;
+  const goingText = `${going} ${liveState === "past" ? "went" : "going"}`;
+  const details = [event.location?.name, goingText].filter(Boolean).join(" · ");
 
   return (
     <div className={`cnf-event ${responsive ? 'cnf-event--responsive' : ''}`}>
@@ -39,36 +41,9 @@ export default function EventCard({
           <ul>
             <li className="cnf-event__date">
               {dateFormatter(new Date(event.date))}
-              {showEndTime && `–${formatEventEndTime(new Date(event.endDate))}`}
             </li>
-            <li className="cnf-event__location">
-              {event.isOnline
-                ? <a href={event.meetingUrl ?? undefined} target="_blank">Online</a>
-                : event.venue?.url
-                  ? <a href={event.venue.url} target="_blank">{event.venue.name}</a>
-                  : event.venue?.name
-                    ? <span>{event.venue.name}</span>
-                    : null
-              }
-            </li>
+            <li className="cnf-event__details">{details}</li>
           </ul>
-        </div>
-        <div className="cnf-event__social">
-          {event.social.instagram && (
-            <a href={event.social.instagram} target="_blank">
-              <img className="cnf-event__social-svg" src="/instagram.svg" />
-            </a>
-          )}
-          {event.social.facebook && (
-            <a href={event.social.facebook} target="_blank">
-              <img className="cnf-event__social-svg" src="/facebook.svg" />
-            </a>
-          )}
-          {event.social.meetup && (
-            <a href={event.social.meetup} target="_blank">
-              <img className="cnf-event__social-svg" src="/meetup.svg" />
-            </a>
-          )}
         </div>
       </div>
     </div>
@@ -80,5 +55,5 @@ type EventCardProps = {
   dateFormatter?: (date: Date) => string;
   responsive?: boolean;
   clubSlug?: string;
-  showEndTime?: boolean;
+  goingCount?: number;
 };
