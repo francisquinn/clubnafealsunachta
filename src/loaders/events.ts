@@ -3,7 +3,7 @@ import { supabaseAdmin } from '../lib/supabase';
 import { shouldSkipContentFetch } from './skipFetch';
 import { unwrapRelation } from '../lib/supabaseRelations';
 import { getAllClubs } from '../lib/clubs';
-import { isRsvpStatus, type RsvpCounts } from '../lib/rsvpTypes';
+import type { RsvpCounts } from '../lib/rsvpTypes';
 
 export function eventsLoader(): Loader {
   return {
@@ -26,7 +26,7 @@ export function eventsLoader(): Loader {
           .select('*, venues(name, url), members!events_created_by_fkey(id, username, full_name, display_full_name, avatar_url)')
           .order('date', { ascending: true }),
         getAllClubs(),
-        supabaseAdmin.from('rsvps').select('event_id, status'),
+        supabaseAdmin.rpc('event_rsvp_counts'),
       ]);
 
       if (eventsResult.error) {
@@ -38,16 +38,15 @@ export function eventsLoader(): Loader {
       // maybe". Tolerated rather than fatal when the rsvps table isn't
       // deployed yet — a migration-pending build shouldn't take the whole
       // site down, and the client-side island refreshes live counts once the
-      // table exists.
+      // table exists. #182: counted in the database (event_rsvp_counts, one
+      // row per event with RSVPs), since one row per RSVP was cut short by
+      // the Data API's 1000-row limit.
       const rsvpCountsByEvent = new Map<number, RsvpCounts>();
       if (rsvpsResult.error) {
         console.error(`Failed to fetch RSVP counts from Supabase: ${rsvpsResult.error.message}`);
       } else {
-        for (const row of rsvpsResult.data ?? []) {
-          if (!isRsvpStatus(row.status)) continue;
-          const counts = rsvpCountsByEvent.get(row.event_id) ?? { going: 0, maybe: 0, not_going: 0 };
-          counts[row.status] += 1;
-          rsvpCountsByEvent.set(row.event_id, counts);
+        for (const row of (rsvpsResult.data ?? []) as ({ event_id: number } & RsvpCounts)[]) {
+          rsvpCountsByEvent.set(row.event_id, { going: row.going, maybe: row.maybe, not_going: row.not_going });
         }
       }
 
@@ -62,21 +61,10 @@ export function eventsLoader(): Loader {
         // genuinely cross-chapter/global. No need to derive it from the
         // venue relation separately.
         //
-        // #60: online events are always treated as global on the public
-        // site regardless of club_id — an online event isn't tied to a
-        // physical place, so it reuses the same "location: null is visible
-        // on every chapter" plumbing #39 built for genuinely cross-chapter
-        // events (clubSlugsForEvent, canonical URLs, etc.), rather than only
-        // showing up under whichever single chapter organizes it. club_id
-        // itself is left untouched in the DB for admin/internal purposes —
-        // only this public-facing `location` is forced null. This is a
-        // temporary simplification pending #52's per-chapter online filter;
-        // revisit once that ships.
-        const location = event.is_online
-          ? null
-          : event.club_id
-            ? clubsMap.get(event.club_id) ?? null
-            : null;
+        // #177: online events belong to the Online club like any other
+        // event belongs to its club — the #60 stopgap that forced them to
+        // null (shown under every chapter) is gone.
+        const location = event.club_id ? clubsMap.get(event.club_id) ?? null : null;
         const creator = unwrapRelation(event.members);
 
         if (!creator) {

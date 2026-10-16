@@ -1,6 +1,7 @@
 import { getCollection } from 'astro:content';
 import { supabaseAdmin } from './supabase';
 import type { EventCollection } from '../types/types';
+import { ONLINE_CLUB_SLUG } from './clubDefaults';
 
 export type Club = { id: number; name: string; slug: string };
 
@@ -52,6 +53,14 @@ export async function getAllClubs(): Promise<Club[]> {
   return clubsPromise;
 }
 
+// #177: the events-page chapter picker's options — city chapters
+// alphabetically, Online last.
+export function sortChaptersForPicker(clubs: Club[]): { name: string; slug: string }[] {
+  return clubs
+    .map(({ name, slug }) => ({ name, slug }))
+    .sort((a, b) => Number(a.slug === ONLINE_CLUB_SLUG) - Number(b.slug === ONLINE_CLUB_SLUG) || a.name.localeCompare(b.name));
+}
+
 // #39: the set of club slugs a given event belongs under — the club it's
 // actually scoped to, or, for a genuinely cross-chapter event (location
 // null), every club that exists (the "visible everywhere" decision). Shared
@@ -80,4 +89,29 @@ export async function getEventClubStaticPaths(): Promise<EventClubPath[]> {
       props: { event },
     }))
   );
+}
+
+export type ClubEventsPath = {
+  params: { clubSlug: string };
+  props: { club: Club; events: EventCollection[] };
+};
+
+// The getStaticPaths shared by events.astro and the events.ics feed (#80) —
+// one entry per club with that club's events, so the list page and the
+// calendar feed always agree on which events a club shows. Every club gets
+// a path, including one with zero events yet.
+export async function getClubEventsStaticPaths(): Promise<ClubEventsPath[]> {
+  const [clubs, events] = await Promise.all([
+    getAllClubs(),
+    getCollection('event') as Promise<EventCollection[]>,
+  ]);
+  const clubSlugs = clubs.map((c) => c.slug);
+
+  return clubs.map((club) => ({
+    params: { clubSlug: club.slug },
+    props: {
+      club,
+      events: events.filter((event) => clubSlugsForEvent(event.data.location, clubSlugs).includes(club.slug)),
+    },
+  }));
 }

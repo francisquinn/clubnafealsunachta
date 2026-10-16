@@ -6,8 +6,6 @@
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 150px 1fr;
-  border-radius: 20px;
-  box-shadow: var(--box-shadow-card);
   position: relative;
   transition: transform ease-in-out 0.2s;
 }
@@ -34,7 +32,8 @@
   text-align: center;
   justify-content: center;
   background-color: hsl(var(--color-beige));
-  border-radius: 20px 20px 0 0;
+  border-radius: 20px;
+  box-shadow: var(--box-shadow-card);
 }
 
 .cnf-event--debate .cnf-event__poster {
@@ -42,12 +41,7 @@
 }
 
 .cnf-event__info {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  padding: 1rem;
-  background-color: hsl(var(--color-white));
-  border-radius: 0 0 20px 20px;
+  padding: 0.75rem 0.25rem 0;
 }
 
 .cnf-event__info ul {
@@ -59,20 +53,14 @@
   color: hsl(var(--color-grey));
 }
 
+.cnf-event__details {
+  margin-top: 0.25rem;
+  font-size: 1rem;
+  color: hsl(var(--color-grey));
+}
+
 .cnf-event__live {
   margin-bottom: 0.5rem;
-}
-
-.cnf-event__location {
-  margin-top: 0.25rem;
-  position: relative;
-}
-
-.cnf-event__social {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 0.75rem;
-  position: relative;
 }
 
 .cnf-event__social-svg {
@@ -160,6 +148,26 @@
 .cnf-event-page__calendar-menu .cnf-dropdown__panel {
   left: 0;
   right: auto;
+}
+
+/* #80: the subscribe line under the events list. */
+.cnf-events__subscribe {
+  margin-top: 2rem;
+  font-size: 1rem;
+  color: hsl(var(--color-grey));
+}
+
+.cnf-events__subscribe-icon {
+  width: 0.875em;
+  height: 0.875em;
+  margin-right: 0.4em;
+  vertical-align: -0.05em;
+  color: hsl(var(--color-green));
+}
+
+/* global.css sizes every link at 1.125rem; match the line instead. */
+.cnf-events__subscribe a {
+  font-size: inherit;
 }
 
 .cnf-event-page__calendar-link {
@@ -260,14 +268,16 @@
     grid-template-rows: 1fr;
   }
 
+  /* #180: the info beside it no longer gives the card its height, so the
+     poster holds room for a two-line title (about what the card was before). */
   .cnf-event--responsive .cnf-event__poster {
     grid-column: 1 / 2;
-    border-radius: 20px 0 0 20px;
+    min-height: 6rem;
   }
 
   .cnf-event--responsive .cnf-event__info {
-    display: block;
     grid-column: 2 / 3;
-    border-radius: 0 20px 20px 0;
+    align-self: center;
+    padding: 0 0 0 1rem;
   }
 }

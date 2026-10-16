@@ -4,3 +4,38 @@
 # to a same-path static file, since none should exist for /events* anymore.
 /events                /trieste/events                301!
 /events/:slug          /trieste/events/:slug          301!
+
+# #177: online events used to be built under every club, with their canonical
+# copy at /trieste/events/<slug>/; they now live only under /online. Listed one
+# by one (the 14 online events in production when Online became a chapter) and
+# forced: a non-forced wildcard would never fire, since the Astro SSR function
+# (path "/*", preferStatic) answers before Netlify reaches non-forced rules,
+# and a forced wildcard would also catch real Trieste events.
+/trieste/events/ai-slop                         /online/events/ai-slop                          301!
+/trieste/events/ai-slop.ics                     /online/events/ai-slop.ics                      301!
+/trieste/events/are-we-present                  /online/events/are-we-present                   301!
+/trieste/events/are-we-present.ics              /online/events/are-we-present.ics               301!
+/trieste/events/back-to-the-future              /online/events/back-to-the-future               301!
+/trieste/events/back-to-the-future.ics          /online/events/back-to-the-future.ics           301!
+/trieste/events/bad-idea                        /online/events/bad-idea                         301!
+/trieste/events/bad-idea.ics                    /online/events/bad-idea.ics                     301!
+/trieste/events/best-time-ever                  /online/events/best-time-ever                   301!
+/trieste/events/best-time-ever.ics              /online/events/best-time-ever.ics               301!
+/trieste/events/better-than-whom                /online/events/better-than-whom                 301!
+/trieste/events/better-than-whom.ics            /online/events/better-than-whom.ics             301!
+/trieste/events/can-travel-shape-us             /online/events/can-travel-shape-us              301!
+/trieste/events/can-travel-shape-us.ics         /online/events/can-travel-shape-us.ics          301!
+/trieste/events/human-with-a-side-of-chips      /online/events/human-with-a-side-of-chips       301!
+/trieste/events/human-with-a-side-of-chips.ics  /online/events/human-with-a-side-of-chips.ics   301!
+/trieste/events/intentionalism                  /online/events/intentionalism                   301!
+/trieste/events/intentionalism.ics              /online/events/intentionalism.ics               301!
+/trieste/events/one-and-only                    /online/events/one-and-only                     301!
+/trieste/events/one-and-only.ics                /online/events/one-and-only.ics                 301!
+/trieste/events/over-my-dead-body               /online/events/over-my-dead-body                301!
+/trieste/events/over-my-dead-body.ics           /online/events/over-my-dead-body.ics            301!
+/trieste/events/resolutions                     /online/events/resolutions                      301!
+/trieste/events/resolutions.ics                 /online/events/resolutions.ics                  301!
+/trieste/events/six-one-news                    /online/events/six-one-news                     301!
+/trieste/events/six-one-news.ics                /online/events/six-one-news.ics                 301!
+/trieste/events/this-is-my-legacy               /online/events/this-is-my-legacy                301!
+/trieste/events/this-is-my-legacy.ics           /online/events/this-is-my-legacy.ics            301!

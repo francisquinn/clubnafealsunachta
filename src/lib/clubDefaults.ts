@@ -19,3 +19,8 @@ export const DEFAULT_CLUB_SLUG = 'trieste';
 // UTC/local boundary. Revisit alongside DEFAULT_CLUB_SLUG once a second real
 // club (in a different timezone) exists.
 export const DEFAULT_CLUB_TIMEZONE = 'Europe/Rome';
+
+// #177: Online is a chapter of its own (every online event belongs to it),
+// open to every admin rather than administered on its own — see
+// getAdminScope and resolveEventClubId.
+export const ONLINE_CLUB_SLUG = 'online';

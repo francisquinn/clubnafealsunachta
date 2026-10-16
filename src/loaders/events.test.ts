@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { eventsLoader } from './events';
 
-const { mockSupabaseAdmin, mockGetAllClubs, mockUnwrapRelation, mockIsRsvpStatus } = vi.hoisted(() => {
+const { mockSupabaseAdmin, mockGetAllClubs, mockUnwrapRelation } = vi.hoisted(() => {
   return {
     mockSupabaseAdmin: {
       from: vi.fn((table: string) => {
@@ -12,17 +12,13 @@ const { mockSupabaseAdmin, mockGetAllClubs, mockUnwrapRelation, mockIsRsvpStatus
             }),
           };
         }
-        if (table === 'rsvps') {
-          return {
-            select: () => Promise.resolve({ data: [], error: null }),
-          };
-        }
         throw new Error(`Unexpected table: ${table}`);
       }),
+      // #182: RSVP counts come from the event_rsvp_counts function.
+      rpc: vi.fn((): Promise<{ data: unknown; error: { message: string } | null }> => Promise.resolve({ data: [], error: null })),
     },
     mockGetAllClubs: vi.fn(() => Promise.resolve([])),
     mockUnwrapRelation: vi.fn((val) => val),
-    mockIsRsvpStatus: vi.fn((status: string) => ['going', 'maybe', 'not_going'].includes(status)),
   };
 });
 
@@ -36,10 +32,6 @@ vi.mock('../lib/clubs', () => ({
 
 vi.mock('../lib/supabaseRelations', () => ({
   unwrapRelation: mockUnwrapRelation,
-}));
-
-vi.mock('../lib/rsvpTypes', () => ({
-  isRsvpStatus: mockIsRsvpStatus,
 }));
 
 describe('eventsLoader', () => {
@@ -83,11 +75,6 @@ describe('eventsLoader', () => {
           }),
         };
       }
-      if (table === 'rsvps') {
-        return {
-          select: () => Promise.resolve({ data: [], error: null }),
-        };
-      }
       throw new Error(`Unexpected table: ${table}`);
     });
 
@@ -102,5 +89,95 @@ describe('eventsLoader', () => {
     expect(store.set).toHaveBeenCalled();
     const callArgs = store.set.mock.calls[0]?.[0];
     expect(callArgs?.data).toHaveProperty('meetPoint');
+  });
+
+  // #177: online events belong to their club (the Online chapter) like any
+  // other event — no longer forced to location null (shown under every
+  // chapter) as the #60 stopgap did.
+  it('gives an online event its club as location', async () => {
+    const onlineClub = { id: 2, name: 'Online', slug: 'online' };
+    mockGetAllClubs.mockResolvedValueOnce([onlineClub] as never);
+    const mockEvent = {
+      id: 2,
+      name: 'Online Event',
+      date: '2025-06-01T19:00:00.000Z',
+      end_date: '2025-06-01T20:30:00.000Z',
+      is_online: true,
+      club_id: 2,
+      slug: 'online-event',
+      description: null,
+      summary: null,
+      instagram: null,
+      facebook: null,
+      meetup: null,
+      meeting_url: 'https://meet.jit.si/test',
+      meet_point: null,
+      tags: [],
+      created_by: 'user-1',
+      venues: null,
+      members: { id: 'user-1', username: 'testuser', full_name: null, display_full_name: false, avatar_url: null },
+    };
+    mockSupabaseAdmin.from.mockImplementation((table: string): any => {
+      if (table === 'events') {
+        return { select: () => ({ order: () => Promise.resolve({ data: [mockEvent], error: null }) }) };
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    const store = { clear: vi.fn(), set: vi.fn() };
+    await eventsLoader().load({ store } as any);
+
+    expect(store.set.mock.calls[0]?.[0]?.data.location).toEqual(onlineClub);
+  });
+
+  // #182: counted in the database, one row per event that has RSVPs.
+  describe('RSVP counts', () => {
+    function eventRow(id: number, slug: string) {
+      return {
+        id, name: slug, date: '2025-06-01T19:00:00.000Z', end_date: '2025-06-01T20:30:00.000Z',
+        is_online: false, club_id: 1, slug, description: null, summary: null, instagram: null,
+        facebook: null, meetup: null, meeting_url: null, meet_point: null, tags: [], created_by: 'user-1',
+        venues: null, members: { id: 'user-1', username: 'testuser', full_name: null, display_full_name: false, avatar_url: null },
+      };
+    }
+
+    beforeEach(() => {
+      mockSupabaseAdmin.from.mockImplementation((table: string): any => {
+        if (table === 'events') {
+          return { select: () => ({ order: () => Promise.resolve({ data: [eventRow(1, 'busy'), eventRow(2, 'quiet')], error: null }) }) };
+        }
+        throw new Error(`Unexpected table: ${table}`);
+      });
+    });
+
+    it('takes each event its counts from event_rsvp_counts, zeros when it has no row', async () => {
+      mockSupabaseAdmin.rpc.mockResolvedValueOnce({
+        data: [{ event_id: 1, slug: 'busy', going: 1200, maybe: 3, not_going: 1 }],
+        error: null,
+      });
+      const store = { clear: vi.fn(), set: vi.fn() };
+      await eventsLoader().load({ store } as any);
+
+      expect(mockSupabaseAdmin.rpc).toHaveBeenCalledWith('event_rsvp_counts');
+      const byId = Object.fromEntries(store.set.mock.calls.map(([entry]) => [entry.data.slug, entry.data.rsvpCounts]));
+      expect(byId).toEqual({
+        busy: { going: 1200, maybe: 3, not_going: 1 },
+        quiet: { going: 0, maybe: 0, not_going: 0 },
+      });
+    });
+
+    it('builds with zero counts when the counts call fails', async () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockSupabaseAdmin.rpc.mockResolvedValueOnce({ data: null, error: { message: 'function missing' } });
+      const store = { clear: vi.fn(), set: vi.fn() };
+      await eventsLoader().load({ store } as any);
+
+      expect(store.set.mock.calls.map(([entry]) => entry.data.rsvpCounts)).toEqual([
+        { going: 0, maybe: 0, not_going: 0 },
+        { going: 0, maybe: 0, not_going: 0 },
+      ]);
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('function missing'));
+      errorSpy.mockRestore();
+    });
   });
 });

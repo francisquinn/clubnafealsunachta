@@ -28,6 +28,11 @@ const state = vi.hoisted(() => {
     // rsvps: the (member_id, event_id) filter setEventRsvp deleted by (captured for assertions).
     deletedFilter: null as Record<string, unknown> | null,
     deleteError: null as Error | null,
+    // getGoingCounts (#182): the event_rsvp_counts rows returned, and the
+    // function name and args it was called with.
+    countRows: [] as { event_id: number; slug: string; going: number; maybe: number; not_going: number }[],
+    countError: null as Error | null,
+    rpcCall: null as { fn: string; args: unknown } | null,
   };
 });
 
@@ -72,6 +77,12 @@ vi.mock('../lib/supabase', () => {
       }
       throw new Error(`Unexpected table: ${table}`);
     },
+    rpc: (fn: string, args: unknown) => {
+      state.rpcCall = { fn, args };
+      return Promise.resolve(
+        state.countError ? { data: null, error: state.countError } : { data: state.countRows, error: null }
+      );
+    },
   };
   return {
     supabase: null,
@@ -88,7 +99,7 @@ vi.mock('../lib/auth', async (importOriginal) => {
   };
 });
 
-import { getEventRsvps, setEventRsvp } from './rsvps';
+import { getEventRsvps, getGoingCounts, setEventRsvp } from './rsvps';
 import type { RsvpState } from '../lib/rsvpTypes';
 
 type Handler<I> = (input: I, context: { cookies: { get(name: string): { value?: string } | undefined } }) => Promise<RsvpState>;
@@ -118,6 +129,9 @@ beforeEach(() => {
   state.upsertError = null;
   state.deletedFilter = null;
   state.deleteError = null;
+  state.countRows = [];
+  state.countError = null;
+  state.rpcCall = null;
 });
 
 describe('getEventRsvps', () => {
@@ -301,5 +315,48 @@ describe('setEventRsvp', () => {
     await expect(setHandler({ slug: 'philosophy-101', status: 'maybe' }, context())).rejects.toMatchObject({
       code: 'INTERNAL_SERVER_ERROR',
     });
+  });
+});
+describe('getGoingCounts (#180, #182)', () => {
+  const countsHandler = (getGoingCounts as unknown as { handler: (input: { slugs: unknown }) => Promise<Record<string, number>> }).handler;
+
+  it('returns the going count per slug, with 0 for events with no RSVPs and for unknown slugs', async () => {
+    state.countRows = [{ event_id: 1, slug: 'free-will', going: 1500, maybe: 2, not_going: 1 }];
+
+    const result = await countsHandler({ slugs: ['free-will', 'good-life', 'no-such-event', 'free-will'] });
+
+    expect(result).toEqual({ 'free-will': 1500, 'good-life': 0, 'no-such-event': 0 });
+    expect(state.rpcCall).toEqual({ fn: 'event_rsvp_counts', args: { event_slugs: ['free-will', 'good-life', 'no-such-event'] } });
+  });
+
+  it('ignores a row for a slug it did not ask for', async () => {
+    state.countRows = [{ event_id: 9, slug: 'other', going: 4, maybe: 0, not_going: 0 }];
+    expect(await countsHandler({ slugs: ['free-will'] })).toEqual({ 'free-will': 0 });
+  });
+
+  it('returns an empty map without querying for an empty list', async () => {
+    expect(await countsHandler({ slugs: [] })).toEqual({});
+    expect(state.rpcCall).toBeNull();
+  });
+
+  it.each([
+    ['not a list', 'free-will'],
+    ['a non-string slug', ['free-will', 3]],
+    ['an empty slug', ['']],
+    ['a slug over 200 characters', ['a'.repeat(201)]],
+    ['more than 1000 events', Array.from({ length: 1001 }, (_, i) => `event-${i}`)],
+  ])('rejects %s', async (_label, slugs) => {
+    await expect(countsHandler({ slugs })).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    expect(state.rpcCall).toBeNull();
+  });
+
+  it('allows 1000 slugs once duplicates are dropped', async () => {
+    const slugs = [...Array.from({ length: 1000 }, (_, i) => `event-${i}`), 'event-0'];
+    await expect(countsHandler({ slugs })).resolves.toMatchObject({ 'event-0': 0 });
+  });
+
+  it('surfaces a failed count call', async () => {
+    state.countError = new Error('counts down');
+    await expect(countsHandler({ slugs: ['free-will'] })).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
   });
 });

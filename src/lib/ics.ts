@@ -6,6 +6,7 @@
 import type { EventCollection } from "../types/types";
 
 const MAX_LINE_OCTETS = 75;
+const REMINDER_MINUTES = 15;
 
 export type EventIcsData = {
   name: string;
@@ -102,30 +103,69 @@ function combineDescription(event: EventIcsData): string {
     .join("\n\n");
 }
 
-export function buildEventIcs(event: EventIcsData): string {
+const CALENDAR_HEADER = [
+  "BEGIN:VCALENDAR",
+  "VERSION:2.0",
+  "PRODID:-//Club na Fealsunachta//NONSGML Club event//EN",
+  "CALSCALE:GREGORIAN",
+  "METHOD:PUBLISH",
+];
+
+// One VEVENT's content lines, shared by the single-event file and the feed
+// so the two can't drift. The UID is stable per event, so a subscribed
+// calendar updates an event in place on refresh instead of adding a copy.
+// (Apps only match UIDs within one calendar: an event also added by hand
+// to another calendar still shows twice.)
+function buildEventLines(event: EventIcsData, stamp: string): string[] {
   const { start, end } = getEventBounds(event);
   const location = buildEventLocation(event);
   const description = combineDescription(event);
 
-  const lines = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Club na Fealsunachta//NONSGML Club event//EN",
-    "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH",
+  return [
     "BEGIN:VEVENT",
     `UID:event-${event.slug}@clubnafealsunachta.com`,
-    `DTSTAMP:${formatIcsDateTime(new Date())}`,
+    `DTSTAMP:${stamp}`,
     `DTSTART:${formatIcsDateTime(start)}`,
     `DTEND:${formatIcsDateTime(end)}`,
     `SUMMARY:${escapeIcsText(event.name)}`,
     ...(location ? [`LOCATION:${escapeIcsText(location)}`] : []),
     ...(description ? [`DESCRIPTION:${escapeIcsText(description)}`] : []),
+    // Section 3.6.6: a DISPLAY alarm needs ACTION, TRIGGER and DESCRIPTION.
+    // Apple Calendar and Outlook pick it up as a reminder before the start.
+    "BEGIN:VALARM",
+    "ACTION:DISPLAY",
+    `TRIGGER:-PT${REMINDER_MINUTES}M`,
+    `DESCRIPTION:${escapeIcsText(event.name)}`,
+    "END:VALARM",
     "END:VEVENT",
-    "END:VCALENDAR",
   ];
+}
 
+function serializeIcs(lines: string[]): string {
   return lines.map(foldIcsLine).join("\r\n") + "\r\n";
+}
+
+export function buildEventIcs(event: EventIcsData): string {
+  const stamp = formatIcsDateTime(new Date());
+  return serializeIcs([...CALENDAR_HEADER, ...buildEventLines(event, stamp), "END:VCALENDAR"]);
+}
+
+// #80: the subscribable feed, one per club. NAME (RFC 7986) and
+// X-WR-CALNAME (what Apple/Google/Outlook actually read) both name the
+// calendar; REFRESH-INTERVAL (RFC 7986) and X-PUBLISHED-TTL (the
+// older Outlook/Apple spelling) ask clients to re-fetch twice a day, since
+// the feed only changes when the site rebuilds.
+export function buildCalendarFeedIcs(calendarName: string, events: EventIcsData[]): string {
+  const stamp = formatIcsDateTime(new Date());
+  return serializeIcs([
+    ...CALENDAR_HEADER,
+    `NAME:${escapeIcsText(calendarName)}`,
+    `X-WR-CALNAME:${escapeIcsText(calendarName)}`,
+    "REFRESH-INTERVAL;VALUE=DURATION:PT12H",
+    "X-PUBLISHED-TTL:PT12H",
+    ...events.flatMap((event) => buildEventLines(event, stamp)),
+    "END:VCALENDAR",
+  ]);
 }
 
 // Google's own "render" endpoint pre-fills its web compose screen — a real
@@ -133,7 +173,10 @@ export function buildEventIcs(event: EventIcsData): string {
 // Google Calendar users at all. Reuses the same UTC instants and combined
 // description/location as the .ics (formatIcsDateTime's Z-suffixed format
 // happens to be exactly what Google's `dates` param wants), just plain
-// URI-encoded rather than ICS-escaped.
+// URI-encoded rather than ICS-escaped. The render link has no parameter for
+// reminders, and Google ignores VALARM in imported and subscribed calendars
+// too, so Google users always get their own default notification instead of
+// the .ics's 15-minute alarm.
 export function buildGoogleCalendarUrl(event: EventIcsData): string {
   const { start, end } = getEventBounds(event);
   const location = buildEventLocation(event);
