@@ -2,7 +2,6 @@ import "../styles/event.css";
 import EventCard from "../layouts/EventCard";
 import type { Event } from "../types/types";
 import { isEventExpired } from "../utils/script";
-import { useGoingCounts } from "../lib/useGoingCounts";
 
 export default function UpcomingEvent(props: UpcomingEventProps) {
   // #97: "not yet ended" (isEventExpired is keyed off endDate), not "not yet
@@ -11,12 +10,6 @@ export default function UpcomingEvent(props: UpcomingEventProps) {
   const nextEvent = props.events
     ?.filter((e) => !isEventExpired(e))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
-  // On the home page this island fetches its own live count; inside
-  // EventList the list fetches once for all its cards and passes goingCounts
-  // (null until that resolves, which still means "don't fetch here").
-  const parentFetches = props.goingCounts !== undefined;
-  const fetchedCounts = useGoingCounts(parentFetches || !nextEvent ? [] : [nextEvent.slug]);
-  const goingCounts = parentFetches ? props.goingCounts : fetchedCounts;
 
   if (!nextEvent) {
     return (
@@ -26,19 +19,11 @@ export default function UpcomingEvent(props: UpcomingEventProps) {
     );
   }
 
-  return (
-    <EventCard
-      event={nextEvent}
-      responsive={props.responsive}
-      clubSlug={props.clubSlug}
-      goingCount={goingCounts?.[nextEvent.slug]}
-    />
-  );
+  return <EventCard event={nextEvent} responsive={props.responsive} clubSlug={props.clubSlug} />;
 }
 
 type UpcomingEventProps = {
   events?: Event[];
   responsive?: boolean;
   clubSlug?: string;
-  goingCounts?: Record<string, number> | null;
 };
