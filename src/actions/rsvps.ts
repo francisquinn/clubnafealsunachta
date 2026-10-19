@@ -137,49 +137,6 @@ export const getEventRsvps = defineAction({
   },
 });
 
-// #180: the event cards' "N going", for every card on a page in one call.
-// Like getEventRsvps it exists because RSVPs don't rebuild the static pages,
-// so the build-time count goes stale. Counts only (public, same as the
-// event page's summary), keyed by slug; a slug with no going RSVPs, or one
-// that matches no event, comes back as 0. #182: counted in the database by
-// event_rsvp_counts (one row per event, so the Data API's 1000-row limit
-// caps events, not RSVPs), and the cap matches that limit.
-const MAX_GOING_COUNT_SLUGS = 1000;
-const MAX_SLUG_LENGTH = 200;
-
-export const getGoingCounts = defineAction({
-  handler: async ({ slugs }: { slugs: string[] }) => {
-    if (!supabaseAdmin) {
-      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Supabase not configured' });
-    }
-
-    if (
-      !Array.isArray(slugs) ||
-      slugs.some((slug) => typeof slug !== 'string' || !slug || slug.length > MAX_SLUG_LENGTH)
-    ) {
-      throw new ActionError({ code: 'BAD_REQUEST', message: 'Slugs must be a list of event slugs' });
-    }
-    const uniqueSlugs = [...new Set(slugs)];
-    if (uniqueSlugs.length > MAX_GOING_COUNT_SLUGS) {
-      throw new ActionError({ code: 'BAD_REQUEST', message: `At most ${MAX_GOING_COUNT_SLUGS} events at a time` });
-    }
-
-    const counts: Record<string, number> = Object.fromEntries(uniqueSlugs.map((slug) => [slug, 0]));
-    if (uniqueSlugs.length === 0) return counts;
-
-    const { data, error } = await supabaseAdmin.rpc('event_rsvp_counts', { event_slugs: uniqueSlugs });
-
-    if (error) {
-      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
-    }
-
-    for (const row of (data ?? []) as { slug: string; going: number }[]) {
-      if (row.slug in counts) counts[row.slug] = row.going;
-    }
-    return counts;
-  },
-});
-
 export const setEventRsvp = defineAction({
   handler: async ({ slug, status }: { slug: string; status: RsvpStatus | null }, context) => {
     if (!supabaseAdmin) {

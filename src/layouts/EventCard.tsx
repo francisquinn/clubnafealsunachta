@@ -8,7 +8,6 @@ export default function EventCard({
   dateFormatter = formatEventDate,
   responsive = false,
   clubSlug,
-  goingCount,
 }: EventCardProps) {
   // #39: events are routed under /[clubSlug]/events/[eventSlug]. A caller
   // rendering within a club-scoped page (e.g. /trieste/events) passes its
@@ -16,13 +15,7 @@ export default function EventCard({
   // links correctly; outside that context it falls back to the event's own
   // club, defaulting to the one club that exists today.
   const href = `/${clubSlug ?? event.location?.slug ?? DEFAULT_CLUB_SLUG}/events/${event.slug}`;
-  const liveState = getEventLiveState(event);
-  const isLive = liveState === "live";
-  // #180: goingCount is the live count from useGoingCounts; until it arrives
-  // (or if it fails) the card shows the build-time one.
-  const going = goingCount ?? event.rsvpCounts.going;
-  const goingText = `${going} ${liveState === "past" ? "went" : "going"}`;
-  const details = [event.location?.name, goingText].filter(Boolean).join(" · ");
+  const isLive = getEventLiveState(event) === "live";
 
   return (
     <div className={`cnf-event ${responsive ? 'cnf-event--responsive' : ''}`}>
@@ -42,7 +35,7 @@ export default function EventCard({
             <li className="cnf-event__date">
               {dateFormatter(new Date(event.date))}
             </li>
-            <li className="cnf-event__details">{details}</li>
+            {event.location && <li className="cnf-event__details">{event.location.name}</li>}
           </ul>
         </div>
       </div>
@@ -55,5 +48,4 @@ type EventCardProps = {
   dateFormatter?: (date: Date) => string;
   responsive?: boolean;
   clubSlug?: string;
-  goingCount?: number;
 };
