@@ -10,8 +10,8 @@ import { utcToLocalWallTime } from "../../../../lib/timezone";
 import { DEFAULT_CLUB_TIMEZONE } from "../../../../lib/clubDefaults";
 import "../../../../styles/form.css";
 
-// #37: only a super admin may leave an event unscoped ("No specific
-// chapter") - EventForm needs to know which to show that option.
+// #37: a club-scoped admin may only edit events in their own clubs (Online
+// included for every club admin, #177) - checked below.
 const admin = (await requireAdmin(Astro.request))!;
 
 const { slug } = Astro.params;
@@ -45,7 +45,6 @@ const initialData: EventFormInitialData = {
   slug: event.slug,
   isOnline: event.is_online,
   venueId: venue?.id,
-  eventClubId: event.club_id ?? undefined,
   meetingUrl: event.meeting_url ?? undefined,
   instagram: event.instagram ?? undefined,
   facebook: event.facebook ?? undefined,
@@ -62,6 +61,6 @@ const initialData: EventFormInitialData = {
       <h1>Edit event</h1>
       <a href="/admin/events">Back to events</a>
     </div>
-    <EventForm mode="edit" initialData={initialData} isSuperAdmin={admin.isSuperAdmin} client:load />
+    <EventForm mode="edit" initialData={initialData} client:load />
   </section>
 </AdminLayout>

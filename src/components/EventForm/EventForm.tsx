@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { actions } from "astro:actions";
 import Checkbox from "../Checkbox/Checkbox";
 import TagPicker from "../TagPicker/TagPicker";
-import { DEFAULT_CLUB_SLUG } from "../../lib/clubDefaults";
+import { DEFAULT_CLUB_SLUG, ONLINE_CLUB_SLUG } from "../../lib/clubDefaults";
 import { slugify } from "../../lib/slugify";
 import { MIN_TAGS } from "../../lib/eventTags";
 
-type Club = { id: number; name: string };
+type Club = { id: number; name: string; slug: string };
 type Venue = { id: number; name: string; url: string | null };
 
 const NEW_VENUE = "__new__";
@@ -19,7 +19,6 @@ export type EventFormInitialData = {
   slug: string;
   isOnline?: boolean;
   venueId?: number;
-  eventClubId?: number;
   meetingUrl?: string;
   meetPoint?: string;
   instagram?: string;
@@ -33,10 +32,9 @@ export type EventFormInitialData = {
 type EventFormProps = {
   mode: "create" | "edit";
   initialData?: EventFormInitialData;
-  isSuperAdmin: boolean;
 };
 
-export default function EventForm({ mode, initialData, isSuperAdmin }: EventFormProps) {
+export default function EventForm({ mode, initialData }: EventFormProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [isOnline, setIsOnline] = useState(initialData?.isOnline ?? false);
@@ -83,6 +81,8 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
   }, []);
 
   const isNewVenue = selectedVenueId === NEW_VENUE;
+  // #177: the Online chapter never hosts a physical venue.
+  const venueClubs = clubs.filter((c) => c.slug !== ONLINE_CLUB_SLUG);
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -184,7 +184,6 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
           }}
           required
         />
-        <small className="cnf-form__hint">Defaults to 20:00 on the event's start day.</small>
       </div>
 
       <div className="cnf-form__group">
@@ -200,29 +199,8 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
 
       {isOnline ? (
         <>
-          <div className="cnf-form__group">
-            <label className="cnf-form__label" htmlFor="event_club_id">
-              Hosting club
-            </label>
-            <select
-              className="cnf-form__input"
-              id="event_club_id"
-              name="event_club_id"
-              defaultValue={initialData?.eventClubId ? String(initialData.eventClubId) : ""}
-              required={!isSuperAdmin}
-            >
-              {isSuperAdmin && <option value="">No specific chapter</option>}
-              {clubs.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <small className="cnf-form__hint">
-              Which chapter is organizing this event.
-            </small>
-          </div>
-
+          {/* #177: no Hosting club choice — online events always belong
+              to the Online chapter (set server-side). */}
           <div className="cnf-form__group">
             <label className="cnf-form__label" htmlFor="meeting_url">
               Meeting URL
@@ -285,11 +263,11 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
 
           <div className="cnf-form__group">
             <label className="cnf-form__label" htmlFor="club_id">
-              Club *
+              Chapter *
             </label>
             <select className="cnf-form__input" id="club_id" name="club_id" required>
-              <option value="">Select a club</option>
-              {clubs.map((c) => (
+              <option value="">Select a chapter</option>
+              {venueClubs.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
@@ -357,8 +335,9 @@ export default function EventForm({ mode, initialData, isSuperAdmin }: EventForm
                   on (an existing venue's club isn't exposed to the client, and
                   there's only one real club to preview anyway) — DEFAULT_CLUB_SLUG
                   is a deliberate placeholder, not a guarantee, until a real
-                  club picker exists here. */}
-              Used in URL: /{DEFAULT_CLUB_SLUG}/events/my-event-name
+                  club picker exists here. Online events always land under
+                  the Online chapter (#177), so that one is exact. */}
+              Used in URL: /{isOnline ? ONLINE_CLUB_SLUG : DEFAULT_CLUB_SLUG}/events/my-event-name
             </small>
           </>
         ) : (

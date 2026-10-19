@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  buildCalendarFeedIcs,
   buildEventIcs,
   buildGoogleCalendarUrl,
   escapeIcsText,
@@ -131,6 +132,23 @@ describe("buildEventIcs", () => {
     expect(ics).toContain("SUMMARY:Philosophy Talk: Free Will");
   });
 
+  it("adds a display alarm 15 minutes before the start, inside the VEVENT", () => {
+    const ics = buildEventIcs(makeEvent());
+    const alarm = ics.match(/BEGIN:VALARM\r\n([\s\S]*?)\r\nEND:VALARM/)?.[1];
+    expect(alarm?.split("\r\n")).toEqual([
+      "ACTION:DISPLAY",
+      "TRIGGER:-PT15M",
+      "DESCRIPTION:Philosophy Talk: Free Will",
+    ]);
+    expect(ics.indexOf("END:VALARM")).toBeLessThan(ics.indexOf("END:VEVENT"));
+    expect(ics.split("BEGIN:VALARM")).toHaveLength(2);
+  });
+
+  it("escapes the event name in the alarm description", () => {
+    const ics = buildEventIcs(makeEvent({ name: "Free Will, Fate; Chance" }));
+    expect(ics).toContain("TRIGGER:-PT15M\r\nDESCRIPTION:Free Will\\, Fate\\; Chance\r\n");
+  });
+
   describe("location", () => {
     it("uses 'Online' with the meeting URL for online events", () => {
       const ics = buildEventIcs(
@@ -224,7 +242,9 @@ describe("buildEventIcs", () => {
 
     it("omits DESCRIPTION when both are absent", () => {
       const ics = buildEventIcs(ALL_WITHOUT_DESCRIPTION);
-      expect(ics).not.toContain("DESCRIPTION:");
+      // The alarm carries its own DESCRIPTION; only the event's is omitted.
+      const eventOnly = ics.replace(/BEGIN:VALARM[\s\S]*?END:VALARM\r\n/, "");
+      expect(eventOnly).not.toContain("DESCRIPTION:");
     });
   });
 
@@ -264,6 +284,35 @@ describe("buildEventIcs", () => {
     const unfolded = ics.split("\r\n").map((l) => l.replace(/^ /, "")).join("");
     expect(unfolded).toContain(`SUMMARY:${longName}`);
     expect(unfolded).toContain(`DESCRIPTION:${longDescription}`);
+  });
+});
+
+describe("buildCalendarFeedIcs", () => {
+  it("wraps every event in one VCALENDAR with the feed name and refresh hints", () => {
+    const ics = buildCalendarFeedIcs("Club na Fealsúnachta · Trieste", [
+      makeEvent(),
+      makeEvent({ slug: "second-talk", name: "Second Talk" }),
+    ]);
+    expect(ics.split("BEGIN:VCALENDAR")).toHaveLength(2);
+    // Its own line, not just the tail of X-WR-CALNAME.
+    expect(ics).toContain("\r\nNAME:Club na Fealsúnachta · Trieste\r\n");
+    expect(ics).toContain("X-WR-CALNAME:Club na Fealsúnachta · Trieste");
+    expect(ics).toContain("REFRESH-INTERVAL;VALUE=DURATION:PT12H");
+    expect(ics).toContain("X-PUBLISHED-TTL:PT12H");
+    expect(ics.split("BEGIN:VEVENT")).toHaveLength(3);
+    expect(ics).toMatch(/\r\nEND:VCALENDAR\r\n$/);
+  });
+
+  it("uses the same VEVENT as the single-event file, so UIDs match", () => {
+    const event = makeEvent();
+    const vevent = (ics: string) =>
+      ics.match(/BEGIN:VEVENT[\s\S]*END:VEVENT/)?.[0].replace(/DTSTAMP:\S+/, "");
+    expect(vevent(buildCalendarFeedIcs("Feed", [event]))).toBe(vevent(buildEventIcs(event)));
+  });
+
+  it("escapes the calendar name", () => {
+    const ics = buildCalendarFeedIcs("Club, Trieste; Online", []);
+    expect(ics).toContain("X-WR-CALNAME:Club\\, Trieste\\; Online");
   });
 });
 

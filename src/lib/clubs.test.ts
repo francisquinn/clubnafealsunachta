@@ -106,3 +106,50 @@ describe("getEventClubStaticPaths", () => {
     paths.forEach((p) => expect(p.params.eventSlug).toBe("global-meetup"));
   });
 });
+
+describe("getClubEventsStaticPaths", () => {
+  it("gives every club a path with its own events plus cross-chapter ones", async () => {
+    state.clubsList = [
+      { id: 1, name: "Trieste", slug: "trieste" },
+      { id: 2, name: "Oslo", slug: "oslo" },
+    ];
+    const triesteEvent = { data: { slug: "philosophy-night", location: { id: 1, name: "Trieste", slug: "trieste" } } };
+    const globalEvent = { data: { slug: "global-meetup", location: null } };
+    mockEvents = [triesteEvent, globalEvent];
+    const { getClubEventsStaticPaths } = await importClubs();
+
+    const paths = await getClubEventsStaticPaths();
+
+    expect(paths).toEqual([
+      { params: { clubSlug: "trieste" }, props: { club: state.clubsList[0], events: [triesteEvent, globalEvent] } },
+      { params: { clubSlug: "oslo" }, props: { club: state.clubsList[1], events: [globalEvent] } },
+    ]);
+  });
+
+  it("still gives a club with no events a path", async () => {
+    state.clubsList = [{ id: 1, name: "Trieste", slug: "trieste" }];
+    const { getClubEventsStaticPaths } = await importClubs();
+
+    const paths = await getClubEventsStaticPaths();
+
+    expect(paths).toEqual([{ params: { clubSlug: "trieste" }, props: { club: state.clubsList[0], events: [] } }]);
+  });
+});
+
+describe("sortChaptersForPicker", () => {
+  it("lists city chapters alphabetically with Online last, keeping only name and slug", async () => {
+    const { sortChaptersForPicker } = await importClubs();
+
+    expect(
+      sortChaptersForPicker([
+        { id: 9, name: "Online", slug: "online" },
+        { id: 2, name: "Trieste", slug: "trieste" },
+        { id: 3, name: "Dublin", slug: "dublin" },
+      ])
+    ).toEqual([
+      { name: "Dublin", slug: "dublin" },
+      { name: "Trieste", slug: "trieste" },
+      { name: "Online", slug: "online" },
+    ]);
+  });
+});

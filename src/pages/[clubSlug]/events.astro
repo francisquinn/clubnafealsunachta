@@ -5,40 +5,31 @@ const pageTitle = "Events";
 import "../../styles/event.css";
 import "../../styles/select.css";
 import EventList from "../../components/EventList/EventList";
-import { getCollection } from "astro:content";
-import type { EventCollection } from "../../types/types";
+import SubscribeCalendarLinks from "../../components/SubscribeCalendarLinks/SubscribeCalendarLinks";
 import Banner from "../../layouts/Banner.astro";
-import { getAllClubs, clubSlugsForEvent } from "../../lib/clubs";
+import { getAllClubs, getClubEventsStaticPaths, sortChaptersForPicker } from "../../lib/clubs";
 
-export async function getStaticPaths() {
-  // #39: resolve clubs + events once total (not once per generated club
-  // page — the collection filter used to live in the page body, so it
-  // re-ran on every club instance) and hand each club its own pre-filtered
-  // list via props.
-  const [clubs, allEvents] = await Promise.all([
-    getAllClubs(),
-    getCollection("event") as Promise<EventCollection[]>,
-  ]);
-  const clubSlugs = clubs.map((c) => c.slug);
-
-  return clubs.map((club) => ({
-    params: { clubSlug: club.slug },
-    props: {
-      events: allEvents.filter((event) =>
-        clubSlugsForEvent(event.data.location, clubSlugs).includes(club.slug)
-      ),
-    },
-  }));
-}
+// #39: clubs and events are resolved once for the whole build, and each
+// club page gets its own pre-filtered list. Shared with the events.ics feed
+// (#80) so the page and the feed list the same events.
+export const getStaticPaths = getClubEventsStaticPaths;
 
 const { clubSlug } = Astro.params;
-const { events: sortedEvents } = Astro.props;
+const { club, events: sortedEvents } = Astro.props;
+// Absolute, since calendar apps fetch the feed from outside the site.
+const feedUrl = new URL(`/${clubSlug}/events.ics`, Astro.site).href;
+// #177: the chapter picker's options. getAllClubs is memoized per build, so
+// this is no extra query.
+const clubs = sortChaptersForPicker(await getAllClubs());
 ---
 
 <BaseLayout pageTitle={pageTitle}>
   <section class="cnf-section">
     <h1>{pageTitle}</h1>
-    <EventList events={sortedEvents} clubSlug={clubSlug} client:load />
+    <EventList events={sortedEvents} clubSlug={clubSlug!} clubs={clubs} client:load />
+  </section>
+  <section class="cnf-section">
+    <SubscribeCalendarLinks feedUrl={feedUrl} chapterName={club.name} />
   </section>
   <Banner
     title="Like to suggest a topic?"
