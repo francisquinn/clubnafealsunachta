@@ -7,7 +7,8 @@
 
 # #177: online events used to be built under every club, with their canonical
 # copy at /trieste/events/<slug>/; they now live only under /online. Listed one
-# by one (the 14 online events in production when Online became a chapter) and
+# by one (the 15 online events in production when Online became a chapter, one
+# of them created between the migrations being written and shipped) and
 # forced: a non-forced wildcard would never fire, since the Astro SSR function
 # (path "/*", preferStatic) answers before Netlify reaches non-forced rules,
 # and a forced wildcard would also catch real Trieste events.
@@ -33,6 +34,8 @@
 /trieste/events/one-and-only.ics                /online/events/one-and-only.ics                 301!
 /trieste/events/over-my-dead-body               /online/events/over-my-dead-body                301!
 /trieste/events/over-my-dead-body.ics           /online/events/over-my-dead-body.ics            301!
+/trieste/events/reels-killed-the-video-star     /online/events/reels-killed-the-video-star      301!
+/trieste/events/reels-killed-the-video-star.ics /online/events/reels-killed-the-video-star.ics  301!
 /trieste/events/resolutions                     /online/events/resolutions                      301!
 /trieste/events/resolutions.ics                 /online/events/resolutions.ics                  301!
 /trieste/events/six-one-news                    /online/events/six-one-news                     301!
