@@ -1,26 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Handler-level tests for createEvent/updateEvent/getClubs/getVenues, mirroring
+// Handler-level tests for createEvent/updateEvent/getChapters/getVenues, mirroring
 // the harness used in rsvps.test.ts: defineAction is mocked to return the
 // definition as-is (so the raw handler is directly invokable), ActionError is
 // stubbed with the real class's shape (code + message), and both Supabase
 // clients are mocked per table with state controlling each query's response.
 // requireAdmin is stubbed directly (rather than faking cookies/JWTs) since
-// isClubInScope/scopeToAdminClubs — the two scoping helpers this file actually
+// isChapterInScope/scopeToAdminChapters — the two scoping helpers this file actually
 // exercises — are pure and kept real via importOriginal. sendMailchimpEmail
 // and triggerNetlifyBuild are stubbed as plain side-effect recorders.
 const state = vi.hoisted(() => {
   return {
     supabaseConfigured: true,
     // requireAdmin's resolved scope for the current test.
-    admin: null as { memberId: string; isSuperAdmin: boolean; clubIds: number[]; onlineUnavailable?: true } | null,
+    admin: null as { memberId: string; isSuperAdmin: boolean; chapterIds: number[]; onlineUnavailable?: true } | null,
 
-    // events: insert (createEvent) / select+eq+single (updateEvent's existing-club
+    // events: insert (createEvent) / select+eq+single (updateEvent's existing-chapter
     // check) / update+eq (updateEvent).
     insertedEvent: null as Record<string, unknown> | null,
     insertedEventRow: { id: 42 } as { id: number } | null,
     eventInsertError: null as Error | null,
-    existingEvent: null as { club_id: number | null } | null,
+    existingEvent: null as { chapter_id: number | null } | null,
+    existingEventSelect: null as string | null,
     existingEventError: null as Error | null,
     updatedEvent: null as Record<string, unknown> | null,
     eventUpdateError: null as Error | null,
@@ -34,28 +35,30 @@ const state = vi.hoisted(() => {
 
     // venues (admin client): existing-venue lookup + new-venue upsert, both used
     // by resolveVenue.
-    venueById: null as { id: number; name: string; url: string | null; club_id: number } | null,
+    venueById: null as { id: number; name: string; url: string | null; chapter_id: number } | null,
+    venueLookupSelect: null as string | null,
     venueLookupError: null as Error | null,
     upsertedVenuePayload: null as Record<string, unknown> | null,
-    upsertedVenueRow: null as { id: number; name: string; url: string | null; club_id: number } | null,
+    upsertedVenueOptions: null as Record<string, unknown> | null,
+    upsertedVenueRow: null as { id: number; name: string; url: string | null; chapter_id: number } | null,
     venueUpsertError: null as Error | null,
 
-    // clubs (admin client): slug lookup for the Mailchimp draft in createEvent,
-    // and the #177 Online club lookup by slug in resolveEventClubId.
-    clubBySlugLookup: null as { slug: string } | null,
-    onlineClubRow: { id: 8 } as { id: number } | null,
-    onlineClubError: null as Error | null,
-    clubLookupError: null as Error | null,
+    // chapters (admin client): slug lookup for the Mailchimp draft in createEvent,
+    // and the #177 Online chapter lookup by slug in resolveEventChapterId.
+    chapterBySlugLookup: null as { slug: string } | null,
+    onlineChapterRow: { id: 8 } as { id: number } | null,
+    onlineChapterError: null as Error | null,
+    chapterLookupError: null as Error | null,
 
     // rsvps (admin client): the host's seeded "going" row on createEvent.
     rsvpInsertPayload: null as Record<string, unknown> | null,
     rsvpInsertError: null as Error | null,
 
-    // clubs/venues (non-admin client): the scoped lists getClubs/getVenues return.
-    clubsList: [] as { id: number; name: string }[],
-    clubsListError: null as Error | null,
-    clubsScopeFilter: null as { col: string; vals: number[] } | null,
-    venuesList: [] as { id: number; name: string; url: string | null; club_id: number }[],
+    // chapters/venues (non-admin client): the scoped lists getChapters/getVenues return.
+    chaptersList: [] as { id: number; name: string }[],
+    chaptersListError: null as Error | null,
+    chaptersScopeFilter: null as { col: string; vals: number[] } | null,
+    venuesList: [] as { id: number; name: string; url: string | null; chapter_id: number }[],
     venuesListError: null as Error | null,
     venuesScopeFilter: null as { col: string; vals: number[] } | null,
 
@@ -89,7 +92,7 @@ vi.mock('../lib/netlifyBuildHook', () => ({
   },
 }));
 
-// A minimal thenable that scopeToAdminClubs can optionally call `.in(...)` on
+// A minimal thenable that scopeToAdminChapters can optionally call `.in(...)` on
 // before it's awaited — matches how a real Supabase query builder behaves
 // (each modifier returns something still awaitable).
 function scopableQuery(
@@ -122,12 +125,14 @@ vi.mock('../lib/supabase', () => {
               }),
             };
           },
-          select: () => ({
+          select: (cols: string) => ({
             eq: (_col: string, val: string) => ({
-              single: () =>
-                state.existingEventError
+              single: () => {
+                state.existingEventSelect = cols;
+                return state.existingEventError
                   ? Promise.resolve({ data: null, error: state.existingEventError })
-                  : Promise.resolve({ data: state.existingEvent, error: null }),
+                  : Promise.resolve({ data: state.existingEvent, error: null });
+              },
               maybeSingle: () =>
                 state.slugCheckError
                   ? Promise.resolve({ data: null, error: state.slugCheckError })
@@ -142,16 +147,19 @@ vi.mock('../lib/supabase', () => {
       }
       if (table === 'venues') {
         return {
-          select: () => ({
+          select: (cols: string) => ({
             eq: () => ({
-              single: () =>
-                state.venueLookupError
+              single: () => {
+                state.venueLookupSelect = cols;
+                return state.venueLookupError
                   ? Promise.resolve({ data: null, error: state.venueLookupError })
-                  : Promise.resolve({ data: state.venueById, error: null }),
+                  : Promise.resolve({ data: state.venueById, error: null });
+              },
             }),
           }),
-          upsert: (row: Record<string, unknown>) => {
+          upsert: (row: Record<string, unknown>, options: Record<string, unknown>) => {
             state.upsertedVenuePayload = row;
+            state.upsertedVenueOptions = options;
             return {
               select: () => ({
                 single: () =>
@@ -163,16 +171,16 @@ vi.mock('../lib/supabase', () => {
           },
         };
       }
-      if (table === 'clubs') {
+      if (table === 'chapters') {
         return {
           select: () => ({
             eq: (col: string) => ({
               single: () =>
                 col === 'slug'
-                  ? Promise.resolve({ data: state.onlineClubError ? null : state.onlineClubRow, error: state.onlineClubError })
-                  : state.clubLookupError
-                  ? Promise.resolve({ data: null, error: state.clubLookupError })
-                  : Promise.resolve({ data: state.clubBySlugLookup, error: null }),
+                  ? Promise.resolve({ data: state.onlineChapterError ? null : state.onlineChapterRow, error: state.onlineChapterError })
+                  : state.chapterLookupError
+                  ? Promise.resolve({ data: null, error: state.chapterLookupError })
+                  : Promise.resolve({ data: state.chapterBySlugLookup, error: null }),
             }),
           }),
         };
@@ -194,16 +202,16 @@ vi.mock('../lib/supabase', () => {
 
   const nonAdminClient = {
     from: (table: string) => {
-      if (table === 'clubs') {
+      if (table === 'chapters') {
         return {
           select: () => ({
             order: () =>
               scopableQuery(
-                state.clubsListError
-                  ? { data: null, error: state.clubsListError }
-                  : { data: state.clubsList, error: null },
+                state.chaptersListError
+                  ? { data: null, error: state.chaptersListError }
+                  : { data: state.chaptersList, error: null },
                 (col, vals) => {
-                  state.clubsScopeFilter = { col, vals };
+                  state.chaptersScopeFilter = { col, vals };
                 }
               ),
           }),
@@ -234,7 +242,7 @@ vi.mock('../lib/supabase', () => {
   };
 });
 
-import { createEvent, updateEvent, getClubs, getVenues } from './events';
+import { createEvent, updateEvent, getChapters, getVenues } from './events';
 
 type Ctx = { request: Request };
 type FormHandler = (formData: FormData, context: Ctx) => Promise<{ success: true }>;
@@ -242,7 +250,7 @@ type QueryHandler = (input: undefined, context: Ctx) => Promise<unknown>;
 
 const createHandler = (createEvent as unknown as { handler: FormHandler }).handler;
 const updateHandler = (updateEvent as unknown as { handler: FormHandler }).handler;
-const getClubsHandler = (getClubs as unknown as { handler: QueryHandler }).handler;
+const getChaptersHandler = (getChapters as unknown as { handler: QueryHandler }).handler;
 const getVenuesHandler = (getVenues as unknown as { handler: QueryHandler }).handler;
 
 function context(): Ctx {
@@ -263,13 +271,13 @@ function formWithTags(fields: Record<string, string>, tags: string[]): FormData 
   return data;
 }
 
-const SUPER_ADMIN = { memberId: 'admin-1', isSuperAdmin: true, clubIds: [] as number[] };
-// As getAdminScope resolves a club admin: their own club (3) plus Online (8),
-// which every club admin gets (#177).
-const CLUB_ADMIN = { memberId: 'admin-2', isSuperAdmin: false, clubIds: [3, 8] };
+const SUPER_ADMIN = { memberId: 'admin-1', isSuperAdmin: true, chapterIds: [] as number[] };
+// As getAdminScope resolves a chapter admin: their own chapter (3) plus Online (8),
+// which every chapter admin gets (#177).
+const CHAPTER_ADMIN = { memberId: 'admin-2', isSuperAdmin: false, chapterIds: [3, 8] };
 
 // A real datetime-local input's value has no timezone info at all — always
-// the club's own local wall-clock time (Europe/Rome), never a full ISO
+// the chapter's own local wall-clock time (Europe/Rome), never a full ISO
 // instant. Jan 1 is winter (CET, UTC+1), hence the '...T17:00:00.000Z'
 // assertion below.
 const ONLINE_FORM = {
@@ -289,25 +297,28 @@ beforeEach(() => {
   state.insertedEventRow = { id: 42 };
   state.eventInsertError = null;
   state.existingEvent = null;
+  state.existingEventSelect = null;
   state.existingEventError = null;
   state.updatedEvent = null;
   state.eventUpdateError = null;
   state.takenSlugs = new Set<string>();
   state.slugCheckError = null;
   state.venueById = null;
+  state.venueLookupSelect = null;
   state.venueLookupError = null;
   state.upsertedVenuePayload = null;
+  state.upsertedVenueOptions = null;
   state.upsertedVenueRow = null;
   state.venueUpsertError = null;
-  state.clubBySlugLookup = { slug: 'trieste' };
-  state.onlineClubRow = { id: 8 };
-  state.onlineClubError = null;
-  state.clubLookupError = null;
+  state.chapterBySlugLookup = { slug: 'trieste' };
+  state.onlineChapterRow = { id: 8 };
+  state.onlineChapterError = null;
+  state.chapterLookupError = null;
   state.rsvpInsertPayload = null;
   state.rsvpInsertError = null;
-  state.clubsList = [];
-  state.clubsListError = null;
-  state.clubsScopeFilter = null;
+  state.chaptersList = [];
+  state.chaptersListError = null;
+  state.chaptersScopeFilter = null;
   state.venuesList = [];
   state.venuesListError = null;
   state.venuesScopeFilter = null;
@@ -350,9 +361,9 @@ describe('createEvent', () => {
     ).rejects.toMatchObject({ code: 'BAD_REQUEST', message: 'End time must be after the start time' });
   });
 
-  it('throws FORBIDDEN when a club-scoped admin picks a venue outside their clubs', async () => {
-    state.admin = CLUB_ADMIN; // clubIds: [3, 8]
-    state.venueById = { id: 9, name: 'Elsewhere Hall', url: null, club_id: 7 };
+  it('throws FORBIDDEN when a chapter-scoped admin picks a venue outside their chapters', async () => {
+    state.admin = CHAPTER_ADMIN; // chapterIds: [3, 8]
+    state.venueById = { id: 9, name: 'Elsewhere Hall', url: null, chapter_id: 7 };
 
     await expect(
       createHandler(form({ ...ONLINE_FORM, is_online: 'false', venue_id: '9' }), context())
@@ -392,7 +403,7 @@ describe('createEvent', () => {
     state.admin = SUPER_ADMIN;
     state.insertedEventRow = { id: 42 };
 
-    state.clubBySlugLookup = { slug: 'online' };
+    state.chapterBySlugLookup = { slug: 'online' };
     const result = await createHandler(form(ONLINE_FORM), context());
 
     expect(result).toEqual({ success: true });
@@ -405,7 +416,7 @@ describe('createEvent', () => {
       slug: 'philosophy-night',
       is_online: true,
       venue_id: null,
-      club_id: 8, // #177: always the Online chapter
+      chapter_id: 8, // #177: always the Online chapter
       created_by: 'admin-1',
       meeting_url: 'https://meet.jit.si/x',
     });
@@ -419,15 +430,15 @@ describe('createEvent', () => {
     // goes to Online's members and links to its page.
     expect(state.mailchimpCall).toMatchObject({
       slug: 'philosophy-night',
-      club_slug: 'online',
+      chapter_slug: 'online',
     });
   });
 
-  it("creates an in-person event via an existing venue, using the venue's club", async () => {
-    state.admin = CLUB_ADMIN; // clubIds: [3, 8]
-    state.venueById = { id: 5, name: 'The Reading Room', url: 'https://example.com/venue', club_id: 3 };
+  it("creates an in-person event via an existing venue, using the venue's chapter", async () => {
+    state.admin = CHAPTER_ADMIN; // chapterIds: [3, 8]
+    state.venueById = { id: 5, name: 'The Reading Room', url: 'https://example.com/venue', chapter_id: 3 };
     state.insertedEventRow = { id: 43 };
-    state.clubBySlugLookup = { slug: 'galway' };
+    state.chapterBySlugLookup = { slug: 'galway' };
 
     const result = await createHandler(
       form({
@@ -443,10 +454,12 @@ describe('createEvent', () => {
     );
 
     expect(result).toEqual({ success: true });
-    expect(state.insertedEvent).toMatchObject({ venue_id: 5, club_id: 3, created_by: 'admin-2' });
+    expect(state.insertedEvent).toMatchObject({ venue_id: 5, chapter_id: 3, created_by: 'admin-2' });
+    // A plain string the type checker can't see: without chapter_id the venue fails the scope check.
+    expect(state.venueLookupSelect).toBe('id, name, url, chapter_id');
     expect(state.rsvpInsertPayload).toMatchObject({ member_id: 'admin-2', event_id: 43, status: 'going' });
     expect(state.mailchimpCall).toMatchObject({
-      club_slug: 'galway',
+      chapter_slug: 'galway',
       venue_name: 'The Reading Room',
     });
   });
@@ -518,17 +531,17 @@ describe('createEvent', () => {
 
   // Ported from #65 (migueltorrescosta) — genuinely missing cases the
   // scaffolding above (upsertedVenuePayload/Row, venueLookupError,
-  // clubLookupError) was already wired for but nothing exercised yet.
+  // chapterLookupError) was already wired for but nothing exercised yet.
   it("creates an in-person event and upserts a brand-new venue via 'New venue…'", async () => {
-    state.admin = CLUB_ADMIN; // clubIds: [3, 8]
-    state.upsertedVenueRow = { id: 9, name: 'New Hall', url: 'https://newhall.example.com', club_id: 3 };
+    state.admin = CHAPTER_ADMIN; // chapterIds: [3, 8]
+    state.upsertedVenueRow = { id: 9, name: 'New Hall', url: 'https://newhall.example.com', chapter_id: 3 };
     state.insertedEventRow = { id: 44 };
 
     const result = await createHandler(
       form({
         ...ONLINE_FORM,
         is_online: 'false',
-        club_id: '3',
+        chapter_id: '3',
         location_name: 'New Hall',
         location_url: 'https://newhall.example.com',
       }),
@@ -536,21 +549,23 @@ describe('createEvent', () => {
     );
 
     expect(result).toEqual({ success: true });
-    expect(state.upsertedVenuePayload).toMatchObject({ name: 'New Hall', url: 'https://newhall.example.com', club_id: 3 });
-    expect(state.insertedEvent).toMatchObject({ venue_id: 9, club_id: 3 });
+    expect(state.upsertedVenuePayload).toMatchObject({ name: 'New Hall', url: 'https://newhall.example.com', chapter_id: 3 });
+    // Plain strings the type checker can't see: must match the venues unique key.
+    expect(state.upsertedVenueOptions).toEqual({ onConflict: 'name,chapter_id' });
+    expect(state.insertedEvent).toMatchObject({ venue_id: 9, chapter_id: 3 });
   });
 
   // #177: a hand-edited form could otherwise put a new venue — and so an
-  // in-person event — under Online, which every club admin has in scope.
+  // in-person event — under Online, which every chapter admin has in scope.
   it.each([
     ['a super admin', SUPER_ADMIN],
-    ['a club-scoped admin', CLUB_ADMIN],
-  ])('throws BAD_REQUEST when %s creates a new venue under the Online club', async (_who, admin) => {
+    ['a chapter-scoped admin', CHAPTER_ADMIN],
+  ])('throws BAD_REQUEST when %s creates a new venue under the Online chapter', async (_who, admin) => {
     state.admin = admin;
 
     await expect(
       createHandler(
-        form({ ...ONLINE_FORM, is_online: 'false', club_id: '8', location_name: 'Somewhere' }),
+        form({ ...ONLINE_FORM, is_online: 'false', chapter_id: '8', location_name: 'Somewhere' }),
         context()
       )
     ).rejects.toMatchObject({ code: 'BAD_REQUEST', message: 'The Online chapter has no venues' });
@@ -562,7 +577,7 @@ describe('createEvent', () => {
   // so it's refused for everyone — super admins included.
   it.each([
     ['a super admin', SUPER_ADMIN],
-    ['a club-scoped admin', CLUB_ADMIN],
+    ['a chapter-scoped admin', CHAPTER_ADMIN],
   ])('throws BAD_REQUEST when %s creates an in-person event with no venue', async (_who, admin) => {
     state.admin = admin;
 
@@ -573,36 +588,36 @@ describe('createEvent', () => {
   });
 
   // #177: online events always belong to the Online chapter — a submitted
-  // event_club_id (the old Hosting club field) is ignored.
-  it('puts an online event on the Online club, ignoring a submitted event_club_id', async () => {
+  // event_chapter_id (the old Hosting chapter field) is ignored.
+  it('puts an online event on the Online chapter, ignoring a submitted event_chapter_id', async () => {
     state.admin = SUPER_ADMIN;
     state.insertedEventRow = { id: 45 };
 
-    const result = await createHandler(form({ ...ONLINE_FORM, event_club_id: '3' }), context());
+    const result = await createHandler(form({ ...ONLINE_FORM, event_chapter_id: '3' }), context());
 
     expect(result).toEqual({ success: true });
-    expect(state.insertedEvent).toMatchObject({ is_online: true, venue_id: null, club_id: 8 });
+    expect(state.insertedEvent).toMatchObject({ is_online: true, venue_id: null, chapter_id: 8 });
   });
 
-  it("allows a club-scoped admin's online event, since Online is in every club admin's scope", async () => {
-    state.admin = CLUB_ADMIN; // clubIds: [3, 8]
+  it("allows a chapter-scoped admin's online event, since Online is in every chapter admin's scope", async () => {
+    state.admin = CHAPTER_ADMIN; // chapterIds: [3, 8]
     state.insertedEventRow = { id: 45 };
 
     const result = await createHandler(form(ONLINE_FORM), context());
 
     expect(result).toEqual({ success: true });
-    expect(state.insertedEvent).toMatchObject({ is_online: true, club_id: 8 });
+    expect(state.insertedEvent).toMatchObject({ is_online: true, chapter_id: 8 });
   });
 
   it("throws FORBIDDEN for an online event when Online isn't in the admin's scope", async () => {
-    state.admin = { ...CLUB_ADMIN, clubIds: [3] }; // e.g. no Online row yet
+    state.admin = { ...CHAPTER_ADMIN, chapterIds: [3] }; // e.g. no Online row yet
 
     await expect(createHandler(form(ONLINE_FORM), context())).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
-  it('throws INTERNAL_SERVER_ERROR when the Online club lookup fails', async () => {
+  it('throws INTERNAL_SERVER_ERROR when the Online chapter lookup fails', async () => {
     state.admin = SUPER_ADMIN;
-    state.onlineClubError = new Error('boom');
+    state.onlineChapterError = new Error('boom');
 
     await expect(createHandler(form(ONLINE_FORM), context())).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
   });
@@ -616,13 +631,13 @@ describe('createEvent', () => {
     ).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
   });
 
-  it('throws INTERNAL_SERVER_ERROR when the club-slug lookup for the Mailchimp draft fails', async () => {
+  it('throws INTERNAL_SERVER_ERROR when the chapter-slug lookup for the Mailchimp draft fails', async () => {
     state.admin = SUPER_ADMIN;
     state.insertedEventRow = { id: 46 };
-    state.clubLookupError = new Error('boom');
+    state.chapterLookupError = new Error('boom');
 
     await expect(
-      createHandler(form({ ...ONLINE_FORM, event_club_id: '3' }), context())
+      createHandler(form({ ...ONLINE_FORM, event_chapter_id: '3' }), context())
     ).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
   });
 });
@@ -668,10 +683,10 @@ describe('updateEvent', () => {
   });
 
   // #177: the Online lookup failed in getAdminScope, so Online is missing
-  // from scope — report that, not "not an admin of that club".
+  // from scope — report that, not "not an admin of that chapter".
   it('throws INTERNAL_SERVER_ERROR, not FORBIDDEN, when Online was unavailable', async () => {
-    state.admin = { ...CLUB_ADMIN, clubIds: [3], onlineUnavailable: true };
-    state.existingEvent = { club_id: 8 };
+    state.admin = { ...CHAPTER_ADMIN, chapterIds: [3], onlineUnavailable: true };
+    state.existingEvent = { chapter_id: 8 };
 
     await expect(updateHandler(form(UPDATE_FORM), context())).rejects.toMatchObject({
       code: 'INTERNAL_SERVER_ERROR',
@@ -680,16 +695,16 @@ describe('updateEvent', () => {
     expect(state.updatedEvent).toBeNull();
   });
 
-  it("throws FORBIDDEN when the admin isn't in scope for the event's existing club", async () => {
-    state.admin = CLUB_ADMIN; // clubIds: [3, 8]
-    state.existingEvent = { club_id: 9 };
+  it("throws FORBIDDEN when the admin isn't in scope for the event's existing chapter", async () => {
+    state.admin = CHAPTER_ADMIN; // chapterIds: [3, 8]
+    state.existingEvent = { chapter_id: 9 };
 
     await expect(updateHandler(form(UPDATE_FORM), context())).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
   it('updates the event and triggers a rebuild', async () => {
     state.admin = SUPER_ADMIN;
-    state.existingEvent = { club_id: 8 };
+    state.existingEvent = { chapter_id: 8 };
 
     const result = await updateHandler(form(UPDATE_FORM), context());
 
@@ -702,7 +717,7 @@ describe('updateEvent', () => {
 
   it('throws BAD_REQUEST when an update removes every tag', async () => {
     state.admin = SUPER_ADMIN;
-    state.existingEvent = { club_id: 8 };
+    state.existingEvent = { chapter_id: 8 };
 
     await expect(updateHandler(formWithTags(UPDATE_FORM, []), context())).rejects.toMatchObject({
       code: 'BAD_REQUEST',
@@ -712,7 +727,7 @@ describe('updateEvent', () => {
 
   it('saves the picked tags on update', async () => {
     state.admin = SUPER_ADMIN;
-    state.existingEvent = { club_id: 8 };
+    state.existingEvent = { chapter_id: 8 };
 
     await updateHandler(formWithTags(UPDATE_FORM, ['society-politics', 'ethics']), context());
 
@@ -721,7 +736,7 @@ describe('updateEvent', () => {
 
   it('throws INTERNAL_SERVER_ERROR when the update fails', async () => {
     state.admin = SUPER_ADMIN;
-    state.existingEvent = { club_id: 8 };
+    state.existingEvent = { chapter_id: 8 };
     state.eventUpdateError = new Error('db down');
 
     await expect(updateHandler(form(UPDATE_FORM), context())).rejects.toMatchObject({
@@ -730,10 +745,10 @@ describe('updateEvent', () => {
   });
 
   // Ported from #65 (migueltorrescosta).
-  it("allows a club-scoped admin to edit an in-person event via a venue in their club", async () => {
-    state.admin = CLUB_ADMIN; // clubIds: [3, 8]
-    state.existingEvent = { club_id: 3 };
-    state.venueById = { id: 5, name: 'The Reading Room', url: null, club_id: 3 };
+  it("allows a chapter-scoped admin to edit an in-person event via a venue in their chapter", async () => {
+    state.admin = CHAPTER_ADMIN; // chapterIds: [3, 8]
+    state.existingEvent = { chapter_id: 3 };
+    state.venueById = { id: 5, name: 'The Reading Room', url: null, chapter_id: 3 };
 
     const result = await updateHandler(
       form({ ...UPDATE_FORM, is_online: 'false', venue_id: '5' }),
@@ -741,13 +756,14 @@ describe('updateEvent', () => {
     );
 
     expect(result).toEqual({ success: true });
-    expect(state.updatedEvent).toMatchObject({ is_online: false, venue_id: 5, club_id: 3 });
+    expect(state.existingEventSelect).toBe('chapter_id');
+    expect(state.updatedEvent).toMatchObject({ is_online: false, venue_id: 5, chapter_id: 3 });
   });
 
-  it('throws BAD_REQUEST when an update picks an existing venue under the Online club', async () => {
+  it('throws BAD_REQUEST when an update picks an existing venue under the Online chapter', async () => {
     state.admin = SUPER_ADMIN;
-    state.existingEvent = { club_id: 8 };
-    state.venueById = { id: 5, name: 'Somewhere', url: null, club_id: 8 };
+    state.existingEvent = { chapter_id: 8 };
+    state.venueById = { id: 5, name: 'Somewhere', url: null, chapter_id: 8 };
 
     await expect(
       updateHandler(form({ ...UPDATE_FORM, is_online: 'false', venue_id: '5' }), context())
@@ -757,7 +773,7 @@ describe('updateEvent', () => {
 
   it('throws BAD_REQUEST when a super admin updates an event to in-person with no venue', async () => {
     state.admin = SUPER_ADMIN;
-    state.existingEvent = { club_id: 8 };
+    state.existingEvent = { chapter_id: 8 };
 
     await expect(
       updateHandler(form({ ...UPDATE_FORM, is_online: 'false' }), context())
@@ -767,8 +783,8 @@ describe('updateEvent', () => {
 
   it('updates an event to be in-person with a venue', async () => {
     state.admin = SUPER_ADMIN;
-    state.existingEvent = { club_id: 8 };
-    state.venueById = { id: 5, name: 'The Reading Room', url: null, club_id: 3 };
+    state.existingEvent = { chapter_id: 8 };
+    state.venueById = { id: 5, name: 'The Reading Room', url: null, chapter_id: 3 };
 
     const result = await updateHandler(
       form({ ...UPDATE_FORM, is_online: 'false', venue_id: '5' }),
@@ -776,36 +792,36 @@ describe('updateEvent', () => {
     );
 
     expect(result).toEqual({ success: true });
-    expect(state.updatedEvent).toMatchObject({ is_online: false, venue_id: 5, club_id: 3 });
+    expect(state.updatedEvent).toMatchObject({ is_online: false, venue_id: 5, chapter_id: 3 });
   });
 });
 
-describe('getClubs', () => {
+describe('getChapters', () => {
   it('throws UNAUTHORIZED without a valid admin session', async () => {
-    await expect(getClubsHandler(undefined, context())).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+    await expect(getChaptersHandler(undefined, context())).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
 
-  it('returns every club, unscoped, for a super admin', async () => {
+  it('returns every chapter, unscoped, for a super admin', async () => {
     state.admin = SUPER_ADMIN;
-    state.clubsList = [
+    state.chaptersList = [
       { id: 1, name: 'Trieste' },
       { id: 2, name: 'Galway' },
     ];
 
-    const result = await getClubsHandler(undefined, context());
+    const result = await getChaptersHandler(undefined, context());
 
-    expect(result).toEqual(state.clubsList);
-    expect(state.clubsScopeFilter).toBeNull();
+    expect(result).toEqual(state.chaptersList);
+    expect(state.chaptersScopeFilter).toBeNull();
   });
 
-  it("scopes the query to a club-scoped admin's own clubs", async () => {
-    state.admin = CLUB_ADMIN; // clubIds: [3, 8]
-    state.clubsList = [{ id: 3, name: 'Galway' }];
+  it("scopes the query to a chapter-scoped admin's own chapters", async () => {
+    state.admin = CHAPTER_ADMIN; // chapterIds: [3, 8]
+    state.chaptersList = [{ id: 3, name: 'Galway' }];
 
-    const result = await getClubsHandler(undefined, context());
+    const result = await getChaptersHandler(undefined, context());
 
-    expect(result).toEqual(state.clubsList);
-    expect(state.clubsScopeFilter).toEqual({ col: 'id', vals: [3, 8] });
+    expect(result).toEqual(state.chaptersList);
+    expect(state.chaptersScopeFilter).toEqual({ col: 'id', vals: [3, 8] });
   });
 });
 
@@ -814,13 +830,13 @@ describe('getVenues', () => {
     await expect(getVenuesHandler(undefined, context())).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
 
-  it("scopes the query to a club-scoped admin's own clubs, by club_id", async () => {
-    state.admin = CLUB_ADMIN; // clubIds: [3, 8]
-    state.venuesList = [{ id: 5, name: 'The Reading Room', url: null, club_id: 3 }];
+  it("scopes the query to a chapter-scoped admin's own chapters, by chapter_id", async () => {
+    state.admin = CHAPTER_ADMIN; // chapterIds: [3, 8]
+    state.venuesList = [{ id: 5, name: 'The Reading Room', url: null, chapter_id: 3 }];
 
     const result = await getVenuesHandler(undefined, context());
 
     expect(result).toEqual(state.venuesList);
-    expect(state.venuesScopeFilter).toEqual({ col: 'club_id', vals: [3, 8] });
+    expect(state.venuesScopeFilter).toEqual({ col: 'chapter_id', vals: [3, 8] });
   });
 });

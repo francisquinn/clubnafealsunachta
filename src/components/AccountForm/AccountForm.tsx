@@ -27,8 +27,8 @@ interface Props {
   initialFullName: string | null;
   initialDisplayFullName: boolean;
   initialAvatarUrl: string | null;
-  clubs: { id: number; name: string }[];
-  initialClubIds: number[];
+  chapters: { id: number; name: string }[];
+  initialChapterIds: number[];
 }
 
 function capitalize(label: string): string {
@@ -49,15 +49,15 @@ export default function AccountForm({
   initialFullName,
   initialDisplayFullName,
   initialAvatarUrl,
-  clubs,
-  initialClubIds,
+  chapters,
+  initialChapterIds,
 }: Props) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
-  const hasClubs = clubs.length > 0;
+  const hasChapters = chapters.length > 0;
   // Real display name (not a generic "your photo" label) so the letter-avatar
   // fallback shows the same initial as everywhere else on the site.
   const displayName = getDisplayName({
@@ -139,9 +139,9 @@ export default function AccountForm({
       // this one, so it runs first: the others then verify against the fresh
       // cookie, and updateUsername's re-signed cookie (new username) lands last.
       const passwordResult = wantsPasswordChange ? await actions.changePassword(formData) : null;
-      const [usernameResult, clubsResult] = await Promise.all([
+      const [usernameResult, chaptersResult] = await Promise.all([
         actions.updateUsername(formData),
-        hasClubs ? actions.updateClubMemberships(formData) : Promise.resolve(null),
+        hasChapters ? actions.updateChapterMemberships(formData) : Promise.resolve(null),
       ]);
 
       const parts: { label: string; code?: string; error: string | null }[] = [
@@ -150,8 +150,8 @@ export default function AccountForm({
       if (wantsPasswordChange) {
         parts.push({ label: "password", code: passwordResult?.error?.code, error: passwordResult?.error?.message ?? null });
       }
-      if (hasClubs) {
-        parts.push({ label: "club settings", code: clubsResult?.error?.code, error: clubsResult?.error?.message ?? null });
+      if (hasChapters) {
+        parts.push({ label: "chapter settings", code: chaptersResult?.error?.code, error: chaptersResult?.error?.message ?? null });
       }
       if (wantsAvatarUpload) {
         parts.push({ label: "photo", code: avatarResult?.error?.code, error: avatarResult?.error?.message ?? null });
@@ -332,21 +332,21 @@ export default function AccountForm({
         </div>
       </fieldset>
 
-      {hasClubs && (
+      {hasChapters && (
         <fieldset className="cnf-form__fieldset">
-          <legend>Club memberships</legend>
+          <legend>Chapter memberships</legend>
 
-          <p className="cnf-form__hint">Select the clubs you're part of.</p>
+          <p className="cnf-form__hint">Select the chapters you're part of.</p>
 
           <div className="cnf-form__group">
-            {clubs.map((club) => (
+            {chapters.map((chapter) => (
               <Checkbox
-                key={club.id}
-                id={`club-${club.id}`}
-                name="club_id"
-                value={String(club.id)}
-                defaultChecked={initialClubIds.includes(club.id)}
-                label={club.name}
+                key={chapter.id}
+                id={`chapter-${chapter.id}`}
+                name="chapter_id"
+                value={String(chapter.id)}
+                defaultChecked={initialChapterIds.includes(chapter.id)}
+                label={chapter.name}
               />
             ))}
           </div>

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { GET, getStaticPaths } from "./events.ics";
-import { getClubEventsStaticPaths } from "../../lib/clubs";
+import { getChapterEventsStaticPaths } from "../../lib/chapters";
 import type { EventCollection } from "../../types/types";
 
 // Fake collection entries with only the fields toEventIcsData reads.
@@ -21,20 +21,20 @@ function makeEvent(slug: string, name: string): EventCollection {
   } as unknown as EventCollection;
 }
 
-const club = { id: 1, name: "Trieste", slug: "trieste" };
+const chapter = { id: 1, name: "Trieste", slug: "trieste" };
 
 async function get(events: EventCollection[]) {
-  return GET({ props: { club, events } } as unknown as Parameters<typeof GET>[0]);
+  return GET({ props: { chapter, events } } as unknown as Parameters<typeof GET>[0]);
 }
 
-describe("GET /:clubSlug/events.ics", () => {
+describe("GET /:chapterSlug/events.ics", () => {
   // Builds one feed per chapter from the same helper as the events page, so
   // every page's subscribe link has a feed behind it.
   it("builds its pages from the same chapter list as the events page", () => {
-    expect(getStaticPaths).toBe(getClubEventsStaticPaths);
+    expect(getStaticPaths).toBe(getChapterEventsStaticPaths);
   });
 
-  it("serves a calendar feed named after the club, with the calendar content-type", async () => {
+  it("serves a calendar feed named after the chapter, with the calendar content-type", async () => {
     const response = await get([makeEvent("talk-one", "Talk One")]);
     const body = await response.text();
 
@@ -51,7 +51,7 @@ describe("GET /:clubSlug/events.ics", () => {
     expect(body).toContain("UID:event-talk-two@clubnafealsunachta.com");
   });
 
-  it("serves a valid empty calendar for a club with no events", async () => {
+  it("serves a valid empty calendar for a chapter with no events", async () => {
     const body = await (await get([])).text();
 
     expect(body).toMatch(/^BEGIN:VCALENDAR\r\n/);

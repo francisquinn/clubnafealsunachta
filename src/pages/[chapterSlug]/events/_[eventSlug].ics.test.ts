@@ -19,7 +19,7 @@ const event = {
   },
 } as unknown as EventCollection;
 
-describe("GET /:clubSlug/events/:eventSlug.ics", () => {
+describe("GET /:chapterSlug/events/:eventSlug.ics", () => {
   it("serves the event's ICS content with the calendar content-type", async () => {
     const response = await GET({ props: { event } } as Parameters<typeof GET>[0]);
     const body = await response.text();

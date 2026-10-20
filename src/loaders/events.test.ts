@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { eventsLoader } from './events';
 
-const { mockSupabaseAdmin, mockGetAllClubs, mockUnwrapRelation, mockIsRsvpStatus } = vi.hoisted(() => {
+const { mockSupabaseAdmin, mockGetAllChapters, mockUnwrapRelation, mockIsRsvpStatus } = vi.hoisted(() => {
   return {
     mockSupabaseAdmin: {
       from: vi.fn((table: string) => {
@@ -20,7 +20,7 @@ const { mockSupabaseAdmin, mockGetAllClubs, mockUnwrapRelation, mockIsRsvpStatus
         throw new Error(`Unexpected table: ${table}`);
       }),
     },
-    mockGetAllClubs: vi.fn(() => Promise.resolve([])),
+    mockGetAllChapters: vi.fn(() => Promise.resolve([])),
     mockUnwrapRelation: vi.fn((val) => val),
     mockIsRsvpStatus: vi.fn((status: string) => ['going', 'maybe', 'not_going'].includes(status)),
   };
@@ -30,8 +30,8 @@ vi.mock('../lib/supabase', () => ({
   supabaseAdmin: mockSupabaseAdmin,
 }));
 
-vi.mock('../lib/clubs', () => ({
-  getAllClubs: mockGetAllClubs,
+vi.mock('../lib/chapters', () => ({
+  getAllChapters: mockGetAllChapters,
 }));
 
 vi.mock('../lib/supabaseRelations', () => ({
@@ -48,14 +48,14 @@ describe('eventsLoader', () => {
   });
 
   it('includes meetPoint in the stored event data', async () => {
-    mockGetAllClubs.mockResolvedValueOnce([{ id: 1, name: 'Trieste', slug: 'trieste' }] as never);
+    mockGetAllChapters.mockResolvedValueOnce([{ id: 1, name: 'Trieste', slug: 'trieste' }] as never);
     const mockEvent = {
       id: 1,
       name: 'Test Event',
       date: '2025-06-01T19:00:00.000Z',
       end_date: '2025-06-01T20:30:00.000Z',
       is_online: false,
-      club_id: 1,
+      chapter_id: 1,
       slug: 'test-event',
       description: 'Test description',
       summary: 'Test summary',
@@ -105,18 +105,18 @@ describe('eventsLoader', () => {
     expect(callArgs?.data).toHaveProperty('meetPoint');
   });
 
-  // #177: online events belong to their club (the Online chapter) like any
+  // #177: online events belong to their chapter (the Online chapter) like any
   // other event.
-  it('gives an online event its club as location', async () => {
-    const onlineClub = { id: 2, name: 'Online', slug: 'online' };
-    mockGetAllClubs.mockResolvedValueOnce([onlineClub] as never);
+  it('gives an online event its chapter as location', async () => {
+    const onlineChapter = { id: 2, name: 'Online', slug: 'online' };
+    mockGetAllChapters.mockResolvedValueOnce([onlineChapter] as never);
     const mockEvent = {
       id: 2,
       name: 'Online Event',
       date: '2025-06-01T19:00:00.000Z',
       end_date: '2025-06-01T20:30:00.000Z',
       is_online: true,
-      club_id: 2,
+      chapter_id: 2,
       slug: 'online-event',
       description: null,
       summary: null,
@@ -143,21 +143,21 @@ describe('eventsLoader', () => {
     const store = { clear: vi.fn(), set: vi.fn() };
     await eventsLoader().load({ store } as any);
 
-    expect(store.set.mock.calls[0]?.[0]?.data.location).toEqual(onlineClub);
+    expect(store.set.mock.calls[0]?.[0]?.data.location).toEqual(onlineChapter);
   });
 
-  // events.club_id is NOT NULL with a foreign key, so a club the loader can't
-  // find means the clubs fetch failed or is stale: skip the event rather than
+  // events.chapter_id is NOT NULL with a foreign key, so a chapter the loader can't
+  // find means the chapters fetch failed or is stale: skip the event rather than
   // build a page with no chapter.
-  it('skips an event whose club is missing', async () => {
-    mockGetAllClubs.mockResolvedValueOnce([{ id: 1, name: 'Trieste', slug: 'trieste' }] as never);
+  it('skips an event whose chapter is missing', async () => {
+    mockGetAllChapters.mockResolvedValueOnce([{ id: 1, name: 'Trieste', slug: 'trieste' }] as never);
     const mockEvent = {
       id: 3,
       name: 'Orphan Event',
       date: '2025-06-01T19:00:00.000Z',
       end_date: '2025-06-01T20:30:00.000Z',
       is_online: false,
-      club_id: 99,
+      chapter_id: 99,
       slug: 'orphan-event',
       description: null,
       summary: null,
@@ -186,7 +186,7 @@ describe('eventsLoader', () => {
     await eventsLoader().load({ store } as any);
 
     expect(store.set).not.toHaveBeenCalled();
-    expect(consoleError).toHaveBeenCalledWith('Skipping event "orphan-event": no matching club for club_id 99');
+    expect(consoleError).toHaveBeenCalledWith('Skipping event "orphan-event": no matching chapter for chapter_id 99');
     consoleError.mockRestore();
   });
 });

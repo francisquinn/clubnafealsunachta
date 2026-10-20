@@ -5,13 +5,13 @@ import {
   verifySessionToken,
   getAdminScope,
   requireAdmin,
-  isClubInScope,
+  isChapterInScope,
   verifySession,
   isSessionRevoked,
 } from "./auth";
 
-// #37: getAdminScope/requireAdmin resolve super-admin vs per-club scope by
-// querying members/club_admins live - mock the two tables independently so
+// #37: getAdminScope/requireAdmin resolve super-admin vs per-chapter scope by
+// querying members/chapter_admins live - mock the two tables independently so
 // each test controls exactly what comes back, same shape as the real
 // supabase-js chain (`.from().select().eq()[.single()]`).
 const state = vi.hoisted(() => ({
@@ -19,14 +19,15 @@ const state = vi.hoisted(() => ({
   // Queue of errors the next members lookups return (one per call), to simulate transient failures.
   memberErrors: [] as ({ code: string } | null)[],
   memberCalls: 0,
-  clubAdmins: [] as { club_id: number }[],
-  // Same idea for the club_admins lookup.
-  clubAdminErrors: [] as ({ code: string } | null)[],
-  clubAdminCalls: 0,
-  // The Online club's row for getAdminScope's #177 lookup.
-  onlineClub: { id: 9 } as { id: number } | null,
-  // Same idea for the Online club lookup.
-  onlineClubErrors: [] as ({ code: string; message?: string } | null)[],
+  chapterAdmins: [] as { chapter_id: number }[],
+  // Same idea for the chapter_admins lookup.
+  chapterAdminErrors: [] as ({ code: string } | null)[],
+  chapterAdminCalls: 0,
+  chapterAdminSelect: null as unknown,
+  // The Online chapter's row for getAdminScope's #177 lookup.
+  onlineChapter: { id: 9 } as { id: number } | null,
+  // Same idea for the Online chapter lookup.
+  onlineChapterErrors: [] as ({ code: string; message?: string } | null)[],
 }));
 
 vi.mock("./supabase", async () => {
@@ -40,16 +41,17 @@ vi.mock("./supabase", async () => {
             const error = state.memberErrors.shift() ?? null;
             return error ? { data: null, error } : { data: state.members, error: null };
           }),
-        clubs: () =>
+        chapters: () =>
           stubQuery(() => {
-            const error = state.onlineClubErrors.shift() ?? null;
-            return error ? { data: null, error } : { data: state.onlineClub, error: null };
+            const error = state.onlineChapterErrors.shift() ?? null;
+            return error ? { data: null, error } : { data: state.onlineChapter, error: null };
           }),
-        club_admins: () =>
-          stubQuery(() => {
-            state.clubAdminCalls++;
-            const error = state.clubAdminErrors.shift() ?? null;
-            return error ? { data: null, error } : { data: state.clubAdmins, error: null };
+        chapter_admins: () =>
+          stubQuery((calls) => {
+            state.chapterAdminCalls++;
+            state.chapterAdminSelect = calls.find((call) => call.method === "select")?.args[0];
+            const error = state.chapterAdminErrors.shift() ?? null;
+            return error ? { data: null, error } : { data: state.chapterAdmins, error: null };
           }),
       }),
     },
@@ -67,63 +69,65 @@ function makeRequest(cookie: string): Request {
 
 beforeEach(() => {
   state.members = null;
-  state.clubAdmins = [];
+  state.chapterAdmins = [];
   state.memberErrors = [];
   state.memberCalls = 0;
-  state.clubAdminErrors = [];
-  state.clubAdminCalls = 0;
-  state.onlineClub = { id: 9 };
-  state.onlineClubErrors = [];
+  state.chapterAdminErrors = [];
+  state.chapterAdminCalls = 0;
+  state.onlineChapter = { id: 9 };
+  state.onlineChapterErrors = [];
 });
 
 describe("getAdminScope", () => {
-  it("grants isSuperAdmin with no clubIds when members.is_admin is true", async () => {
+  it("grants isSuperAdmin with no chapterIds when members.is_admin is true", async () => {
     state.members = { is_admin: true };
-    state.clubAdmins = [{ club_id: 1 }]; // should be ignored once super admin is found
+    state.chapterAdmins = [{ chapter_id: 1 }]; // should be ignored once super admin is found
 
     const scope = await getAdminScope("member-1");
 
-    expect(scope).toEqual({ memberId: "member-1", isSuperAdmin: true, clubIds: [] });
+    expect(scope).toEqual({ memberId: "member-1", isSuperAdmin: true, chapterIds: [] });
   });
 
-  it("resolves clubIds from club_admins, plus the Online club, when not a super admin", async () => {
+  it("resolves chapterIds from chapter_admins, plus the Online chapter, when not a super admin", async () => {
     state.members = { is_admin: false };
-    state.clubAdmins = [{ club_id: 1 }, { club_id: 2 }];
+    state.chapterAdmins = [{ chapter_id: 1 }, { chapter_id: 2 }];
 
     const scope = await getAdminScope("member-2");
 
-    expect(scope).toEqual({ memberId: "member-2", isSuperAdmin: false, clubIds: [1, 2, 9] });
+    expect(scope).toEqual({ memberId: "member-2", isSuperAdmin: false, chapterIds: [1, 2, 9] });
+    // A plain string the type checker can't see: a wrong column would leave every chapter admin without /admin.
+    expect(state.chapterAdminSelect).toBe("chapter_id");
   });
 
-  // #177: Online comes with being a club admin, not on its own.
-  it("doesn't give Online to a member who administers no club", async () => {
+  // #177: Online comes with being a chapter admin, not on its own.
+  it("doesn't give Online to a member who administers no chapter", async () => {
     state.members = { is_admin: false };
-    state.clubAdmins = [];
+    state.chapterAdmins = [];
 
     const scope = await getAdminScope("member-3");
 
-    expect(scope).toEqual({ memberId: "member-3", isSuperAdmin: false, clubIds: [] });
+    expect(scope).toEqual({ memberId: "member-3", isSuperAdmin: false, chapterIds: [] });
   });
 
-  it("leaves Online out when its club row can't be found", async () => {
+  it("leaves Online out when its chapter row can't be found", async () => {
     state.members = { is_admin: false };
-    state.clubAdmins = [{ club_id: 1 }];
-    state.onlineClub = null;
+    state.chapterAdmins = [{ chapter_id: 1 }];
+    state.onlineChapter = null;
 
     const scope = await getAdminScope("member-4");
 
-    expect(scope).toEqual({ memberId: "member-4", isSuperAdmin: false, clubIds: [1] });
+    expect(scope).toEqual({ memberId: "member-4", isSuperAdmin: false, chapterIds: [1] });
   });
 
-  it("leaves Online out and flags it when the Online club lookup fails twice", async () => {
+  it("leaves Online out and flags it when the Online chapter lookup fails twice", async () => {
     state.members = { is_admin: false };
-    state.clubAdmins = [{ club_id: 1 }];
+    state.chapterAdmins = [{ chapter_id: 1 }];
     // Both the first try and lookupWithRetry's retry fail.
-    state.onlineClubErrors = [{ code: "42501", message: "permission denied" }, { code: "42501", message: "permission denied" }];
+    state.onlineChapterErrors = [{ code: "42501", message: "permission denied" }, { code: "42501", message: "permission denied" }];
 
     const scope = await getAdminScope("member-5");
 
-    expect(scope).toEqual({ memberId: "member-5", isSuperAdmin: false, clubIds: [1], onlineUnavailable: true });
+    expect(scope).toEqual({ memberId: "member-5", isSuperAdmin: false, chapterIds: [1], onlineUnavailable: true });
   });
 
   it("fails closed with no rights when the member row is missing", async () => {
@@ -131,7 +135,7 @@ describe("getAdminScope", () => {
 
     const scope = await getAdminScope("ghost");
 
-    expect(scope).toEqual({ memberId: "ghost", isSuperAdmin: false, clubIds: [] });
+    expect(scope).toEqual({ memberId: "ghost", isSuperAdmin: false, chapterIds: [] });
   });
 });
 
@@ -146,40 +150,40 @@ describe("requireAdmin", () => {
 
     const scope = await requireAdmin(makeRequest(`session=${token}`));
 
-    expect(scope).toEqual({ memberId: "member-1", isSuperAdmin: true, clubIds: [] });
+    expect(scope).toEqual({ memberId: "member-1", isSuperAdmin: true, chapterIds: [] });
   });
 
-  it("returns the scope for a club-scoped (non-super) admin", async () => {
+  it("returns the scope for a chapter-scoped (non-super) admin", async () => {
     state.members = { is_admin: false };
-    state.clubAdmins = [{ club_id: 3 }];
-    const token = createSessionToken("member-2", false, "clubadmin");
+    state.chapterAdmins = [{ chapter_id: 3 }];
+    const token = createSessionToken("member-2", false, "chapteradmin");
 
     const scope = await requireAdmin(makeRequest(`session=${token}`));
 
-    expect(scope).toEqual({ memberId: "member-2", isSuperAdmin: false, clubIds: [3, 9] });
+    expect(scope).toEqual({ memberId: "member-2", isSuperAdmin: false, chapterIds: [3, 9] });
   });
 
-  it("returns null for a member with no super-admin flag and no club_admins rows", async () => {
+  it("returns null for a member with no super-admin flag and no chapter_admins rows", async () => {
     state.members = { is_admin: false };
-    state.clubAdmins = [];
+    state.chapterAdmins = [];
     const token = createSessionToken("member-3", false, "regularuser");
 
     expect(await requireAdmin(makeRequest(`session=${token}`))).toBeNull();
   });
 });
 
-describe("isClubInScope", () => {
-  const superAdmin = { memberId: "m1", isSuperAdmin: true, clubIds: [] };
-  const clubScoped = { memberId: "m2", isSuperAdmin: false, clubIds: [1, 2] };
+describe("isChapterInScope", () => {
+  const superAdmin = { memberId: "m1", isSuperAdmin: true, chapterIds: [] };
+  const chapterScoped = { memberId: "m2", isSuperAdmin: false, chapterIds: [1, 2] };
 
-  it("lets a super admin touch any club", () => {
-    expect(isClubInScope(superAdmin, 1)).toBe(true);
-    expect(isClubInScope(superAdmin, 99)).toBe(true);
+  it("lets a super admin touch any chapter", () => {
+    expect(isChapterInScope(superAdmin, 1)).toBe(true);
+    expect(isChapterInScope(superAdmin, 99)).toBe(true);
   });
 
-  it("lets a club-scoped admin touch only the clubs they administer", () => {
-    expect(isClubInScope(clubScoped, 1)).toBe(true);
-    expect(isClubInScope(clubScoped, 3)).toBe(false);
+  it("lets a chapter-scoped admin touch only the chapters they administer", () => {
+    expect(isChapterInScope(chapterScoped, 1)).toBe(true);
+    expect(isChapterInScope(chapterScoped, 3)).toBe(false);
   });
 });
 
@@ -309,15 +313,15 @@ describe("transient lookup errors", () => {
     expect(await requireAdmin(makeRequest(`session=${token()}`))).toBeNull();
   });
 
-  it("a club admin survives a single transient club_admins lookup error (retries)", async () => {
+  it("a chapter admin survives a single transient chapter_admins lookup error (retries)", async () => {
     state.members = { is_admin: false };
-    state.clubAdmins = [{ club_id: 7 }];
-    state.clubAdminErrors = [{ code: "57014" }];
+    state.chapterAdmins = [{ chapter_id: 7 }];
+    state.chapterAdminErrors = [{ code: "57014" }];
 
     const scope = await requireAdmin(makeRequest(`session=${token()}`));
 
-    expect(scope).toMatchObject({ isSuperAdmin: false, clubIds: [7, 9] });
-    expect(state.clubAdminCalls).toBe(2);
+    expect(scope).toMatchObject({ isSuperAdmin: false, chapterIds: [7, 9] });
+    expect(state.chapterAdminCalls).toBe(2);
   });
 
   describe("logging", () => {

@@ -24,27 +24,27 @@ if (!profileUser) {
 
 // Public, visible to any visitor — not gated on isOwnProfile. Hide the
 // section on a lookup failure rather than showing an empty/wrong list, same
-// posture as the edit page's club-section fallback.
-let clubNames: string[] = [];
+// posture as the edit page's chapter-section fallback.
+let chapterNames: string[] = [];
 if (profileUser && supabaseAdmin) {
   const { data: memberships, error: membershipsError } = await supabaseAdmin
-    .from("club_members")
-    .select("club_id")
+    .from("chapter_members")
+    .select("chapter_id")
     .eq("member_id", profileUser.id);
 
   if (membershipsError) {
-    console.error("Failed to load club memberships for profile page:", membershipsError.message);
+    console.error("Failed to load chapter memberships for profile page:", membershipsError.message);
   } else if (memberships && memberships.length > 0) {
-    const { data: clubs, error: clubsError } = await supabaseAdmin
-      .from("clubs")
+    const { data: chapters, error: chaptersError } = await supabaseAdmin
+      .from("chapters")
       .select("name")
-      .in("id", memberships.map((membership) => membership.club_id))
+      .in("id", memberships.map((membership) => membership.chapter_id))
       .order("name");
 
-    if (clubsError) {
-      console.error("Failed to load clubs for profile page:", clubsError.message);
+    if (chaptersError) {
+      console.error("Failed to load chapters for profile page:", chaptersError.message);
     } else {
-      clubNames = (clubs ?? []).map((club) => club.name);
+      chapterNames = (chapters ?? []).map((chapter) => chapter.name);
     }
   }
 }
@@ -93,11 +93,11 @@ const isOwnProfile = Boolean(payload && profileUser && payload.username === prof
         )}
       </section>
 
-      {clubNames.length > 0 && (
+      {chapterNames.length > 0 && (
         <section class="cnf-section">
           <h2>Memberships</h2>
-          <ul class="cnf-club-badges">
-            {clubNames.map((name) => (
+          <ul class="cnf-chapter-badges">
+            {chapterNames.map((name) => (
               <li class="cnf-badge">{name}</li>
             ))}
           </ul>

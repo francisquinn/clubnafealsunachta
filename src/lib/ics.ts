@@ -150,7 +150,7 @@ export function buildEventIcs(event: EventIcsData): string {
   return serializeIcs([...CALENDAR_HEADER, ...buildEventLines(event, stamp), "END:VCALENDAR"]);
 }
 
-// #80: the subscribable feed, one per club. NAME (RFC 7986) and
+// #80: the subscribable feed, one per chapter. NAME (RFC 7986) and
 // X-WR-CALNAME (what Apple/Google/Outlook actually read) both name the
 // calendar; REFRESH-INTERVAL (RFC 7986) and X-PUBLISHED-TTL (the
 // older Outlook/Apple spelling) ask clients to re-fetch twice a day, since

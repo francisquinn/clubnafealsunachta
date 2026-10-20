@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import "@testing-library/jest-dom";
 import { render, screen, fireEvent } from "@testing-library/react";
 import NavMenu from "./NavMenu";
-import { DEFAULT_CLUB_SLUG } from "../../lib/clubDefaults";
+import { DEFAULT_CHAPTER_SLUG } from "../../lib/chapterDefaults";
 
 // Layout and animation (full-screen overlay on mobile, inline row on desktop,
 // staggered fade, underline for the current page) live in nav.css, which
@@ -153,7 +153,7 @@ describe("NavMenu", () => {
   it.each([
     ["/about/", "About"],
     ["/values/", "Values"],
-    [`/${DEFAULT_CLUB_SLUG}/events/`, "Events"],
+    [`/${DEFAULT_CHAPTER_SLUG}/events/`, "Events"],
     ["/blog/", "Blog"],
     ["/posts/some-post", "Blog"],
     ["/library/", "Library"],
@@ -170,15 +170,15 @@ describe("NavMenu", () => {
     expect(document.querySelector(".tab-active")).toBeNull();
   });
 
-  it("points Events at the current club while on one of its events pages", () => {
-    render(<NavMenu pathname="/some-club/events/123" />);
+  it("points Events at the current chapter while on one of its events pages", () => {
+    render(<NavMenu pathname="/some-chapter/events/123" />);
 
-    expect(screen.getByRole("link", { name: "Events" })).toHaveAttribute("href", "/some-club/events/");
+    expect(screen.getByRole("link", { name: "Events" })).toHaveAttribute("href", "/some-chapter/events/");
   });
 
-  it("falls back to the default club's events elsewhere", () => {
+  it("falls back to the default chapter's events elsewhere", () => {
     render(<NavMenu pathname="/profile/eventsguy" />);
 
-    expect(screen.getByRole("link", { name: "Events" })).toHaveAttribute("href", `/${DEFAULT_CLUB_SLUG}/events/`);
+    expect(screen.getByRole("link", { name: "Events" })).toHaveAttribute("href", `/${DEFAULT_CHAPTER_SLUG}/events/`);
   });
 });

@@ -15,10 +15,10 @@ values
    '30ae246a5ad46ed4890311078edd35e6:e33d2428a65c8294241e90684e667b5f0ec3cdd9293523a797e240eca900db08af71db39a376375e8c448974ef0a1019c7831324ff0457546a4331faf7bbf656',
    'marco', 'Marco Bianchi', false, now());
 
-insert into public.venues (name, url, club_id)
-values ('Caffè San Marco', 'https://caffesanmarco.it', (select id from public.clubs where slug = 'trieste'));
+insert into public.venues (name, url, chapter_id)
+values ('Caffè San Marco', 'https://caffesanmarco.it', (select id from public.chapters where slug = 'trieste'));
 
-insert into public.events (name, date, end_date, slug, description, summary, venue_id, created_by, is_online, club_id)
+insert into public.events (name, date, end_date, slug, description, summary, venue_id, created_by, is_online, chapter_id)
 values
   ('What is a good life?',
    now() - interval '14 days', now() - interval '14 days' + interval '2 hours',
@@ -27,7 +27,7 @@ values
    'Aristotle on the good life.',
    (select id from public.venues where name = 'Caffè San Marco'),
    '00000000-0000-0000-0000-000000000001', false,
-   (select id from public.clubs where slug = 'trieste')),
+   (select id from public.chapters where slug = 'trieste')),
   ('Free will and determinism',
    now() + interval '7 days', now() + interval '7 days' + interval '2 hours',
    'free-will-and-determinism',
@@ -35,7 +35,7 @@ values
    'An evening on free will.',
    null,
    '00000000-0000-0000-0000-000000000002', true,
-   (select id from public.clubs where slug = 'online')),
+   (select id from public.chapters where slug = 'online')),
   ('The ethics of technology',
    now() + interval '21 days', now() + interval '21 days' + interval '2 hours',
    'the-ethics-of-technology',
@@ -43,7 +43,7 @@ values
    'Technology and ethics.',
    (select id from public.venues where name = 'Caffè San Marco'),
    '00000000-0000-0000-0000-000000000001', false,
-   (select id from public.clubs where slug = 'trieste'));
+   (select id from public.chapters where slug = 'trieste'));
 
 insert into public.posts (title, slug, date, body, author_id)
 values

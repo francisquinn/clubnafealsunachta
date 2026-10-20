@@ -1,17 +1,19 @@
-import { DEFAULT_CLUB_TIMEZONE } from './clubDefaults';
+import { DEFAULT_CHAPTER_TIMEZONE } from './chapterDefaults';
 import { createHash } from 'crypto';
 
 const MAILCHIMP_API_KEY = process.env.MAILCHIMP_API_KEY;
 const MAILCHIMP_AUDIENCE_ID = process.env.MAILCHIMP_AUDIENCE_ID;
 const DC = MAILCHIMP_API_KEY?.split('-')[1];
 
-// #55: club subscriptions are mirrored onto Mailchimp member tags named
-// club:<slug> (e.g. club:trieste). The anonymous newsletter form
+// #55: chapter subscriptions are mirrored onto Mailchimp member tags named
+// chapter:<slug> (e.g. chapter:trieste). The anonymous newsletter form
 // (subscribe.ts) creates untagged contacts; this is the tagged lane.
-export const CLUB_TAG_PREFIX = 'club:';
+// #178: renamed from club:<slug>; existing members are re-tagged and the
+// segments rebuilt on the new tags in the same deploy.
+export const CHAPTER_TAG_PREFIX = 'chapter:';
 
-export function clubTagFor(clubSlug: string): string {
-  return `${CLUB_TAG_PREFIX}${clubSlug}`;
+export function chapterTagFor(chapterSlug: string): string {
+  return `${CHAPTER_TAG_PREFIX}${chapterSlug}`;
 }
 
 // Test seam: vitest runs with import.meta.env.DEV === true, which would
@@ -70,9 +72,9 @@ export interface EventDraft {
   name: string;
   date: string;
   slug: string;
-  // The event's club: where the CTA links (#39) and which club segment
+  // The event's chapter: where the CTA links (#39) and which chapter segment
   // receives the draft (#55).
-  club_slug: string;
+  chapter_slug: string;
   meeting_url?: string | null;
   venue_name?: string | null;
   venue_url?: string | null;
@@ -85,7 +87,7 @@ export interface PostDraft {
 }
 
 // `date` is a true UTC instant (see src/lib/timezone.ts) — rendered in the
-// club's own local time, same as the site's own formatEventDate, not raw
+// chapter's own local time, same as the site's own formatEventDate, not raw
 // UTC. Previously pinned timeZone: 'UTC' here, which only produced the
 // correct-looking digits because of a separate storage bug that stored
 // Trieste wall-clock digits mislabeled as UTC in the first place.
@@ -93,11 +95,11 @@ function formatEventDate(dateStr: string): string {
   const date = new Date(dateStr);
   const datePart = date.toLocaleDateString('en-IE', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-    timeZone: DEFAULT_CLUB_TIMEZONE,
+    timeZone: DEFAULT_CHAPTER_TIMEZONE,
   });
   const timePart = date.toLocaleTimeString('en-IE', {
     hour: '2-digit', minute: '2-digit',
-    timeZone: DEFAULT_CLUB_TIMEZONE,
+    timeZone: DEFAULT_CHAPTER_TIMEZONE,
   });
   return `${datePart} @ ${timePart}`;
 }
@@ -273,7 +275,7 @@ function buildEventEmailHtml(event: EventDraft): string {
     title: event.name,
     cardHtml: `<span style="display:block;text-align:center;">${formatEventDate(event.date)}</span>${venueHtml}`,
     ctaText: 'View event',
-    ctaUrl: `${SITE_URL}/${event.club_slug}/events/${event.slug}`,
+    ctaUrl: `${SITE_URL}/${event.chapter_slug}/events/${event.slug}`,
   });
 }
 
@@ -301,11 +303,11 @@ async function setMemberTags(email: string, tags: { name: string; status: 'activ
   throw new Error(`Mailchimp tag update failed: ${(await mailchimpError(res)).message}`);
 }
 
-// Join a club: make sure the member's email is on the audience (creating the
+// Join a chapter: make sure the member's email is on the audience (creating the
 // contact as subscribed if new, leaving an existing contact's status
-// untouched) and carry the club:<slug> tag. Not dev-gated like the campaign
+// untouched) and carry the chapter:<slug> tag. Not dev-gated like the campaign
 // send — same posture as subscribe.ts, a real user gesture.
-export async function addClubTag(email: string, clubSlug: string): Promise<void> {
+export async function addChapterTag(email: string, chapterSlug: string): Promise<void> {
   if (!isConfigured()) {
     console.warn('Mailchimp not configured — skipping tag update');
     return;
@@ -317,28 +319,28 @@ export async function addClubTag(email: string, clubSlug: string): Promise<void>
   if (!res.ok) {
     throw new Error(`Mailchimp member upsert failed: ${(await mailchimpError(res)).message}`);
   }
-  await setMemberTags(email, [{ name: clubTagFor(clubSlug), status: 'active' }]);
+  await setMemberTags(email, [{ name: chapterTagFor(chapterSlug), status: 'active' }]);
 }
 
-// Leave a club: keep the contact, drop the club:<slug> tag.
-export async function removeClubTag(email: string, clubSlug: string): Promise<void> {
+// Leave a chapter: keep the contact, drop the chapter:<slug> tag.
+export async function removeChapterTag(email: string, chapterSlug: string): Promise<void> {
   if (!isConfigured()) {
     console.warn('Mailchimp not configured — skipping tag update');
     return;
   }
-  await setMemberTags(email, [{ name: clubTagFor(clubSlug), status: 'inactive' }]);
+  await setMemberTags(email, [{ name: chapterTagFor(chapterSlug), status: 'inactive' }]);
 }
 
 // Mailchimp's segments list endpoint pages by default; 1000 is the API's own
-// max count per page. Without paging through, a club whose segment falls
+// max count per page. Without paging through, a chapter whose segment falls
 // past the first page would be indistinguishable from "no segment yet".
 const SEGMENTS_PAGE_SIZE = 1000;
 
-// Resolve the audience segment id whose name is the club's tag. Tags are
-// static segments on the audience (same name), so targeting one club's
+// Resolve the audience segment id whose name is the chapter's tag. Tags are
+// static segments on the audience (same name), so targeting one chapter's
 // subscribers is a saved_segment_id in the campaign recipients (see #55).
-async function clubSegmentId(clubSlug: string): Promise<number | null> {
-  const targetName = clubTagFor(clubSlug);
+async function chapterSegmentId(chapterSlug: string): Promise<number | null> {
+  const targetName = chapterTagFor(chapterSlug);
   let offset = 0;
   while (true) {
     const res = await mailchimp(`/lists/${MAILCHIMP_AUDIENCE_ID}/segments?count=${SEGMENTS_PAGE_SIZE}&offset=${offset}`);
@@ -418,15 +420,15 @@ export async function sendMailchimpEmail(event: EventDraft): Promise<void> {
     return;
   }
 
-  // #55: route the event draft to the event's club segment — never the
-  // whole audience. A club nobody has subscribed to yet has no segment at
+  // #55: route the event draft to the event's chapter segment — never the
+  // whole audience. A chapter nobody has subscribed to yet has no segment at
   // all, which means no one has actually opted in to that email, so it's
   // skipped rather than blasting everyone (that "whole audience" fallback
   // silently included newsletter-only subscribers, contradicting the
   // segment-only direction above — dropped once this was noticed).
-  const segmentId = await clubSegmentId(event.club_slug);
+  const segmentId = await chapterSegmentId(event.chapter_slug);
   if (segmentId == null) {
-    console.warn(`No Mailchimp segment for "${clubTagFor(event.club_slug)}" — skipping event email`);
+    console.warn(`No Mailchimp segment for "${chapterTagFor(event.chapter_slug)}" — skipping event email`);
     return;
   }
   const recipients = { list_id: MAILCHIMP_AUDIENCE_ID, segment_opts: { saved_segment_id: segmentId } };

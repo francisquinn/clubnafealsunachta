@@ -1,15 +1,15 @@
 import type { Event } from "../types/types";
-import { DEFAULT_CLUB_TIMEZONE } from "../lib/clubDefaults";
+import { DEFAULT_CHAPTER_TIMEZONE } from "../lib/chapterDefaults";
 
 // `timeZone` is optional so blog posts (the one remaining caller that
 // doesn't pass one) are unaffected — pass it explicitly for a date that must
 // read as a specific timezone's calendar day regardless of where the code
 // runs. Both event callers (the admin events list, and the public
-// past-events list in EventList.tsx) now pass DEFAULT_CLUB_TIMEZONE (#75:
+// past-events list in EventList.tsx) now pass DEFAULT_CHAPTER_TIMEZONE (#75:
 // rendering with no timeZone defaults to wherever the code executes — the
 // server's UTC runtime for the admin page, the visitor's own browser for the
 // client-hydrated public list — either of which can disagree with the
-// club's actual local calendar day for a late-enough event).
+// chapter's actual local calendar day for a late-enough event).
 export function formatBlogDate(date: Date, timeZone?: string): string {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {
@@ -24,7 +24,7 @@ export function formatBlogDate(date: Date, timeZone?: string): string {
   return `${parts.month} ${parts.day}, ${parts.year}`;
 }
 
-// Always shown in the club's own local time (see DEFAULT_CLUB_TIMEZONE), not
+// Always shown in the chapter's own local time (see DEFAULT_CHAPTER_TIMEZONE), not
 // UTC and not the visitor's own timezone — a remote/online-event attendee in
 // another timezone still needs "Fri Sep 4 @ 18:30" to mean the same instant
 // as it does for a Trieste-based one. Previously read getUTCHours()/
@@ -35,7 +35,7 @@ export function formatBlogDate(date: Date, timeZone?: string): string {
 export function formatEventDate(date: Date): string {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {
-      timeZone: DEFAULT_CLUB_TIMEZONE,
+      timeZone: DEFAULT_CHAPTER_TIMEZONE,
       weekday: "short",
       month: "short",
       day: "numeric",
@@ -51,14 +51,14 @@ export function formatEventDate(date: Date): string {
   return `${parts.weekday} ${parts.month} ${parts.day} @ ${hour}:${parts.minute}`;
 }
 
-// #100: just the club-local "HH:mm" for an end time, appended to
+// #100: just the chapter-local "HH:mm" for an end time, appended to
 // formatEventDate's start — e.g. "Fri Sep 4 @ 18:30–20:00". A bare end time
 // reads fine here since it's always the same calendar day as the start (see
 // the 20260914120000 migration's backfill and EventForm's default).
 export function formatEventEndTime(date: Date): string {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {
-      timeZone: DEFAULT_CLUB_TIMEZONE,
+      timeZone: DEFAULT_CHAPTER_TIMEZONE,
       hour: "numeric",
       minute: "2-digit",
       hour12: false,

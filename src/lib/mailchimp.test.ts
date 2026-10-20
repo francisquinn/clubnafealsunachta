@@ -9,10 +9,10 @@ vi.hoisted(() => {
 });
 
 import {
-  addClubTag,
-  removeClubTag,
+  addChapterTag,
+  removeChapterTag,
   sendMailchimpEmail,
-  clubTagFor,
+  chapterTagFor,
   mailchimpRuntime,
 } from './mailchimp';
 
@@ -49,25 +49,25 @@ afterAll(() => {
   delete process.env.MAILCHIMP_AUDIENCE_ID;
 });
 
-describe('clubTagFor', () => {
-  it('namespaces a club slug under club:', () => {
-    expect(clubTagFor('trieste')).toBe('club:trieste');
+describe('chapterTagFor', () => {
+  it('namespaces a chapter slug under chapter:', () => {
+    expect(chapterTagFor('trieste')).toBe('chapter:trieste');
   });
 });
 
-describe('addClubTag', () => {
+describe('addChapterTag', () => {
   beforeEach(() => {
     globalThis.fetch = vi.fn();
   });
 
-  it('upserts the member into the audience then activates the club tag', async () => {
+  it('upserts the member into the audience then activates the chapter tag', async () => {
     fetchMock()
       .mockResolvedValueOnce(memberUpsertResponse())
       .mockResolvedValueOnce(fakeResponse({}, 200));
 
     // Member email in the URL hash is lowercased/trimmed; the body keeps the
     // stored casing.
-    await addClubTag('Member@Example.COM ', 'trieste');
+    await addChapterTag('Member@Example.COM ', 'trieste');
 
     expect(fetchMock()).toHaveBeenCalledTimes(2);
 
@@ -84,7 +84,7 @@ describe('addClubTag', () => {
     expect(tagUrl).toBe(`${US1}/lists/audience-123/members/${HASH}/tags`);
     expect(tagInit.method).toBe('POST');
     expect(JSON.parse(String(tagInit.body))).toEqual({
-      tags: [{ name: 'club:trieste', status: 'active' }],
+      tags: [{ name: 'chapter:trieste', status: 'active' }],
     });
   });
 
@@ -93,36 +93,36 @@ describe('addClubTag', () => {
       fakeResponse({ title: 'Invalid Resource', detail: 'The resource submitted could not be validated.' }, 400)
     );
 
-    await expect(addClubTag('member@example.com', 'trieste')).rejects.toThrow(
+    await expect(addChapterTag('member@example.com', 'trieste')).rejects.toThrow(
       /Mailchimp member upsert failed: The resource submitted could not be validated\./
     );
     expect(fetchMock()).toHaveBeenCalledTimes(1);
   });
 });
 
-describe('removeClubTag', () => {
+describe('removeChapterTag', () => {
   beforeEach(() => {
     globalThis.fetch = vi.fn();
   });
 
-  it('drops the club tag but leaves the contact on the audience', async () => {
+  it('drops the chapter tag but leaves the contact on the audience', async () => {
     fetchMock().mockResolvedValueOnce(fakeResponse({}, 200));
 
-    await removeClubTag('member@example.com', 'trieste');
+    await removeChapterTag('member@example.com', 'trieste');
 
     expect(fetchMock()).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock().mock.calls[0] as [string, RequestInit];
     expect(url).toBe(`${US1}/lists/audience-123/members/${HASH}/tags`);
     expect(init.method).toBe('POST');
     expect(JSON.parse(String(init.body))).toEqual({
-      tags: [{ name: 'club:trieste', status: 'inactive' }],
+      tags: [{ name: 'chapter:trieste', status: 'inactive' }],
     });
   });
 
   it('treats a missing contact (404) as already untagged', async () => {
     fetchMock().mockResolvedValueOnce(fakeResponse({ title: 'Resource Not Found' }, 404));
 
-    await expect(removeClubTag('member@example.com', 'trieste')).resolves.toBeUndefined();
+    await expect(removeChapterTag('member@example.com', 'trieste')).resolves.toBeUndefined();
     expect(fetchMock()).toHaveBeenCalledTimes(1);
   });
 });
@@ -137,12 +137,12 @@ describe('sendMailchimpEmail', () => {
     globalThis.fetch = vi.fn();
   });
 
-  it('routes the event draft to the event club segment', async () => {
+  it('routes the event draft to the event chapter segment', async () => {
     fetchMock()
       .mockResolvedValueOnce(fakeResponse({
         segments: [
-          { id: 7, name: 'club:trieste' },
-          { id: 8, name: 'club:rome' },
+          { id: 7, name: 'chapter:trieste' },
+          { id: 8, name: 'chapter:rome' },
         ],
       }))
       .mockResolvedValueOnce(fakeResponse({ id: 'campaign-1' }))
@@ -153,7 +153,7 @@ describe('sendMailchimpEmail', () => {
       name: 'Coffee Morning',
       date: '2026-09-01T10:00:00Z',
       slug: 'coffee-morning',
-      club_slug: 'trieste',
+      chapter_slug: 'trieste',
       meeting_url: null,
       venue_name: null,
       venue_url: null,
@@ -186,15 +186,15 @@ describe('sendMailchimpEmail', () => {
     expect(sendInit.method).toBe('POST');
   });
 
-  it('skips the send when the event club has no segment yet', async () => {
-    fetchMock().mockResolvedValueOnce(fakeResponse({ segments: [{ id: 7, name: 'club:trieste' }] }));
+  it('skips the send when the event chapter has no segment yet', async () => {
+    fetchMock().mockResolvedValueOnce(fakeResponse({ segments: [{ id: 7, name: 'chapter:trieste' }] }));
 
     await expect(
       sendMailchimpEmail({
         name: 'Venice Meetup',
         date: '2026-10-01T10:00:00Z',
         slug: 'venice-meetup',
-        club_slug: 'venice',
+        chapter_slug: 'venice',
         meeting_url: null,
         venue_name: null,
         venue_url: null,
@@ -205,13 +205,13 @@ describe('sendMailchimpEmail', () => {
     expect(fetchMock()).toHaveBeenCalledTimes(1);
   });
 
-  it('pages through the segments list when the club segment is past the first page', async () => {
+  it('pages through the segments list when the chapter segment is past the first page', async () => {
     // A full first page (no match) forces a second request at the next offset.
-    const firstPage = Array.from({ length: 1000 }, (_, i) => ({ id: i, name: `club:filler-${i}` }));
+    const firstPage = Array.from({ length: 1000 }, (_, i) => ({ id: i, name: `chapter:filler-${i}` }));
 
     fetchMock()
       .mockResolvedValueOnce(fakeResponse({ segments: firstPage }))
-      .mockResolvedValueOnce(fakeResponse({ segments: [{ id: 42, name: 'club:trieste' }] }))
+      .mockResolvedValueOnce(fakeResponse({ segments: [{ id: 42, name: 'chapter:trieste' }] }))
       .mockResolvedValueOnce(fakeResponse({ id: 'campaign-1' }))
       .mockResolvedValueOnce(fakeResponse({}, 200))
       .mockResolvedValueOnce(fakeResponse({}, 200));
@@ -220,7 +220,7 @@ describe('sendMailchimpEmail', () => {
       name: 'Coffee Morning',
       date: '2026-09-01T10:00:00Z',
       slug: 'coffee-morning',
-      club_slug: 'trieste',
+      chapter_slug: 'trieste',
       meeting_url: null,
       venue_name: null,
       venue_url: null,
@@ -246,7 +246,7 @@ describe('sendMailchimpEmail', () => {
       name: 'Coffee Morning',
       date: '2026-09-01T10:00:00Z',
       slug: 'coffee-morning',
-      club_slug: 'trieste',
+      chapter_slug: 'trieste',
       meeting_url: null,
       venue_name: null,
       venue_url: null,

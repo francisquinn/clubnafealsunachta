@@ -7,29 +7,29 @@ import "../../styles/select.css";
 import EventList from "../../components/EventList/EventList";
 import SubscribeCalendarLinks from "../../components/SubscribeCalendarLinks/SubscribeCalendarLinks";
 import Banner from "../../layouts/Banner.astro";
-import { getAllClubs, getClubEventsStaticPaths, sortChaptersForPicker } from "../../lib/clubs";
+import { getAllChapters, getChapterEventsStaticPaths, sortChaptersForPicker } from "../../lib/chapters";
 
-// #39: clubs and events are resolved once for the whole build, and each
-// club page gets its own pre-filtered list. Shared with the events.ics feed
+// #39: chapters and events are resolved once for the whole build, and each
+// chapter page gets its own pre-filtered list. Shared with the events.ics feed
 // (#80) so the page and the feed list the same events.
-export const getStaticPaths = getClubEventsStaticPaths;
+export const getStaticPaths = getChapterEventsStaticPaths;
 
-const { clubSlug } = Astro.params;
-const { club, events: sortedEvents } = Astro.props;
+const { chapterSlug } = Astro.params;
+const { chapter, events: sortedEvents } = Astro.props;
 // Absolute, since calendar apps fetch the feed from outside the site.
-const feedUrl = new URL(`/${clubSlug}/events.ics`, Astro.site).href;
-// #177: the chapter picker's options. getAllClubs is memoized per build, so
+const feedUrl = new URL(`/${chapterSlug}/events.ics`, Astro.site).href;
+// #177: the chapter picker's options. getAllChapters is memoized per build, so
 // this is no extra query.
-const clubs = sortChaptersForPicker(await getAllClubs());
+const chapters = sortChaptersForPicker(await getAllChapters());
 ---
 
 <BaseLayout pageTitle={pageTitle}>
   <section class="cnf-section">
     <h1>{pageTitle}</h1>
-    <EventList events={sortedEvents} clubSlug={clubSlug!} clubs={clubs} client:load />
+    <EventList events={sortedEvents} chapterSlug={chapterSlug!} chapters={chapters} client:load />
   </section>
   <section class="cnf-section">
-    <SubscribeCalendarLinks feedUrl={feedUrl} chapterName={club.name} />
+    <SubscribeCalendarLinks feedUrl={feedUrl} chapterName={chapter.name} />
   </section>
   <Banner
     title="Like to suggest a topic?"
