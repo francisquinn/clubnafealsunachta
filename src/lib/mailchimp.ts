@@ -70,15 +70,9 @@ export interface EventDraft {
   name: string;
   date: string;
   slug: string;
-  // Link-only: which club's page the CTA points to (falls back to
-  // DEFAULT_CLUB_SLUG for a cross-chapter event, which has no page of its
-  // own — see #39). Not the audience — see is_cross_chapter.
+  // The event's club: where the CTA links (#39) and which club segment
+  // receives the draft (#55).
   club_slug: string;
-  // True for an event with no single owning club (event_club_id null).
-  // No segment exists for "every club at once", so a cross-chapter event
-  // has no one subscribed to notify — sendMailchimpEmail skips it rather
-  // than guessing at a club or blasting the whole audience.
-  is_cross_chapter: boolean;
   meeting_url?: string | null;
   venue_name?: string | null;
   venue_url?: string | null;
@@ -426,16 +420,10 @@ export async function sendMailchimpEmail(event: EventDraft): Promise<void> {
 
   // #55: route the event draft to the event's club segment — never the
   // whole audience. A club nobody has subscribed to yet has no segment at
-  // all, and a cross-chapter event has no single club to narrow to either;
-  // both mean no one has actually opted in to that email, so both are
-  // skipped rather than falling back to club_slug's link-only default or
-  // blasting everyone (that "whole audience" fallback silently included
-  // newsletter-only subscribers, contradicting the segment-only direction
-  // above — dropped once this was noticed).
-  if (event.is_cross_chapter) {
-    console.warn(`Cross-chapter event "${event.name}" has no club segment to notify — skipping event email`);
-    return;
-  }
+  // all, which means no one has actually opted in to that email, so it's
+  // skipped rather than blasting everyone (that "whole audience" fallback
+  // silently included newsletter-only subscribers, contradicting the
+  // segment-only direction above — dropped once this was noticed).
   const segmentId = await clubSegmentId(event.club_slug);
   if (segmentId == null) {
     console.warn(`No Mailchimp segment for "${clubTagFor(event.club_slug)}" — skipping event email`);

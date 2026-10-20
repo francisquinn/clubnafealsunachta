@@ -172,22 +172,14 @@ describe("isClubInScope", () => {
   const superAdmin = { memberId: "m1", isSuperAdmin: true, clubIds: [] };
   const clubScoped = { memberId: "m2", isSuperAdmin: false, clubIds: [1, 2] };
 
-  it("lets a super admin touch any club, including a null (global) one", () => {
+  it("lets a super admin touch any club", () => {
     expect(isClubInScope(superAdmin, 1)).toBe(true);
     expect(isClubInScope(superAdmin, 99)).toBe(true);
-    expect(isClubInScope(superAdmin, null)).toBe(true);
   });
 
   it("lets a club-scoped admin touch only the clubs they administer", () => {
     expect(isClubInScope(clubScoped, 1)).toBe(true);
     expect(isClubInScope(clubScoped, 3)).toBe(false);
-  });
-
-  // Regression: a club-scoped admin must not be able to leave something
-  // unscoped (null club_id) just by omitting a club - that's equivalent to
-  // the "no specific chapter" option, which only a super admin may pick.
-  it("never lets a club-scoped admin touch a null (global) club", () => {
-    expect(isClubInScope(clubScoped, null)).toBe(false);
   });
 });
 

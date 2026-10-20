@@ -19,11 +19,10 @@ export default function UpcomingEvent(props: UpcomingEventProps) {
     );
   }
 
-  return <EventCard event={nextEvent} responsive={props.responsive} clubSlug={props.clubSlug} />;
+  return <EventCard event={nextEvent} responsive={props.responsive} />;
 }
 
 type UpcomingEventProps = {
   events?: Event[];
   responsive?: boolean;
-  clubSlug?: string;
 };

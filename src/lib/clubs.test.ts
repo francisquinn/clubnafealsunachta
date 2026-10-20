@@ -75,11 +75,7 @@ describe("getAllClubs", () => {
 });
 
 describe("getEventClubStaticPaths", () => {
-  it("gives a club-scoped event exactly one path, under its own club", async () => {
-    state.clubsList = [
-      { id: 1, name: "Trieste", slug: "trieste" },
-      { id: 2, name: "Oslo", slug: "oslo" },
-    ];
+  it("gives an event exactly one path, under its own club", async () => {
     mockEvents = [
       { data: { slug: "philosophy-night", location: { id: 1, name: "Trieste", slug: "trieste" } } },
     ];
@@ -91,38 +87,24 @@ describe("getEventClubStaticPaths", () => {
       { params: { clubSlug: "trieste", eventSlug: "philosophy-night" }, props: { event: mockEvents[0] } },
     ]);
   });
-
-  it("fans a cross-chapter event (location: null) out across every existing club", async () => {
-    state.clubsList = [
-      { id: 1, name: "Trieste", slug: "trieste" },
-      { id: 2, name: "Oslo", slug: "oslo" },
-    ];
-    mockEvents = [{ data: { slug: "global-meetup", location: null } }];
-    const { getEventClubStaticPaths } = await importClubs();
-
-    const paths = await getEventClubStaticPaths();
-
-    expect(paths.map((p) => p.params.clubSlug).sort()).toEqual(["oslo", "trieste"]);
-    paths.forEach((p) => expect(p.params.eventSlug).toBe("global-meetup"));
-  });
 });
 
 describe("getClubEventsStaticPaths", () => {
-  it("gives every club a path with its own events plus cross-chapter ones", async () => {
+  it("gives every club a path with only its own events", async () => {
     state.clubsList = [
       { id: 1, name: "Trieste", slug: "trieste" },
       { id: 2, name: "Oslo", slug: "oslo" },
     ];
     const triesteEvent = { data: { slug: "philosophy-night", location: { id: 1, name: "Trieste", slug: "trieste" } } };
-    const globalEvent = { data: { slug: "global-meetup", location: null } };
-    mockEvents = [triesteEvent, globalEvent];
+    const osloEvent = { data: { slug: "fjord-talk", location: { id: 2, name: "Oslo", slug: "oslo" } } };
+    mockEvents = [triesteEvent, osloEvent];
     const { getClubEventsStaticPaths } = await importClubs();
 
     const paths = await getClubEventsStaticPaths();
 
     expect(paths).toEqual([
-      { params: { clubSlug: "trieste" }, props: { club: state.clubsList[0], events: [triesteEvent, globalEvent] } },
-      { params: { clubSlug: "oslo" }, props: { club: state.clubsList[1], events: [globalEvent] } },
+      { params: { clubSlug: "trieste" }, props: { club: state.clubsList[0], events: [triesteEvent] } },
+      { params: { clubSlug: "oslo" }, props: { club: state.clubsList[1], events: [osloEvent] } },
     ]);
   });
 

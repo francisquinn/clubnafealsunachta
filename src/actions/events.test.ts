@@ -420,7 +420,6 @@ describe('createEvent', () => {
     expect(state.mailchimpCall).toMatchObject({
       slug: 'philosophy-night',
       club_slug: 'online',
-      is_cross_chapter: false,
     });
   });
 
@@ -448,7 +447,6 @@ describe('createEvent', () => {
     expect(state.rsvpInsertPayload).toMatchObject({ member_id: 'admin-2', event_id: 43, status: 'going' });
     expect(state.mailchimpCall).toMatchObject({
       club_slug: 'galway',
-      is_cross_chapter: false,
       venue_name: 'The Reading Room',
     });
   });

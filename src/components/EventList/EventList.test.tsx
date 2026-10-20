@@ -57,7 +57,7 @@ function makeOnlineEvent(name: string, date: Date): EventCollection {
     name,
     date,
     endDate: endDateFor(date),
-    location: null,
+    location: { id: 2, name: "Online", slug: "online" },
     isOnline: true,
     venue: null,
     slug: name.toLowerCase().replace(/ /g, "-"),

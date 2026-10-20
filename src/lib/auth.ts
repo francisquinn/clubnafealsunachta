@@ -263,16 +263,14 @@ export async function requireAdmin(request: Request): Promise<AdminScope | null>
   return scope;
 }
 
-// A non-super admin may only touch clubs they administer - a null club_id
-// (genuinely cross-chapter/global, see #36) is out of scope for them too,
-// since it isn't any specific club they administer. Shared by every place
+// A non-super admin may only touch clubs they administer. Shared by every place
 // that gates access to one specific club (an existing venue/event's club, a
 // submitted event_club_id/new-venue club_id, an event about to be viewed or
 // edited) so the rule can't drift between call sites. A plain predicate
 // rather than a throw - callers fail however fits their context (an
 // ActionError in a server action, a redirect on an Astro page).
-export function isClubInScope(admin: AdminScope, club_id: number | null): boolean {
-  return admin.isSuperAdmin || (club_id !== null && admin.clubIds.includes(club_id));
+export function isClubInScope(admin: AdminScope, club_id: number): boolean {
+  return admin.isSuperAdmin || admin.clubIds.includes(club_id);
 }
 
 // Narrows any Supabase query builder to a super admin's full access, or a
