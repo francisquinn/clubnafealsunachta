@@ -15,13 +15,13 @@ export { DEFAULT_CLUB_SLUG } from './clubDefaults';
 // (#39) to know which club-prefixed pages to build, including a club with
 // zero events yet.
 //
-// Memoized per build/process: [eventSlug].astro and [eventSlug].ics.ts each
-// run their own getStaticPaths (Astro doesn't share state between route
-// files), and without this cache both independently hit Supabase for the
-// exact same "every club" data. Caching also closes a real divergence risk —
-// two live, unmemoized queries a moment apart could see a different club
-// list if the clubs table changed mid-build, desyncing which .ics files
-// exist from which event pages link to them. A rejected fetch clears the
+// Memoized per build/process: events.astro and events.ics.ts each run their
+// own getStaticPaths (Astro doesn't share state between route files), and
+// without this cache both independently hit Supabase for the exact same
+// "every club" data. Caching also closes a real divergence risk — two live,
+// unmemoized queries a moment apart could see a different club list if the
+// clubs table changed mid-build, desyncing which feeds exist from which
+// events pages link to them. A rejected fetch clears the
 // cache so a real Supabase outage doesn't wedge every future call in the
 // same process into a stale failure.
 let clubsPromise: Promise<Club[]> | null = null;
@@ -61,34 +61,22 @@ export function sortChaptersForPicker(clubs: Club[]): { name: string; slug: stri
     .sort((a, b) => Number(a.slug === ONLINE_CLUB_SLUG) - Number(b.slug === ONLINE_CLUB_SLUG) || a.name.localeCompare(b.name));
 }
 
-// #39: the set of club slugs a given event belongs under — the club it's
-// actually scoped to, or, for a genuinely cross-chapter event (location
-// null), every club that exists (the "visible everywhere" decision). Shared
-// by both [clubSlug] route files so the membership rule can't drift between
-// the list page and the detail page's getStaticPaths.
-export function clubSlugsForEvent(location: { slug: string } | null, allClubSlugs: string[]): string[] {
-  return location ? [location.slug] : allClubSlugs;
-}
-
 export type EventClubPath = {
   params: { clubSlug: string; eventSlug: string };
   props: { event: EventCollection };
 };
 
 // The getStaticPaths shared by [eventSlug].astro and [eventSlug].ics.ts —
-// every event/club pair that needs a page, kept in exactly one place instead
+// one page per event, under its own club, kept in exactly one place instead
 // of copy-pasted so the two routes can't drift out of lockstep with each
 // other.
 export async function getEventClubStaticPaths(): Promise<EventClubPath[]> {
-  const [events, clubs] = await Promise.all([getCollection('event'), getAllClubs()]);
-  const clubSlugs = clubs.map((c) => c.slug);
+  const events = await getCollection('event');
 
-  return events.flatMap((event) =>
-    clubSlugsForEvent(event.data.location, clubSlugs).map((clubSlug) => ({
-      params: { clubSlug, eventSlug: event.data.slug },
-      props: { event },
-    }))
-  );
+  return events.map((event) => ({
+    params: { clubSlug: event.data.location.slug, eventSlug: event.data.slug },
+    props: { event },
+  }));
 }
 
 export type ClubEventsPath = {
@@ -105,13 +93,11 @@ export async function getClubEventsStaticPaths(): Promise<ClubEventsPath[]> {
     getAllClubs(),
     getCollection('event') as Promise<EventCollection[]>,
   ]);
-  const clubSlugs = clubs.map((c) => c.slug);
-
   return clubs.map((club) => ({
     params: { clubSlug: club.slug },
     props: {
       club,
-      events: events.filter((event) => clubSlugsForEvent(event.data.location, clubSlugs).includes(club.slug)),
+      events: events.filter((event) => event.data.location.slug === club.slug),
     },
   }));
 }

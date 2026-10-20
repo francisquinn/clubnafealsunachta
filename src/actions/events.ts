@@ -3,7 +3,7 @@ import { supabase, supabaseAdmin } from '../lib/supabase';
 import { sendMailchimpEmail } from '../lib/mailchimp';
 import { requireAdmin, isClubInScope, scopeToAdminClubs, type AdminScope } from '../lib/auth';
 import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
-import { DEFAULT_CLUB_SLUG, DEFAULT_CLUB_TIMEZONE, ONLINE_CLUB_SLUG } from '../lib/clubDefaults';
+import { DEFAULT_CLUB_TIMEZONE, ONLINE_CLUB_SLUG } from '../lib/clubDefaults';
 import { localWallTimeToUtc } from '../lib/timezone';
 import { resolveUniqueSlug } from '../lib/slugDedup';
 import { upsertRsvp } from './rsvps';
@@ -15,7 +15,7 @@ type ResolvedVenue = { id: number; name: string; url: string | null; club_id: nu
 // server-action call sites below (resolveVenue/resolveEventClubId/updateEvent).
 // #177: when the Online lookup failed (see getAdminScope), an out-of-scope
 // club may well be Online, so report that instead of a misleading FORBIDDEN.
-function assertClubInScope(admin: AdminScope, club_id: number | null) {
+function assertClubInScope(admin: AdminScope, club_id: number) {
   if (isClubInScope(admin, club_id)) return;
   if (admin.onlineUnavailable) {
     throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: "Couldn't load the Online chapter, try again in a moment" });
@@ -204,33 +204,22 @@ export const createEvent = defineAction({
 
     triggerNetlifyBuild();
 
-    // #39: events are routed under /[clubSlug]/events — a cross-chapter
-    // event (event_club_id null) has no club of its own to link into, so
-    // the draft email's CTA link falls back to the one club that exists
-    // today. A single-row lookup, not getAllClubs() — no need to fetch
-    // every club just to read one slug (and event_club_id null can never
-    // match a row anyway, so that path would always fetch and discard the
-    // whole table). This fallback is link-only: it must not also decide
-    // who receives the email (see is_cross_chapter below) — #64's
-    // segment-per-club targeting would otherwise silently narrow a
-    // cross-chapter event's audience down to just that one club.
-    let club_slug: string = DEFAULT_CLUB_SLUG;
-    if (event_club_id !== null) {
-      const { data: club, error: clubError } = await supabaseAdmin
-        .from('clubs')
-        .select('slug')
-        .eq('id', event_club_id)
-        .single();
-      if (clubError) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: clubError.message });
-      club_slug = club.slug;
-    }
+    // #39: events are routed under /[clubSlug]/events, and the club's slug
+    // also picks the Mailchimp segment the draft goes to (#64). A single-row
+    // lookup, not getAllClubs() — no need to fetch every club just to read
+    // one slug.
+    const { data: club, error: clubError } = await supabaseAdmin
+      .from('clubs')
+      .select('slug')
+      .eq('id', event_club_id)
+      .single();
+    if (clubError) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: clubError.message });
 
     await sendMailchimpEmail({
       name,
       date,
       slug,
-      club_slug,
-      is_cross_chapter: event_club_id === null,
+      club_slug: club.slug,
       meeting_url,
       venue_name: venue?.name ?? null,
       venue_url: venue?.url ?? null,

@@ -154,7 +154,6 @@ describe('sendMailchimpEmail', () => {
       date: '2026-09-01T10:00:00Z',
       slug: 'coffee-morning',
       club_slug: 'trieste',
-      is_cross_chapter: false,
       meeting_url: null,
       venue_name: null,
       venue_url: null,
@@ -196,7 +195,6 @@ describe('sendMailchimpEmail', () => {
         date: '2026-10-01T10:00:00Z',
         slug: 'venice-meetup',
         club_slug: 'venice',
-        is_cross_chapter: false,
         meeting_url: null,
         venue_name: null,
         venue_url: null,
@@ -223,7 +221,6 @@ describe('sendMailchimpEmail', () => {
       date: '2026-09-01T10:00:00Z',
       slug: 'coffee-morning',
       club_slug: 'trieste',
-      is_cross_chapter: false,
       meeting_url: null,
       venue_name: null,
       venue_url: null,
@@ -250,25 +247,6 @@ describe('sendMailchimpEmail', () => {
       date: '2026-09-01T10:00:00Z',
       slug: 'coffee-morning',
       club_slug: 'trieste',
-      is_cross_chapter: false,
-      meeting_url: null,
-      venue_name: null,
-      venue_url: null,
-    });
-
-    expect(fetchMock()).not.toHaveBeenCalled();
-  });
-
-  it('skips a cross-chapter event entirely rather than notifying one club or everyone', async () => {
-    await sendMailchimpEmail({
-      name: 'Annual Gathering',
-      date: '2026-11-01T10:00:00Z',
-      slug: 'annual-gathering',
-      // club_slug still carries the CTA-link fallback (see #39), but
-      // is_cross_chapter must be what decides whether the email goes out
-      // at all — no segment exists for "every club at once".
-      club_slug: 'trieste',
-      is_cross_chapter: true,
       meeting_url: null,
       venue_name: null,
       venue_url: null,

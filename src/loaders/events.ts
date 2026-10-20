@@ -58,16 +58,17 @@ export function eventsLoader(): Loader {
         // #39: events.club_id is the single source of truth for "which club
         // is this event under" — set from the venue's own club for in-person
         // events and from an explicit form field for online ones (see
-        // resolveEventClubId in src/actions/events.ts), null meaning
-        // genuinely cross-chapter/global. No need to derive it from the
-        // venue relation separately.
-        //
-        // #177: online events belong to the Online club like any other
-        // event belongs to its club — the #60 stopgap that forced them to
-        // null (shown under every chapter) is gone.
-        const location = event.club_id ? clubsMap.get(event.club_id) ?? null : null;
+        // resolveEventClubId in src/actions/events.ts). No need to derive it
+        // from the venue relation separately. #177: every event has one
+        // (online events belong to the Online club, events.club_id is NOT
+        // NULL).
+        const location = clubsMap.get(event.club_id);
         const creator = unwrapRelation(event.members);
 
+        if (!location) {
+          console.error(`Skipping event "${event.slug}": no matching club for club_id ${event.club_id}`);
+          continue;
+        }
         if (!creator) {
           console.error(`Skipping event "${event.slug}": no matching member for created_by ${event.created_by}`);
           continue;

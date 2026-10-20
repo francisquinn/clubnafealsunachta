@@ -62,7 +62,7 @@ export default function EventList(props: EventListProps) {
     if (showUpcoming) {
       return <div className="cnf-events--grid">
         {upcomingEvents.length > 0
-          ? upcomingEvents.map((event) => <UpcomingEvent events={[event.data]} clubSlug={props.clubSlug} key={event.data.slug} />)
+          ? upcomingEvents.map((event) => <UpcomingEvent events={[event.data]} key={event.data.slug} />)
           : <p>No upcoming events at the moment. Stay tuned for further updates!</p>}
       </div>;
     }
@@ -78,7 +78,6 @@ export default function EventList(props: EventListProps) {
           event={event.data}
           key={event.data.slug}
           dateFormatter={(date) => formatBlogDate(date, DEFAULT_CLUB_TIMEZONE)}
-          clubSlug={props.clubSlug}
         />
     );
   }

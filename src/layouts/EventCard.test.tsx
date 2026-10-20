@@ -45,4 +45,9 @@ describe("EventCard", () => {
     expect(links).toHaveLength(1);
     expect(links[0]).toHaveAttribute("href", "/trieste/events/free-will");
   });
+
+  it("links to the event's own chapter, not the default one", () => {
+    render(<EventCard event={makeEvent({ location: { id: 2, name: "Online", slug: "online" }, isOnline: true })} />);
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/online/events/free-will");
+  });
 });

@@ -9,7 +9,7 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     name: "Test Event",
     date: new Date("2099-01-01"),
     endDate: new Date("2099-01-01T02:00:00Z"),
-    location: null,
+    location: { id: 2, name: "Online", slug: "online" },
     isOnline: true,
     venue: null,
     slug: "test-event",
