@@ -20,7 +20,7 @@ npx astro check
 - `src/layouts/` — page layouts
 - `src/lib/` — Supabase client, auth, email helpers
 - `src/loaders/` — Astro content loaders (events, posts)
-- `src/pages/` — file-based routes
+- `src/pages/` — file-based routes. Every non-route file here (tests included) must start with `_` (e.g. `_login.test.ts`), or Astro builds it as a route and the Netlify build breaks.
 - `src/middleware.ts` — session auth, CSRF, admin gating
 - `supabase/schema.sql` — database schema
 
