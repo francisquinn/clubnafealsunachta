@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { actions } from "astro:actions";
 import Checkbox from "../Checkbox/Checkbox";
 import TagPicker from "../TagPicker/TagPicker";
-import { DEFAULT_CLUB_SLUG, ONLINE_CLUB_SLUG } from "../../lib/clubDefaults";
+import { DEFAULT_CHAPTER_SLUG, ONLINE_CHAPTER_SLUG } from "../../lib/chapterDefaults";
 import { slugify } from "../../lib/slugify";
 import { MIN_TAGS } from "../../lib/eventTags";
 
-type Club = { id: number; name: string; slug: string };
+type Chapter = { id: number; name: string; slug: string };
 type Venue = { id: number; name: string; url: string | null };
 
 const NEW_VENUE = "__new__";
@@ -38,14 +38,14 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [isOnline, setIsOnline] = useState(initialData?.isOnline ?? false);
-  const [clubs, setClubs] = useState<Club[]>([]);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [venues, setVenues] = useState<Venue[]>([]);
   const [venuesLoading, setVenuesLoading] = useState(true);
   const [selectedVenueId, setSelectedVenueId] = useState<string>(
     initialData?.venueId ? String(initialData.venueId) : ""
   );
   // #100: end time defaults to 20:00 on the same calendar day as the start
-  // (the club's usual end time), re-derived from the start field until the
+  // (the chapter's usual end time), re-derived from the start field until the
   // admin actually edits the end field themselves — an existing event being
   // edited keeps its own stored end time untouched from the start.
   const [endDate, setEndDate] = useState<string>(initialData?.endDate ?? "");
@@ -71,8 +71,8 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
   }
 
   useEffect(() => {
-    actions.getClubs().then(({ data }) => {
-      if (data) setClubs(data);
+    actions.getChapters().then(({ data }) => {
+      if (data) setChapters(data);
     });
     actions.getVenues().then(({ data }) => {
       if (data) setVenues(data);
@@ -82,7 +82,7 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
 
   const isNewVenue = selectedVenueId === NEW_VENUE;
   // #177: the Online chapter never hosts a physical venue.
-  const venueClubs = clubs.filter((c) => c.slug !== ONLINE_CLUB_SLUG);
+  const venueChapters = chapters.filter((c) => c.slug !== ONLINE_CHAPTER_SLUG);
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -199,7 +199,7 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
 
       {isOnline ? (
         <>
-          {/* #177: no Hosting club choice — online events always belong
+          {/* #177: no Hosting chapter choice — online events always belong
               to the Online chapter (set server-side). */}
           <div className="cnf-form__group">
             <label className="cnf-form__label" htmlFor="meeting_url">
@@ -262,12 +262,12 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
           </div>
 
           <div className="cnf-form__group">
-            <label className="cnf-form__label" htmlFor="club_id">
+            <label className="cnf-form__label" htmlFor="chapter_id">
               Chapter *
             </label>
-            <select className="cnf-form__input" id="club_id" name="club_id" required>
+            <select className="cnf-form__input" id="chapter_id" name="chapter_id" required>
               <option value="">Select a chapter</option>
-              {venueClubs.map((c) => (
+              {venueChapters.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
@@ -331,13 +331,13 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
               required
             />
             <small className="cnf-form__hint">
-              {/* #39: the form doesn't yet know which club's page this will land
-                  on (an existing venue's club isn't exposed to the client, and
-                  there's only one real club to preview anyway) — DEFAULT_CLUB_SLUG
+              {/* #39: the form doesn't yet know which chapter's page this will land
+                  on (an existing venue's chapter isn't exposed to the client, and
+                  there's only one real chapter to preview anyway) — DEFAULT_CHAPTER_SLUG
                   is a deliberate placeholder, not a guarantee, until a real
-                  club picker exists here. Online events always land under
+                  chapter picker exists here. Online events always land under
                   the Online chapter (#177), so that one is exact. */}
-              Used in URL: /{isOnline ? ONLINE_CLUB_SLUG : DEFAULT_CLUB_SLUG}/events/my-event-name
+              Used in URL: /{isOnline ? ONLINE_CHAPTER_SLUG : DEFAULT_CHAPTER_SLUG}/events/my-event-name
             </small>
           </>
         ) : (

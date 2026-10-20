@@ -4,7 +4,7 @@ interface SubscribeCalendarLinksProps {
   chapterName: string;
 }
 
-// #80: a quiet line under the events list for subscribing to a club's whole
+// #80: a quiet line under the events list for subscribing to a chapter's whole
 // feed (Meetup puts theirs at the bottom of the calendar too). Both links
 // hand the calendar app a URL to keep re-fetching, not a one-off file. No
 // state, so it renders from Astro with no client directive.

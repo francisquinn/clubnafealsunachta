@@ -1,4 +1,4 @@
-import { createEvent, updateEvent, getClubs, getVenues } from './events';
+import { createEvent, updateEvent, getChapters, getVenues } from './events';
 import { createPost, updatePost } from './posts';
 import { createBook, updateBook } from './books';
 import { createMember } from './members';
@@ -6,14 +6,14 @@ import { signup } from './signup';
 import { changePassword } from './changePassword';
 import { requestPasswordReset, resetPassword } from './passwordReset';
 import { updateUsername } from './updateUsername';
-import { updateClubMemberships } from './clubMembers';
+import { updateChapterMemberships } from './chapterMembers';
 import { getEventRsvps, setEventRsvp } from './rsvps';
 import { uploadAvatar } from './avatar';
 
 export const server = {
   createEvent,
   updateEvent,
-  getClubs,
+  getChapters,
   getVenues,
   createPost,
   updatePost,
@@ -25,7 +25,7 @@ export const server = {
   requestPasswordReset,
   resetPassword,
   updateUsername,
-  updateClubMemberships,
+  updateChapterMemberships,
   getEventRsvps,
   setEventRsvp,
   uploadAvatar,

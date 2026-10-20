@@ -1,11 +1,11 @@
 # #39: legacy un-prefixed event URLs (existing bookmarks/social links) now
-# live under /trieste — the only club that existed before path-based club
+# live under /trieste — the only chapter that existed before path-based chapter
 # routing. Forced (!) so these always redirect rather than falling through
 # to a same-path static file, since none should exist for /events* anymore.
 /events                /trieste/events                301!
 /events/:slug          /trieste/events/:slug          301!
 
-# #177: online events used to be built under every club, with their canonical
+# #177: online events used to be built under every chapter, with their canonical
 # copy at /trieste/events/<slug>/; they now live only under /online. Listed one
 # by one (the 15 online events in production when Online became a chapter, one
 # of them created between the migrations being written and shipped) and

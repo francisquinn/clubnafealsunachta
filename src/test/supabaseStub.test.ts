@@ -4,7 +4,7 @@ import { stubFrom, stubQuery } from "./supabaseStub";
 describe("stubFrom", () => {
   it("throws on a table the test did not configure", () => {
     const from = stubFrom({ members: () => stubQuery(() => ({ data: [] })) });
-    expect(() => from("clubs")).toThrow("unexpected table: clubs");
+    expect(() => from("chapters")).toThrow("unexpected table: chapters");
   });
 });
 

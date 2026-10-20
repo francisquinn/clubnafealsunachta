@@ -3,15 +3,15 @@ export const prerender = false;
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { getCollection } from "astro:content";
 import { supabaseAdmin } from "../../lib/supabase";
-import { requireAdmin, scopeToAdminClubs } from "../../lib/auth";
+import { requireAdmin, scopeToAdminChapters } from "../../lib/auth";
 
-// #40: the events content collection's loader drops club_id (same reason
+// #40: the events content collection's loader drops chapter_id (same reason
 // admin/events.astro queries Supabase directly, see #37) - scope the
-// dashboard's event counts to the caller's own clubs the same way, instead
-// of counting every club's events via getCollection.
+// dashboard's event counts to the caller's own chapters the same way, instead
+// of counting every chapter's events via getCollection.
 const admin = (await requireAdmin(Astro.request))!;
 
-const query = scopeToAdminClubs(supabaseAdmin!.from("events").select("date"), admin, "club_id");
+const query = scopeToAdminChapters(supabaseAdmin!.from("events").select("date"), admin, "chapter_id");
 const { data, error } = await query;
 // Fails to a zero count rather than crashing the whole dashboard on a
 // transient Supabase error - same tradeoff as admin/events.astro.
@@ -24,8 +24,8 @@ const rows = data ?? [];
 const totalEvents = rows.length;
 const upcomingEvents = rows.filter((event) => event.date >= nowIso).length;
 
-// Posts have no club_id at all - they stay global, so this count is
-// deliberately unscoped for every admin, super or club-scoped alike.
+// Posts have no chapter_id at all - they stay global, so this count is
+// deliberately unscoped for every admin, super or chapter-scoped alike.
 const posts = await getCollection("blog");
 
 // Books are global content too, same as posts.

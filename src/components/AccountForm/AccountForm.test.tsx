@@ -6,14 +6,14 @@ import { getCachedMember } from "../../utils/session";
 
 const mockUpdateUsername = vi.fn();
 const mockChangePassword = vi.fn();
-const mockUpdateClubMemberships = vi.fn();
+const mockUpdateChapterMemberships = vi.fn();
 const mockUploadAvatar = vi.fn();
 
 vi.mock("astro:actions", async () =>
   (await import("../../test/astroActions")).mockActions(() => ({
     updateUsername: mockUpdateUsername,
     changePassword: mockChangePassword,
-    updateClubMemberships: mockUpdateClubMemberships,
+    updateChapterMemberships: mockUpdateChapterMemberships,
     uploadAvatar: mockUploadAvatar,
   })),
 );
@@ -22,7 +22,7 @@ const TRESTE = { id: 1, name: "Trieste" };
 const DUBLIN = { id: 2, name: "Dublin" };
 
 function submittedFormData() {
-  return mockUpdateClubMemberships.mock.calls[0]?.[0] as FormData;
+  return mockUpdateChapterMemberships.mock.calls[0]?.[0] as FormData;
 }
 
 function renderForm(overrides: Partial<Parameters<typeof AccountForm>[0]> = {}) {
@@ -33,8 +33,8 @@ function renderForm(overrides: Partial<Parameters<typeof AccountForm>[0]> = {}) 
       initialFullName={null}
       initialDisplayFullName={false}
       initialAvatarUrl={null}
-      clubs={[]}
-      initialClubIds={[]}
+      chapters={[]}
+      initialChapterIds={[]}
       {...overrides}
     />
   );
@@ -44,7 +44,7 @@ describe("AccountForm", () => {
   beforeEach(() => {
     mockUpdateUsername.mockReset();
     mockChangePassword.mockReset();
-    mockUpdateClubMemberships.mockReset();
+    mockUpdateChapterMemberships.mockReset();
     mockUploadAvatar.mockReset();
     localStorage.clear();
   });
@@ -57,8 +57,8 @@ describe("AccountForm", () => {
         initialFullName="Old Name"
         initialDisplayFullName={true}
         initialAvatarUrl={null}
-        clubs={[]}
-        initialClubIds={[]}
+        chapters={[]}
+        initialChapterIds={[]}
       />
     );
     expect(screen.getByLabelText("Username")).toHaveValue("oldname");
@@ -70,13 +70,13 @@ describe("AccountForm", () => {
     expect(screen.getAllByRole("button", { name: /save/i })).toHaveLength(1);
   });
 
-  it("doesn't render a club section when there are no clubs", () => {
-    renderForm({ clubs: [] });
-    expect(screen.queryByText(/club memberships/i)).not.toBeInTheDocument();
+  it("doesn't render a chapter section when there are no chapters", () => {
+    renderForm({ chapters: [] });
+    expect(screen.queryByText(/chapter memberships/i)).not.toBeInTheDocument();
   });
 
-  it("renders a checkbox per club, reflecting current associations on load", () => {
-    renderForm({ clubs: [TRESTE, DUBLIN], initialClubIds: [1] });
+  it("renders a checkbox per chapter, reflecting current associations on load", () => {
+    renderForm({ chapters: [TRESTE, DUBLIN], initialChapterIds: [1] });
 
     expect(screen.getByRole("checkbox", { name: "Trieste" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Dublin" })).not.toBeChecked();
@@ -96,9 +96,9 @@ describe("AccountForm", () => {
     expect(mockUpdateUsername).not.toHaveBeenCalled();
   });
 
-  it("saves the username without touching the password when the password fields are left blank, and skips club settings when there are no clubs", async () => {
+  it("saves the username without touching the password when the password fields are left blank, and skips chapter settings when there are no chapters", async () => {
     mockUpdateUsername.mockResolvedValue({ data: { success: true } });
-    renderForm({ clubs: [] });
+    renderForm({ chapters: [] });
 
     fireEvent.submit(document.querySelector("form")!);
 
@@ -107,7 +107,7 @@ describe("AccountForm", () => {
     });
     expect(mockUpdateUsername).toHaveBeenCalledTimes(1);
     expect(mockChangePassword).not.toHaveBeenCalled();
-    expect(mockUpdateClubMemberships).not.toHaveBeenCalled();
+    expect(mockUpdateChapterMemberships).not.toHaveBeenCalled();
   });
 
   // #70 follow-up: without this, AccountMenu's header avatar would show the
@@ -135,7 +135,7 @@ describe("AccountForm", () => {
 
   it("does not treat an autofilled current-password field alone as a password-change request", async () => {
     mockUpdateUsername.mockResolvedValue({ data: { success: true } });
-    renderForm({ clubs: [] });
+    renderForm({ chapters: [] });
 
     fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "OldPassword1" } });
     fireEvent.submit(document.querySelector("form")!);
@@ -159,14 +159,14 @@ describe("AccountForm", () => {
     });
     expect(mockUpdateUsername).not.toHaveBeenCalled();
     expect(mockChangePassword).not.toHaveBeenCalled();
-    expect(mockUpdateClubMemberships).not.toHaveBeenCalled();
+    expect(mockUpdateChapterMemberships).not.toHaveBeenCalled();
   });
 
-  it("saves username, password, and club settings in one submit", async () => {
+  it("saves username, password, and chapter settings in one submit", async () => {
     mockUpdateUsername.mockResolvedValue({ data: { success: true } });
     mockChangePassword.mockResolvedValue({ data: { success: true } });
-    mockUpdateClubMemberships.mockResolvedValue({ data: { success: true, club_ids: [1, 2] } });
-    renderForm({ clubs: [TRESTE, DUBLIN], initialClubIds: [1] });
+    mockUpdateChapterMemberships.mockResolvedValue({ data: { success: true, chapter_ids: [1, 2] } });
+    renderForm({ chapters: [TRESTE, DUBLIN], initialChapterIds: [1] });
 
     fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "OldPassword1" } });
     fireEvent.change(screen.getByLabelText(/^new password$/i), { target: { value: "NewPassword1" } });
@@ -175,23 +175,23 @@ describe("AccountForm", () => {
     fireEvent.submit(document.querySelector("form")!);
 
     await waitFor(() => {
-      expect(screen.getByText(/your info, password, and club settings have been updated/i)).toBeInTheDocument();
+      expect(screen.getByText(/your info, password, and chapter settings have been updated/i)).toBeInTheDocument();
     });
     expect(mockUpdateUsername).toHaveBeenCalledTimes(1);
     expect(mockChangePassword).toHaveBeenCalledTimes(1);
-    expect(mockUpdateClubMemberships).toHaveBeenCalledTimes(1);
+    expect(mockUpdateChapterMemberships).toHaveBeenCalledTimes(1);
     // all three save together off one shared FormData
-    expect(submittedFormData().getAll("club_id")).toEqual(["1", "2"]);
+    expect(submittedFormData().getAll("chapter_id")).toEqual(["1", "2"]);
   });
 
   // changePassword revokes the old session and re-issues it, so the other
   // actions must only start once it has finished (see AccountForm).
-  it("finishes the password change before saving the username and club settings", async () => {
+  it("finishes the password change before saving the username and chapter settings", async () => {
     let finishPassword!: (value: unknown) => void;
     mockChangePassword.mockReturnValue(new Promise((resolve) => (finishPassword = resolve)));
     mockUpdateUsername.mockResolvedValue({ data: { success: true } });
-    mockUpdateClubMemberships.mockResolvedValue({ data: { success: true, club_ids: [1] } });
-    renderForm({ clubs: [TRESTE], initialClubIds: [1] });
+    mockUpdateChapterMemberships.mockResolvedValue({ data: { success: true, chapter_ids: [1] } });
+    renderForm({ chapters: [TRESTE], initialChapterIds: [1] });
 
     fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "OldPassword1" } });
     fireEvent.change(screen.getByLabelText(/^new password$/i), { target: { value: "NewPassword1" } });
@@ -200,20 +200,20 @@ describe("AccountForm", () => {
 
     await waitFor(() => expect(mockChangePassword).toHaveBeenCalledTimes(1));
     expect(mockUpdateUsername).not.toHaveBeenCalled();
-    expect(mockUpdateClubMemberships).not.toHaveBeenCalled();
+    expect(mockUpdateChapterMemberships).not.toHaveBeenCalled();
 
     finishPassword({ data: { success: true } });
     await waitFor(() => {
-      expect(screen.getByText(/your info, password, and club settings have been updated/i)).toBeInTheDocument();
+      expect(screen.getByText(/your info, password, and chapter settings have been updated/i)).toBeInTheDocument();
     });
     expect(mockUpdateUsername).toHaveBeenCalledTimes(1);
-    expect(mockUpdateClubMemberships).toHaveBeenCalledTimes(1);
+    expect(mockUpdateChapterMemberships).toHaveBeenCalledTimes(1);
   });
 
   it("reports the username as saved and explains the password failure when only the password action errors", async () => {
     mockUpdateUsername.mockResolvedValue({ data: { success: true } });
     mockChangePassword.mockResolvedValue({ error: { message: "Current password is incorrect" } });
-    renderForm({ clubs: [] });
+    renderForm({ chapters: [] });
 
     fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "WrongPassword1" } });
     fireEvent.change(screen.getByLabelText(/^new password$/i), { target: { value: "NewPassword1" } });
@@ -226,11 +226,11 @@ describe("AccountForm", () => {
     expect(screen.getByRole("form")).toBeInTheDocument();
   });
 
-  it("reports info and password as saved and explains the club-settings failure when only that action errors", async () => {
+  it("reports info and password as saved and explains the chapter-settings failure when only that action errors", async () => {
     mockUpdateUsername.mockResolvedValue({ data: { success: true } });
     mockChangePassword.mockResolvedValue({ data: { success: true } });
-    mockUpdateClubMemberships.mockResolvedValue({ error: { message: "One or more selected clubs do not exist" } });
-    renderForm({ clubs: [TRESTE], initialClubIds: [] });
+    mockUpdateChapterMemberships.mockResolvedValue({ error: { message: "One or more selected chapters do not exist" } });
+    renderForm({ chapters: [TRESTE], initialChapterIds: [] });
 
     fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "OldPassword1" } });
     fireEvent.change(screen.getByLabelText(/^new password$/i), { target: { value: "NewPassword1" } });
@@ -239,7 +239,7 @@ describe("AccountForm", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/your info and password have been updated\. club settings unchanged: one or more selected clubs do not exist/i)
+        screen.getByText(/your info and password have been updated\. chapter settings unchanged: one or more selected chapters do not exist/i)
       ).toBeInTheDocument();
     });
   });
@@ -274,8 +274,8 @@ describe("AccountForm", () => {
   it("shows one friendly message instead of the raw size-limit error repeated per field", async () => {
     const tooLarge = { code: "CONTENT_TOO_LARGE", message: "Request body exceeds 1048576 bytes" };
     mockUpdateUsername.mockResolvedValue({ error: tooLarge });
-    mockUpdateClubMemberships.mockResolvedValue({ error: tooLarge });
-    renderForm({ clubs: [TRESTE], initialClubIds: [] });
+    mockUpdateChapterMemberships.mockResolvedValue({ error: tooLarge });
+    renderForm({ chapters: [TRESTE], initialChapterIds: [] });
 
     fireEvent.submit(document.querySelector("form")!);
 

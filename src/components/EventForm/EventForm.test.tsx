@@ -5,14 +5,14 @@ import EventForm from "./EventForm";
 
 const mockCreateEvent = vi.fn();
 const mockUpdateEvent = vi.fn();
-const mockGetClubs = vi.fn();
+const mockGetChapters = vi.fn();
 const mockGetVenues = vi.fn();
 
 vi.mock("astro:actions", async () =>
   (await import("../../test/astroActions")).mockActions(() => ({
     createEvent: mockCreateEvent,
     updateEvent: mockUpdateEvent,
-    getClubs: mockGetClubs,
+    getChapters: mockGetChapters,
     getVenues: mockGetVenues,
   })),
 );
@@ -38,7 +38,7 @@ async function waitForVenuesToLoad() {
 describe("EventForm (create mode)", () => {
   beforeEach(() => {
     mockCreateEvent.mockReset();
-    mockGetClubs.mockResolvedValue({ data: [{ id: 1, name: "Trieste", slug: "trieste" }] });
+    mockGetChapters.mockResolvedValue({ data: [{ id: 1, name: "Trieste", slug: "trieste" }] });
     mockGetVenues.mockResolvedValue({ data: [] });
   });
 
@@ -119,16 +119,16 @@ describe("EventForm (create mode)", () => {
   });
 
   // #177: online events always belong to the Online chapter (set
-  // server-side), so there's no club to pick, and Online never hosts a
+  // server-side), so there's no chapter to pick, and Online never hosts a
   // physical venue.
-  it("has no hosting club field for an online event", () => {
+  it("has no hosting chapter field for an online event", () => {
     render(<EventForm mode="create" />);
     fireEvent.click(screen.getByRole("checkbox", { name: /this event is online/i }));
-    expect(screen.queryByLabelText(/hosting club/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/hosting chapter/i)).not.toBeInTheDocument();
   });
 
-  it("leaves Online out of a new venue's club choices", async () => {
-    mockGetClubs.mockResolvedValue({
+  it("leaves Online out of a new venue's chapter choices", async () => {
+    mockGetChapters.mockResolvedValue({
       data: [
         { id: 1, name: "Trieste", slug: "trieste" },
         { id: 2, name: "Online", slug: "online" },
@@ -137,9 +137,11 @@ describe("EventForm (create mode)", () => {
     render(<EventForm mode="create" />);
     await waitForVenuesToLoad();
     fireEvent.change(screen.getByLabelText(/^venue/i), { target: { value: "__new__" } });
-    const clubSelect = await screen.findByLabelText(/^chapter/i);
-    const options = [...(clubSelect as HTMLSelectElement).options].map((o) => o.textContent);
+    const chapterSelect = await screen.findByLabelText(/^chapter/i);
+    const options = [...(chapterSelect as HTMLSelectElement).options].map((o) => o.textContent);
     expect(options).toEqual(["Select a chapter", "Trieste"]);
+    // resolveVenue reads the new venue's chapter from this field name.
+    expect(chapterSelect).toHaveAttribute("name", "chapter_id");
   });
 
   it("disables submit button while submitting", async () => {
@@ -200,7 +202,7 @@ describe("EventForm (create mode)", () => {
 describe("EventForm (edit mode)", () => {
   beforeEach(() => {
     mockUpdateEvent.mockReset();
-    mockGetClubs.mockResolvedValue({ data: [{ id: 1, name: "Trieste", slug: "trieste" }] });
+    mockGetChapters.mockResolvedValue({ data: [{ id: 1, name: "Trieste", slug: "trieste" }] });
     mockGetVenues.mockResolvedValue({ data: [] });
   });
 
@@ -281,8 +283,8 @@ describe("EventForm (edit mode)", () => {
 
   it("pre-selects the venue matching initialData.venueId", async () => {
     const venues = [
-      { id: 5, name: "The Philosophy Bar", url: null, club_id: 1 },
-      { id: 6, name: "Another Venue", url: null, club_id: 1 },
+      { id: 5, name: "The Philosophy Bar", url: null, chapter_id: 1 },
+      { id: 6, name: "Another Venue", url: null, chapter_id: 1 },
     ];
     mockGetVenues.mockResolvedValue({ data: venues });
     render(<EventForm mode="edit" initialData={{ ...sampleInitialData, venueId: 5 }} />);
@@ -293,7 +295,7 @@ describe("EventForm (edit mode)", () => {
   });
 
   it("does not pre-select a venue when no venueId is provided", async () => {
-    const venues = [{ id: 5, name: "The Philosophy Bar", url: null, club_id: 1 }];
+    const venues = [{ id: 5, name: "The Philosophy Bar", url: null, chapter_id: 1 }];
     mockGetVenues.mockResolvedValue({ data: venues });
     render(<EventForm mode="edit" initialData={sampleInitialData} />);
 

@@ -12,22 +12,22 @@ if (!payload) {
   return Astro.redirect("/");
 }
 
-// Independent lookups — the profile form must keep working even if the club
+// Independent lookups — the profile form must keep working even if the chapter
 // subscription query fails, so each is its own query rather than one
 // Promise.all that would sink all three together.
 const [
   { data: member },
-  { data: clubs },
+  { data: chapters },
   { data: memberships, error: membershipsError },
 ] = await Promise.all([
   supabaseAdmin
     ? supabaseAdmin.from("members").select("username, email, full_name, display_full_name, avatar_url").eq("id", payload.memberId).single()
     : Promise.resolve({ data: null }),
   supabaseAdmin
-    ? supabaseAdmin.from("clubs").select("id, name, slug").order("name")
+    ? supabaseAdmin.from("chapters").select("id, name, slug").order("name")
     : Promise.resolve({ data: null }),
   supabaseAdmin
-    ? supabaseAdmin.from("club_members").select("club_id").eq("member_id", payload.memberId)
+    ? supabaseAdmin.from("chapter_members").select("chapter_id").eq("member_id", payload.memberId)
     : Promise.resolve({ data: null, error: null }),
 ]);
 
@@ -37,10 +37,10 @@ if (!member) {
 
 // A failed memberships lookup must not be treated as "no memberships": that
 // would render every checkbox unchecked, and saving as-is (a full replace
-// sync in updateClubMemberships) would then wipe the member's real
-// association. Hide the club section (clubs={[]} below) instead of guessing
+// sync in updateChapterMemberships) would then wipe the member's real
+// association. Hide the chapter section (chapters={[]} below) instead of guessing
 // at its state — the rest of the form (username/password) still works.
-if (membershipsError) console.error("Failed to load club memberships for profile edit:", membershipsError.message);
+if (membershipsError) console.error("Failed to load chapter memberships for profile edit:", membershipsError.message);
 ---
 
 <BaseLayout pageTitle="Edit info">
@@ -56,8 +56,8 @@ if (membershipsError) console.error("Failed to load club memberships for profile
       initialFullName={member.full_name}
       initialDisplayFullName={member.display_full_name}
       initialAvatarUrl={member.avatar_url}
-      clubs={membershipsError ? [] : (clubs ?? [])}
-      initialClubIds={(memberships ?? []).map((membership) => membership.club_id)}
+      chapters={membershipsError ? [] : (chapters ?? [])}
+      initialChapterIds={(memberships ?? []).map((membership) => membership.chapter_id)}
     />
   </section>
 </BaseLayout>
