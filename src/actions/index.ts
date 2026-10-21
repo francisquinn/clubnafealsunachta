@@ -1,4 +1,4 @@
-import { createEvent, updateEvent, getChapters, getVenues } from './events';
+import { createEvent, updateEvent, getChapters, getVenues, getEventLive } from './events';
 import { createPost, updatePost } from './posts';
 import { createBook, updateBook } from './books';
 import { createMember } from './members';
@@ -15,6 +15,7 @@ export const server = {
   updateEvent,
   getChapters,
   getVenues,
+  getEventLive,
   createPost,
   updatePost,
   createBook,
