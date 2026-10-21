@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-let mockEvents: unknown[] = [];
 const getCollectionMock = vi.hoisted(() => vi.fn());
 vi.mock("astro:content", () => ({ getCollection: getCollectionMock }));
 
-
+let mockEvents: unknown[] = [];
 const event = (slug: string, chapter: string) => ({ data: { slug, location: { slug: chapter } } });
 
 let findMovedEventPath: (path: string) => Promise<string | null>;

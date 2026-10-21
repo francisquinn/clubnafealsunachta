@@ -21,7 +21,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // UNVERIFIED: that middleware runs on Astro's default 404 render on a real
     // Netlify build has not been confirmed (previews are skipped, so it needs a
     // manual check on production after deploy).
-    if (response?.status === 404 && (context.request.method === "GET" || context.request.method === "HEAD")) {
+    if (response.status === 404 && (context.request.method === "GET" || context.request.method === "HEAD")) {
       try {
         const moved = await findMovedEventPath(context.url.pathname);
         if (moved) return context.redirect(moved + context.url.search, 302);
