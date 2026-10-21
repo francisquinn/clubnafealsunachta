@@ -1,4 +1,5 @@
 import { defineAction, ActionError } from 'astro:actions';
+import { z } from 'astro/zod';
 import { supabase, supabaseAdmin } from '../lib/supabase';
 import { sendMailchimpEmail } from '../lib/mailchimp';
 import { requireAdmin, isChapterInScope, scopeToAdminChapters, type AdminScope } from '../lib/auth';
@@ -354,10 +355,9 @@ export const getVenues = defineAction({
 // Scope: only the Join online button, the "Online"/venue link and the
 // calendar links are live. The date/time text on the page stays build-time.
 export const getEventLive = defineAction({
-  handler: async ({ slug }: { slug: string }) => {
-    if (typeof slug !== 'string' || !slug) {
-      throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing event slug' });
-    }
+  // Astro answers a missing or non-string slug with a BAD_REQUEST itself.
+  input: z.object({ slug: z.string().min(1) }),
+  handler: async ({ slug }) => {
     let live;
     try {
       live = await fetchLiveEvent(slug);

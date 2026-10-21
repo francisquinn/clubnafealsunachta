@@ -32,9 +32,12 @@ beforeEach(() => {
 });
 
 describe('getEventLive', () => {
-  it('rejects a missing slug with BAD_REQUEST', async () => {
-    await expect(handler({ slug: '' })).rejects.toMatchObject({ code: 'BAD_REQUEST' });
-    expect(state.calledWith).toBeNull();
+  it('validates the slug at the input boundary', () => {
+    const input = (getEventLive as unknown as { input: { safeParse(v: unknown): { success: boolean } } }).input;
+    expect(input.safeParse({ slug: '' }).success).toBe(false);
+    expect(input.safeParse({ slug: 5 }).success).toBe(false);
+    expect(input.safeParse({}).success).toBe(false);
+    expect(input.safeParse({ slug: 'talk' }).success).toBe(true);
   });
 
   it('returns the live event', async () => {
