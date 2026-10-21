@@ -9,7 +9,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest",
-    "sync-env": "node scripts/sync-env.mjs"
+    "sync-env": "node scripts/sync-env.mjs",
+    "retag-mailchimp": "node scripts/retag-mailchimp-chapters.mjs"
   },
   "dependencies": {
     "@astrojs/netlify": "^6.6.4",
