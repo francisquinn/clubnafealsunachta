@@ -1,13 +1,13 @@
 import type { APIRoute } from "astro";
 import { buildEventIcs, toEventIcsData } from "../../../lib/ics";
-import { getEventClubStaticPaths } from "../../../lib/clubs";
+import { getEventChapterStaticPaths } from "../../../lib/chapters";
 import type { EventCollection } from "../../../types/types";
 
-// Same club/event pairing as [eventSlug].astro's own getStaticPaths — a
-// shared helper (src/lib/clubs.ts) instead of a copy-pasted one, so every
+// Same chapter/event pairing as [eventSlug].astro's own getStaticPaths — a
+// shared helper (src/lib/chapters.ts) instead of a copy-pasted one, so every
 // event page that exists is guaranteed to have a matching .ics file at the
-// same clubSlug/eventSlug pair.
-export const getStaticPaths = getEventClubStaticPaths;
+// same chapterSlug/eventSlug pair.
+export const getStaticPaths = getEventChapterStaticPaths;
 
 // A real same-origin .ics file, not a `data:` URI — WebKit blocks top-level
 // navigation to `data:` URLs (an anti-phishing restriction), which is why

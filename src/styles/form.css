@@ -103,7 +103,7 @@ select.cnf-form__input {
   font-size: 0.875rem;
 }
 
-/* A hint sitting right under a section legend (e.g. "Your clubs") reads as
+/* A hint sitting right under a section legend (e.g. "Your chapters") reads as
    copy for that section, not a field-level note — same size as regular
    text, just grey, matching .cnf-event-page__details-info's date style. */
 legend + .cnf-form__hint {

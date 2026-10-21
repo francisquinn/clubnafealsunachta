@@ -6,7 +6,7 @@ import { supabaseAdmin } from "./supabase";
 import { getAvatarColor, getAvatarLetter } from "./avatarColor";
 import { getDisplayName } from "./memberDisplay";
 import { getAvatarDisplayUrl } from "./avatarTransform";
-import { ONLINE_CLUB_SLUG } from "./clubDefaults";
+import { ONLINE_CHAPTER_SLUG } from "./chapterDefaults";
 
 const scryptAsync = promisify(scrypt);
 
@@ -186,18 +186,18 @@ export async function verifySession(token: string | undefined): Promise<SessionP
 }
 
 // A member's admin scope: a super admin (members.is_admin) manages every
-// club, so clubIds is meaningless for them and left empty - callers must
-// check isSuperAdmin first. A non-super admin's scope is exactly the clubs
-// in club_admins; empty means they hold no admin rights over any club (e.g.
+// chapter, so chapterIds is meaningless for them and left empty - callers must
+// check isSuperAdmin first. A non-super admin's scope is exactly the chapters
+// in chapter_admins; empty means they hold no admin rights over any chapter (e.g.
 // admin status was fully revoked, or - shouldn't happen once #37 ships with
 // no self-serve grant path - a member row with no super-admin flag and no
-// club_admins rows at all).
+// chapter_admins rows at all).
 // onlineUnavailable (#177): the Online chapter lookup failed, so Online is
-// missing from clubIds for now — see getAdminScope.
-export type AdminScope = { memberId: string; isSuperAdmin: boolean; clubIds: number[]; onlineUnavailable?: true };
+// missing from chapterIds for now — see getAdminScope.
+export type AdminScope = { memberId: string; isSuperAdmin: boolean; chapterIds: number[]; onlineUnavailable?: true };
 
 // Resolves a member's full admin scope: super-admin status plus, if not a
-// super admin, the specific clubs they administer via club_admins. The
+// super admin, the specific chapters they administer via chapter_admins. The
 // token's own isAdmin claim is fine for cosmetic reads (e.g. showing/hiding
 // a nav link) but anything that actually GATES access should call this
 // instead: it checks live, so revoking rights takes effect on the very next
@@ -212,7 +212,7 @@ export type AdminScope = { memberId: string; isSuperAdmin: boolean; clubIds: num
 // iat: the same members row also carries sessions_valid_after, so a revoked
 // session resolves to no rights without a second lookup of the same row.
 export async function getAdminScope(memberId: string, session?: { iat?: number }): Promise<AdminScope> {
-  const none = { memberId, isSuperAdmin: false, clubIds: [] };
+  const none = { memberId, isSuperAdmin: false, chapterIds: [] };
   if (!supabaseAdmin) return none;
 
   const { data: member } = await lookupWithRetry(() =>
@@ -221,70 +221,68 @@ export async function getAdminScope(memberId: string, session?: { iat?: number }
   );
   if (!member) return none;
   if (session && isSessionRevoked(session.iat, member.sessions_valid_after)) return none;
-  if (member.is_admin) return { memberId, isSuperAdmin: true, clubIds: [] };
+  if (member.is_admin) return { memberId, isSuperAdmin: true, chapterIds: [] };
 
-  const { data: clubAdmins } = await lookupWithRetry(() =>
-    supabaseAdmin!.from("club_admins").select("club_id").eq("member_id", memberId),
-    "getAdminScope club_admins",
+  const { data: chapterAdmins } = await lookupWithRetry(() =>
+    supabaseAdmin!.from("chapter_admins").select("chapter_id").eq("member_id", memberId),
+    "getAdminScope chapter_admins",
   );
-  const clubIds = (clubAdmins ?? []).map((row) => row.club_id);
-  if (clubIds.length === 0) return { memberId, isSuperAdmin: false, clubIds };
+  const chapterIds = (chapterAdmins ?? []).map((row) => row.chapter_id);
+  if (chapterIds.length === 0) return { memberId, isSuperAdmin: false, chapterIds };
 
-  // #177: every club admin can run online events, so the Online chapter is
-  // in every club admin's scope without needing its own club_admins row. A
+  // #177: every chapter admin can run online events, so the Online chapter is
+  // in every chapter admin's scope without needing its own chapter_admins row. A
   // failed lookup leaves Online out but flags it (onlineUnavailable), so the
   // event actions can report the real error instead of a baffling "not an
-  // admin of that club", while the rest of admin keeps working. A missing row
+  // admin of that chapter", while the rest of admin keeps working. A missing row
   // (migration not run yet) just leaves it out.
-  const { data: onlineClub, error: onlineClubError } = await lookupWithRetry(() =>
-    supabaseAdmin!.from("clubs").select("id").eq("slug", ONLINE_CLUB_SLUG).maybeSingle(),
-    "getAdminScope online club",
+  const { data: onlineChapter, error: onlineChapterError } = await lookupWithRetry(() =>
+    supabaseAdmin!.from("chapters").select("id").eq("slug", ONLINE_CHAPTER_SLUG).maybeSingle(),
+    "getAdminScope online chapter",
   );
-  if (onlineClubError) return { memberId, isSuperAdmin: false, clubIds, onlineUnavailable: true };
-  if (onlineClub && !clubIds.includes(onlineClub.id)) clubIds.push(onlineClub.id);
-  return { memberId, isSuperAdmin: false, clubIds };
+  if (onlineChapterError) return { memberId, isSuperAdmin: false, chapterIds, onlineUnavailable: true };
+  if (onlineChapter && !chapterIds.includes(onlineChapter.id)) chapterIds.push(onlineChapter.id);
+  return { memberId, isSuperAdmin: false, chapterIds };
 }
 
 // Single admin-gate check shared by middleware and every admin-only action.
 // Extracts and verifies the session cookie, then resolves the caller's full
-// admin scope (super admin, or the specific clubs they administer) live via
+// admin scope (super admin, or the specific chapters they administer) live via
 // getAdminScope. Returns the scope when authorized (super admin, or admin of
-// at least one club), null otherwise - callers decide how to respond
-// (redirect vs. throw ActionError). Actions that need to enforce per-club
+// at least one chapter), null otherwise - callers decide how to respond
+// (redirect vs. throw ActionError). Actions that need to enforce per-chapter
 // scoping (not just "is this member an admin at all") should read
-// isSuperAdmin/clubIds off the returned scope directly.
+// isSuperAdmin/chapterIds off the returned scope directly.
 export async function requireAdmin(request: Request): Promise<AdminScope | null> {
   const token = getSessionToken(request);
   const payload = token ? verifySessionToken(token) : null;
   if (!payload) return null;
 
   const scope = await getAdminScope(payload.memberId, payload);
-  if (!scope.isSuperAdmin && scope.clubIds.length === 0) return null;
+  if (!scope.isSuperAdmin && scope.chapterIds.length === 0) return null;
   return scope;
 }
 
-// A non-super admin may only touch clubs they administer - a null club_id
-// (genuinely cross-chapter/global, see #36) is out of scope for them too,
-// since it isn't any specific club they administer. Shared by every place
-// that gates access to one specific club (an existing venue/event's club, a
-// submitted event_club_id/new-venue club_id, an event about to be viewed or
+// A non-super admin may only touch chapters they administer. Shared by every place
+// that gates access to one specific chapter (an existing venue/event's chapter, a
+// submitted event_chapter_id/new-venue chapter_id, an event about to be viewed or
 // edited) so the rule can't drift between call sites. A plain predicate
 // rather than a throw - callers fail however fits their context (an
 // ActionError in a server action, a redirect on an Astro page).
-export function isClubInScope(admin: AdminScope, club_id: number | null): boolean {
-  return admin.isSuperAdmin || (club_id !== null && admin.clubIds.includes(club_id));
+export function isChapterInScope(admin: AdminScope, chapter_id: number): boolean {
+  return admin.isSuperAdmin || admin.chapterIds.includes(chapter_id);
 }
 
 // Narrows any Supabase query builder to a super admin's full access, or a
-// club-scoped admin's own clubs via the given column - the one "scope this
-// list to the caller's clubs" shape shared by getClubs/getVenues/the admin
+// chapter-scoped admin's own chapters via the given column - the one "scope this
+// list to the caller's chapters" shape shared by getChapters/getVenues/the admin
 // events list, instead of each repeating the isSuperAdmin branch itself.
 // Q is left unconstrained (not `Q extends {in(...): Q}`) and the `.in` call
 // is asserted locally instead - constraining Q directly against Supabase's
 // real builder type sends TS's inference into an infinite loop (ts(2589)).
-export function scopeToAdminClubs<Q>(query: Q, admin: AdminScope, column: string): Q {
+export function scopeToAdminChapters<Q>(query: Q, admin: AdminScope, column: string): Q {
   if (admin.isSuperAdmin) return query;
-  return (query as unknown as { in(column: string, values: number[]): Q }).in(column, admin.clubIds);
+  return (query as unknown as { in(column: string, values: number[]): Q }).in(column, admin.chapterIds);
 }
 
 // Safari (unlike Chrome) refuses to store cookies marked Secure over plain HTTP,

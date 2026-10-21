@@ -2,7 +2,7 @@ import type { Loader } from 'astro/loaders';
 import { supabaseAdmin } from '../lib/supabase';
 import { shouldSkipContentFetch } from './skipFetch';
 import { unwrapRelation } from '../lib/supabaseRelations';
-import { getAllClubs } from '../lib/clubs';
+import { getAllChapters } from '../lib/chapters';
 import { isRsvpStatus, type RsvpCounts } from '../lib/rsvpTypes';
 
 export function eventsLoader(): Loader {
@@ -20,12 +20,12 @@ export function eventsLoader(): Loader {
 
       store.clear();
 
-      const [eventsResult, clubs, rsvpsResult] = await Promise.all([
+      const [eventsResult, chapters, rsvpsResult] = await Promise.all([
         supabaseAdmin
           .from('events')
           .select('*, venues(name, url), members!events_created_by_fkey(id, username, full_name, display_full_name, avatar_url)')
           .order('date', { ascending: true }),
-        getAllClubs(),
+        getAllChapters(),
         supabaseAdmin.from('rsvps').select('event_id, status'),
       ]);
 
@@ -51,23 +51,24 @@ export function eventsLoader(): Loader {
         }
       }
 
-      const clubsMap = new Map(clubs.map((c) => [c.id, c]));
+      const chaptersMap = new Map(chapters.map((c) => [c.id, c]));
 
       for (const event of eventsResult.data || []) {
         const venue = unwrapRelation(event.venues);
-        // #39: events.club_id is the single source of truth for "which club
-        // is this event under" — set from the venue's own club for in-person
+        // #39: events.chapter_id is the single source of truth for "which chapter
+        // is this event under" — set from the venue's own chapter for in-person
         // events and from an explicit form field for online ones (see
-        // resolveEventClubId in src/actions/events.ts), null meaning
-        // genuinely cross-chapter/global. No need to derive it from the
-        // venue relation separately.
-        //
-        // #177: online events belong to the Online club like any other
-        // event belongs to its club — the #60 stopgap that forced them to
-        // null (shown under every chapter) is gone.
-        const location = event.club_id ? clubsMap.get(event.club_id) ?? null : null;
+        // resolveEventChapterId in src/actions/events.ts). No need to derive it
+        // from the venue relation separately. #177: every event has one
+        // (online events belong to the Online chapter, events.chapter_id is NOT
+        // NULL).
+        const location = chaptersMap.get(event.chapter_id);
         const creator = unwrapRelation(event.members);
 
+        if (!location) {
+          console.error(`Skipping event "${event.slug}": no matching chapter for chapter_id ${event.chapter_id}`);
+          continue;
+        }
         if (!creator) {
           console.error(`Skipping event "${event.slug}": no matching member for created_by ${event.created_by}`);
           continue;

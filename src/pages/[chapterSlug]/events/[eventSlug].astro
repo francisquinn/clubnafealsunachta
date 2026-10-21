@@ -10,26 +10,15 @@ import JoinEventButton from "../../../components/JoinEventButton/JoinEventButton
 import AddToCalendarButton from "../../../components/AddToCalendarButton/AddToCalendarButton";
 import { getDisplayName } from "../../../lib/memberDisplay";
 import Avatar from "../../../components/Avatar/Avatar.astro";
-import { getEventClubStaticPaths } from "../../../lib/clubs";
-import { DEFAULT_CLUB_SLUG } from "../../../lib/clubDefaults";
+import { getEventChapterStaticPaths } from "../../../lib/chapters";
 import { getTagLabel, normalizeTags } from "../../../lib/eventTags";
 
-// #39: an event with a club gets exactly one URL, under that club's prefix. A
-// genuinely cross-chapter event (location null) has no club of its own, so —
-// matching the "visible everywhere" call on the list page — it gets one URL
-// per existing club instead of a single fixed one. Shared with
+// #39: every event gets exactly one URL, under its chapter's prefix. Shared with
 // [eventSlug].ics.ts so the two routes can't drift out of lockstep.
-export const getStaticPaths = getEventClubStaticPaths;
+export const getStaticPaths = getEventChapterStaticPaths;
 
 const { event } = Astro.props;
-const { clubSlug } = Astro.params;
-// A cross-chapter event is duplicated across every club's URL space — give
-// them all ONE shared canonical (the default club's copy) instead of each
-// page self-referencing, which would otherwise be duplicate-content SEO-wise
-// the moment a second club exists.
-const canonicalPath = event.data.location
-  ? undefined
-  : `/${DEFAULT_CLUB_SLUG}/events/${event.data.slug}/`;
+const { chapterSlug } = Astro.params;
 
 // #28/#76: an "Add to calendar" dropdown for upcoming events (Google Calendar
 // / Apple Calendar), built at build time from the same normalized event data
@@ -45,7 +34,7 @@ const canonicalPath = event.data.location
 // events get no button.
 const isCalendarVisible = !isEventExpired(event.data);
 const icsEventData = toEventIcsData(event);
-const icsHref = `/${clubSlug}/events/${event.data.slug}.ics`;
+const icsHref = `/${chapterSlug}/events/${event.data.slug}.ics`;
 const icsFilename = `${event.data.slug}.ics`;
 const googleCalendarUrl = buildGoogleCalendarUrl(icsEventData);
 // Normalized so tags always show alphabetically, and ones off the fixed list
@@ -56,7 +45,6 @@ const tagLabels = normalizeTags(event.data.tags ?? []).flatMap((slug) => getTagL
 <BaseLayout
   pageTitle={event.data.name}
   description={event.data.description ?? `Join Club na Fealsúnachta for ${event.data.name}.`}
-  canonicalPath={canonicalPath}
 >
   <section class="cnf-section">
     <h1>{event.data.name}</h1>

@@ -1,26 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Dropdown from "../Dropdown/Dropdown";
-import { DEFAULT_CLUB_SLUG } from "../../lib/clubDefaults";
+import { DEFAULT_CHAPTER_SLUG } from "../../lib/chapterDefaults";
 
 interface NavMenuProps {
   pathname: string;
 }
 
-// #39: matches /[clubSlug]/events or /[clubSlug]/events/... — the `(\/|$)`
+// #39: matches /[chapterSlug]/events or /[chapterSlug]/events/... — the `(\/|$)`
 // requires "events" to be a whole path segment, not just a prefix, so it
 // doesn't false-positive on e.g. a user-generated /profile/eventsguy.
-const CLUB_EVENTS_PATH = /^\/([^/]+)\/events(\/|$)/;
+const CHAPTER_EVENTS_PATH = /^\/([^/]+)\/events(\/|$)/;
 
 // Must match the max-width of the overlay's media query in nav.css.
 const OVERLAY_QUERY = "(max-width: 575.98px)";
 
 export default function NavMenu({ pathname }: NavMenuProps) {
   const toggleRef = useRef<HTMLButtonElement>(null);
-  // Only the events pages are club-prefixed (About/Blog stay global), so
-  // "current club" only means anything while already on one; elsewhere
-  // (home, blog, about, profile) there's no club in the URL to read, so the
-  // Events link falls back to the one club that exists today.
-  const currentClubSlug = pathname.match(CLUB_EVENTS_PATH)?.[1] ?? DEFAULT_CLUB_SLUG;
+  // Only the events pages are chapter-prefixed (About/Blog stay global), so
+  // "current chapter" only means anything while already on one; elsewhere
+  // (home, blog, about, profile) there's no chapter in the URL to read, so the
+  // Events link falls back to the one chapter that exists today.
+  const currentChapterSlug = pathname.match(CHAPTER_EVENTS_PATH)?.[1] ?? DEFAULT_CHAPTER_SLUG;
   const [isOpen, setIsOpen] = useState(false);
   const handleOpenChange = useCallback((open: boolean) => setIsOpen(open), []);
 
@@ -70,8 +70,8 @@ export default function NavMenu({ pathname }: NavMenuProps) {
             Values
           </a>
           <a
-            className={`cnf-nav__link ${CLUB_EVENTS_PATH.test(pathname) ? "tab-active" : ""}`}
-            href={`/${currentClubSlug}/events/`}
+            className={`cnf-nav__link ${CHAPTER_EVENTS_PATH.test(pathname) ? "tab-active" : ""}`}
+            href={`/${currentChapterSlug}/events/`}
           >
             Events
           </a>

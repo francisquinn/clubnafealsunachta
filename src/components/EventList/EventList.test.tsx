@@ -27,7 +27,7 @@ vi.mock("../../styles/event.css", () => ({}));
 // `data` is typed as the real `Event` shape (not the loosely-cast wrapper
 // below) so a future field added there — like the #39 `location.slug` — is
 // enforced here too, instead of being silently absent from these fixtures.
-// Every fixture's endDate trails its date by 1.5h (the club's usual event
+// Every fixture's endDate trails its date by 1.5h (the chapter's usual event
 // length, #100) — irrelevant to what these tests check, just keeps
 // isEventExpired's past/future outcome matching the intended date.
 function endDateFor(date: Date): Date {
@@ -57,7 +57,7 @@ function makeOnlineEvent(name: string, date: Date): EventCollection {
     name,
     date,
     endDate: endDateFor(date),
-    location: null,
+    location: { id: 2, name: "Online", slug: "online" },
     isOnline: true,
     venue: null,
     slug: name.toLowerCase().replace(/ /g, "-"),
@@ -76,13 +76,13 @@ const pastDate1 = new Date("2020-01-01");
 const pastDate2 = new Date("2021-06-01");
 const pastDate3 = new Date("2019-03-01");
 
-const CLUBS = [
+const CHAPTERS = [
   { name: "Trieste", slug: "trieste" },
   { name: "Online", slug: "online" },
 ];
 
-function renderList(events: EventCollection[], clubSlug = "trieste") {
-  return render(<EventList events={events} clubSlug={clubSlug} clubs={CLUBS} />);
+function renderList(events: EventCollection[], chapterSlug = "trieste") {
+  return render(<EventList events={events} chapterSlug={chapterSlug} chapters={CHAPTERS} />);
 }
 
 describe("EventList", () => {
@@ -164,8 +164,8 @@ describe("EventList", () => {
       render(
         <EventList
           events={[]}
-          clubSlug="trieste"
-          clubs={[{ name: "Trieste", slug: "trieste" }, { name: "Trieste", slug: "trieste-2" }]}
+          chapterSlug="trieste"
+          chapters={[{ name: "Trieste", slug: "trieste" }, { name: "Trieste", slug: "trieste-2" }]}
         />
       );
       const picker = screen.getByRole("combobox") as HTMLSelectElement;

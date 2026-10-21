@@ -2,20 +2,20 @@
 export const prerender = false;
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { supabaseAdmin } from "../../lib/supabase";
-import { requireAdmin, scopeToAdminClubs } from "../../lib/auth";
+import { requireAdmin, scopeToAdminChapters } from "../../lib/auth";
 import { unwrapRelation } from "../../lib/supabaseRelations";
 import { formatBlogDate } from "../../utils/script";
-import { DEFAULT_CLUB_TIMEZONE } from "../../lib/clubDefaults";
+import { DEFAULT_CHAPTER_TIMEZONE } from "../../lib/chapterDefaults";
 
-// #37: scoped to the caller's clubs, so this can no longer read from the
-// events content collection (its loader drops club_id) - queries Supabase
+// #37: scoped to the caller's chapters, so this can no longer read from the
+// events content collection (its loader drops chapter_id) - queries Supabase
 // directly instead, same pattern as the edit page.
 const admin = (await requireAdmin(Astro.request))!;
 
-const query = scopeToAdminClubs(
-  supabaseAdmin!.from("events").select("name, date, slug, is_online, club_id, venues(name)").order("date", { ascending: false }),
+const query = scopeToAdminChapters(
+  supabaseAdmin!.from("events").select("name, date, slug, is_online, chapter_id, venues(name)").order("date", { ascending: false }),
   admin,
-  "club_id"
+  "chapter_id"
 );
 const { data, error } = await query;
 // Fails to an empty list rather than crashing the whole admin dashboard on a
@@ -51,7 +51,7 @@ const sorted = (data ?? []).map((event) => ({
         {sorted.map((event) => (
           <tr>
             <td data-label="Name">{event.name}</td>
-            <td data-label="Date">{formatBlogDate(event.date, DEFAULT_CLUB_TIMEZONE)}</td>
+            <td data-label="Date">{formatBlogDate(event.date, DEFAULT_CHAPTER_TIMEZONE)}</td>
             <td data-label="Location">{event.is_online ? "Online" : event.venue?.name ?? "—"}</td>
             <td><a href={`/admin/events/${event.slug}/edit`}>Edit</a></td>
           </tr>

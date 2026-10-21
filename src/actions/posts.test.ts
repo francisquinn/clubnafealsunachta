@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // touches the network.
 const state = vi.hoisted(() => {
   return {
-    admin: null as { memberId: string; isSuperAdmin: boolean; clubIds: number[] } | null,
+    admin: null as { memberId: string; isSuperAdmin: boolean; chapterIds: number[] } | null,
     // posts insert (createPost) - captured rows + error
     insertedPost: null as Record<string, unknown> | null,
     postInsertError: null as Error | null,
@@ -98,7 +98,7 @@ const updateAction = updatePost as unknown as {
   handler: (formData: FormData, context: { request: Request }) => Promise<{ success: boolean }>;
 };
 
-const SUPER_ADMIN = { memberId: 'admin-1', isSuperAdmin: true, clubIds: [] };
+const SUPER_ADMIN = { memberId: 'admin-1', isSuperAdmin: true, chapterIds: [] };
 
 function makeContext() {
   return { request: new Request('https://example.com/actions', { method: 'POST' }) };

@@ -32,7 +32,7 @@ const event = defineCollection({
       id: z.number(),
       name: z.string(),
       slug: z.string(),
-    }).nullable(),
+    }),
     isOnline: z.boolean(),
     venue: z.object({
       name: z.string().nullable(),

@@ -8,7 +8,7 @@
   border-radius: 50px;
 }
 
-/* Small tinted pill for a label (event tags, club membership) — same green
+/* Small tinted pill for a label (event tags, chapter membership) — same green
    tint as the active nav link. */
 .cnf-badge {
   display: inline-block;

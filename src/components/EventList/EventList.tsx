@@ -5,14 +5,14 @@ import EventCard from "../../layouts/EventCard";
 import { formatBlogDate } from "../../utils/script";
 import Selector from "../Selector/Selector";
 import type { EventCollection } from "../../types/types";
-import { DEFAULT_CLUB_TIMEZONE } from "../../lib/clubDefaults";
+import { DEFAULT_CHAPTER_TIMEZONE } from "../../lib/chapterDefaults";
 
 export default function EventList(props: EventListProps) {
   const [showUpcoming, setShowUpcoming] = useState<boolean>(true);
-  // #177: each [clubSlug]/events page already holds just that chapter's
+  // #177: each [chapterSlug]/events page already holds just that chapter's
   // events (Online included, now that it's a chapter), so there's nothing
   // to filter here — the picker switches chapter by going to its page.
-  const currentClub = props.clubs.find((club) => club.slug === props.clubSlug);
+  const currentChapter = props.chapters.find((chapter) => chapter.slug === props.chapterSlug);
   const locationEvents = props.events;
 
   const upcomingEvents = locationEvents.filter(
@@ -22,14 +22,14 @@ export default function EventList(props: EventListProps) {
     .filter((event) => isEventExpired(event.data))
     .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 
-  function renderClubSelector(): JSX.Element {
+  function renderChapterSelector(): JSX.Element {
     return (
       <Selector
         label="Select a chapter"
-        options={props.clubs.map((club) => ({ value: club.slug, label: club.name }))}
-        value={currentClub?.slug ?? ""}
+        options={props.chapters.map((chapter) => ({ value: chapter.slug, label: chapter.name }))}
+        value={currentChapter?.slug ?? ""}
         onChange={(slug) => {
-          if (slug !== props.clubSlug) {
+          if (slug !== props.chapterSlug) {
             window.location.assign(`/${slug}/events/`);
           }
         }}
@@ -62,12 +62,12 @@ export default function EventList(props: EventListProps) {
     if (showUpcoming) {
       return <div className="cnf-events--grid">
         {upcomingEvents.length > 0
-          ? upcomingEvents.map((event) => <UpcomingEvent events={[event.data]} clubSlug={props.clubSlug} key={event.data.slug} />)
+          ? upcomingEvents.map((event) => <UpcomingEvent events={[event.data]} key={event.data.slug} />)
           : <p>No upcoming events at the moment. Stay tuned for further updates!</p>}
       </div>;
     }
     return <div className="cnf-events--grid">
-      {pastEvents.length > 0 ? renderPastEvents() : <p>No past events in {currentClub?.name ?? "this chapter"}.</p>}
+      {pastEvents.length > 0 ? renderPastEvents() : <p>No past events in {currentChapter?.name ?? "this chapter"}.</p>}
     </div>;
   }
 
@@ -77,15 +77,14 @@ export default function EventList(props: EventListProps) {
         <EventCard
           event={event.data}
           key={event.data.slug}
-          dateFormatter={(date) => formatBlogDate(date, DEFAULT_CLUB_TIMEZONE)}
-          clubSlug={props.clubSlug}
+          dateFormatter={(date) => formatBlogDate(date, DEFAULT_CHAPTER_TIMEZONE)}
         />
     );
   }
 
   return (
     <>
-      {renderClubSelector()}
+      {renderChapterSelector()}
       {renderNavigation()}
       {renderEvents()}
     </>
@@ -94,6 +93,6 @@ export default function EventList(props: EventListProps) {
 
 type EventListProps = {
   events: EventCollection[];
-  clubSlug: string;
-  clubs: { name: string; slug: string }[];
+  chapterSlug: string;
+  chapters: { name: string; slug: string }[];
 };
