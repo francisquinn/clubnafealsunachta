@@ -1,13 +1,6 @@
-import type { Event } from "../../types/types";
-import { isEventExpired } from "../../utils/script";
-
-export default function JoinEventButton({ event }: JoinEventButtonProps) {
-  const { isOnline, meetingUrl } = event;
-
-  if (!isOnline || !meetingUrl || isEventExpired(event)) {
-    return null;
-  }
-
+// Presentational: EventLiveActions decides whether (and with which link) to
+// show it, from live data with a build-time fallback (#197).
+export default function JoinEventButton({ meetingUrl }: { meetingUrl: string }) {
   return (
     <a
       href={meetingUrl}
@@ -19,7 +12,3 @@ export default function JoinEventButton({ event }: JoinEventButtonProps) {
     </a>
   );
 }
-
-type JoinEventButtonProps = {
-  event: Event;
-};

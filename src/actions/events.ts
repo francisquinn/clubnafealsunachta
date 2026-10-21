@@ -1,8 +1,10 @@
 import { defineAction, ActionError } from 'astro:actions';
+import { z } from 'astro/zod';
 import { supabase, supabaseAdmin } from '../lib/supabase';
 import { sendMailchimpEmail } from '../lib/mailchimp';
 import { requireAdmin, isChapterInScope, scopeToAdminChapters, type AdminScope } from '../lib/auth';
 import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
+import { fetchLiveEvent } from '../lib/liveEvent';
 import { DEFAULT_CHAPTER_TIMEZONE, ONLINE_CHAPTER_SLUG } from '../lib/chapterDefaults';
 import { localWallTimeToUtc } from '../lib/timezone';
 import { resolveUniqueSlug } from '../lib/slugDedup';
@@ -346,4 +348,25 @@ export const getVenues = defineAction({
     if (error) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
     return data ?? [];
   }
+});
+
+// #197: fresh schedule/meeting-link/calendar inputs for the prerendered event
+// page's islands to swap in on hydration (same idea as getEventRsvps).
+// Scope: only the Join online button, the "Online"/venue link and the
+// calendar links are live. The date/time text on the page stays build-time.
+export const getEventLive = defineAction({
+  // Astro answers a missing or non-string slug with a BAD_REQUEST itself.
+  input: z.object({ slug: z.string().min(1) }),
+  handler: async ({ slug }) => {
+    let live;
+    try {
+      live = await fetchLiveEvent(slug);
+    } catch {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Could not load event' });
+    }
+    // NOT_FOUND (not BAD_REQUEST) so the page's islands can tell "event was
+    // deleted since the build" from a transient failure and hide themselves.
+    if (!live) throw new ActionError({ code: 'NOT_FOUND', message: 'Event not found' });
+    return live;
+  },
 });
