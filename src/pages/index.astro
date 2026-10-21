@@ -2,8 +2,10 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Hero from "../components/Hero.astro";
 import UpcomingEvent from "../components/UpcomingEvent";
+import SeeAllEventsLink from "../components/SeeAllEventsLink/SeeAllEventsLink";
 import LatestPost from "../components/LatestPost.astro";
 import { getCollection } from "astro:content";
+import { getAllChapters } from "../lib/chapters";
 import type { EventCollection } from "../types/types";
 
 const events = (await getCollection("event")) as EventCollection[];
@@ -15,6 +17,10 @@ const allEvents = sorted
   .slice(Math.max(0, lastPastIndex), lastPastIndex + 3)
   .map((e) => e.data);
 
+// #194: only a still-existing chapter may be linked to (a stale stored slug
+// would 404). getAllChapters is memoized per build.
+const chapterSlugs = (await getAllChapters()).map((c) => c.slug);
+
 const pageTitle = "Home";
 const description = "A philosophy discussion club meeting in Trieste, Italy.";
 ---
@@ -24,7 +30,7 @@ const description = "A philosophy discussion club meeting in Trieste, Italy.";
   <section class="cnf-section">
     <div class="cnf-section__header">
       <h2>Upcoming events</h2>
-      <a href="/trieste/events">See all events</a>
+      <SeeAllEventsLink chapterSlugs={chapterSlugs} client:load />
     </div>
     <UpcomingEvent events={allEvents} responsive={true} client:load />
   </section>

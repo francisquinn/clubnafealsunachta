@@ -86,6 +86,12 @@ function renderList(events: EventCollection[], chapterSlug = "trieste") {
 }
 
 describe("EventList", () => {
+  it("remembers the viewed chapter for the home page link (#194)", () => {
+    localStorage.clear();
+    renderList([], "online");
+    expect(localStorage.getItem("cnf-chosen-chapter")).toBe("online");
+  });
+
   describe("upcoming events", () => {
     it("renders all upcoming events", () => {
       const events = [

@@ -1,10 +1,11 @@
-import { useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import UpcomingEvent from "../UpcomingEvent";
 import { isEventExpired } from "../../utils/script";
 import EventCard from "../../layouts/EventCard";
 import { formatBlogDate } from "../../utils/script";
 import Selector from "../Selector/Selector";
 import type { EventCollection } from "../../types/types";
+import { setChosenChapter } from "../../utils/chapterChoice";
 import { DEFAULT_CHAPTER_TIMEZONE } from "../../lib/chapterDefaults";
 
 export default function EventList(props: EventListProps) {
@@ -12,6 +13,8 @@ export default function EventList(props: EventListProps) {
   // #177: each [chapterSlug]/events page already holds just that chapter's
   // events (Online included, now that it's a chapter), so there's nothing
   // to filter here — the picker switches chapter by going to its page.
+  // #194: remember the chapter being viewed so the home page links back to it.
+  useEffect(() => setChosenChapter(props.chapterSlug), [props.chapterSlug]);
   const currentChapter = props.chapters.find((chapter) => chapter.slug === props.chapterSlug);
   const locationEvents = props.events;
 
