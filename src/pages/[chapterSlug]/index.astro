@@ -4,7 +4,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import "../../styles/event.css";
 import UpcomingEvent from "../../components/UpcomingEvent";
 import JoinChapterButton from "../../components/JoinChapterButton/JoinChapterButton";
-import SubscribeCalendarLinks from "../../components/SubscribeCalendarLinks/SubscribeCalendarLinks";
 import { getChapterEventsStaticPaths } from "../../lib/chapters";
 import { getChapterContent } from "../../lib/chapterContent";
 
@@ -16,35 +15,58 @@ const { chapterSlug } = Astro.params;
 const { chapter, events } = Astro.props;
 const { description, photo, meeting, chatUrl, whatToExpect, social } = getChapterContent(chapterSlug!);
 const chapterEvents = events.map((e) => e.data);
-// Absolute, since calendar apps fetch the feed from outside the site.
-const feedUrl = new URL(`/${chapterSlug}/events.ics`, Astro.site).href;
 ---
 
 <style>
   .cnf-chapter-page__photo {
-    aspect-ratio: 3 / 2;
+    aspect-ratio: 16 / 9;
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow-card);
     display: block;
-    margin-bottom: 1.5rem;
-    max-width: 720px;
+    margin: 1.5rem 0;
     object-fit: cover;
     width: 100%;
   }
 
+  .cnf-chapter-page__actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+  }
+
+  .cnf-chapter-page__description {
+    margin: 0 0 1.5rem;
+    max-width: 720px;
+  }
+
   .cnf-chapter-page__meeting {
-    margin: 0;
+    display: grid;
+    gap: 1rem 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    margin: 0 0 1.5rem;
+    max-width: 720px;
   }
 
   .cnf-chapter-page__meeting dt {
-    font-weight: 600;
+    color: hsl(var(--color-grey));
+    font-size: 0.875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .cnf-chapter-page__meeting dd {
-    margin: 0 0 0.75rem;
+    color: hsl(var(--color-green));
+    font-size: 1.125rem;
+    margin: 0.25rem 0 0;
+  }
+
+  .cnf-chapter-page__meeting > div {
+    min-width: 0;
   }
 
   .cnf-chapter-page__expect {
+    list-style-type: disc;
     margin: 0;
     max-width: 720px;
     padding-left: 1.25rem;
@@ -52,6 +74,10 @@ const feedUrl = new URL(`/${chapterSlug}/events.ics`, Astro.site).href;
 
   .cnf-chapter-page__expect li {
     margin-bottom: 0.5rem;
+  }
+
+  .cnf-chapter-page__expect li::marker {
+    color: hsl(var(--color-green));
   }
 
   .cnf-chapter-page__social {
@@ -63,10 +89,6 @@ const feedUrl = new URL(`/${chapterSlug}/events.ics`, Astro.site).href;
   .cnf-chapter-page__social-icon {
     height: 30px;
     width: 30px;
-  }
-
-  .cnf-chapter-page__join {
-    margin-top: 1.5rem;
   }
 
   .cnf-chapter-page__chat {
@@ -81,33 +103,48 @@ const feedUrl = new URL(`/${chapterSlug}/events.ics`, Astro.site).href;
   }
 </style>
 
-<BaseLayout pageTitle={chapter.name} description={description}>
+<BaseLayout pageTitle={chapter.name} description={description} activeNav="chapters">
   <section class="cnf-section">
     <h1>{chapter.name}</h1>
-    <img class="cnf-chapter-page__photo" src={photo} alt="" />
-  </section>
-  <section class="cnf-section">
+    <p class="cnf-chapter-page__description">{description}</p>
     {
       meeting && (
         <dl class="cnf-chapter-page__meeting">
-          <dt>When</dt>
-          <dd>{meeting.when}</dd>
-          <dt>Where</dt>
-          <dd><a href={meeting.whereUrl} target="_blank">{meeting.where}</a></dd>
+          <div>
+            <dt>When</dt>
+            <dd>{meeting.when}</dd>
+          </div>
+          <div>
+            <dt>Where</dt>
+            <dd>
+              <a class="cnf-event-page__details-link" href={meeting.whereUrl} target="_blank">
+                <img src="/map-pin.svg" alt="" />
+                {meeting.where}
+              </a>
+            </dd>
+          </div>
         </dl>
       )
     }
-    {
-      chatUrl && (
-        <a class="cnf-chapter-page__chat" href={chatUrl} target="_blank" rel="noopener">
-          <img class="cnf-chapter-page__chat-icon" src="/whatsapp.svg" alt="" />
-          Join the WhatsApp group
-        </a>
-      )
-    }
-    <div class="cnf-chapter-page__join">
-      <JoinChapterButton chapterId={chapter.id} chapterName={chapter.name} client:load />
+    <div class="cnf-chapter-page__actions">
+      <JoinChapterButton chapterId={chapter.id} client:load />
+      {
+        chatUrl && (
+          <a class="cnf-chapter-page__chat" href={chatUrl} target="_blank" rel="noopener">
+            <img class="cnf-chapter-page__chat-icon" src="/whatsapp.svg" alt="" />
+            Join the WhatsApp group
+          </a>
+        )
+      }
     </div>
+    <img class="cnf-chapter-page__photo" src={photo} alt="" />
+  </section>
+  <section class="cnf-section">
+    <div class="cnf-section__header">
+      <h2>Upcoming events</h2>
+      <a href={`/${chapterSlug}/events`}>See all events</a>
+    </div>
+    <UpcomingEvent events={chapterEvents} responsive={true} client:load />
   </section>
   {
     whatToExpect && (
@@ -135,14 +172,4 @@ const feedUrl = new URL(`/${chapterSlug}/events.ics`, Astro.site).href;
       </section>
     )
   }
-  <section class="cnf-section">
-    <div class="cnf-section__header">
-      <h2>Upcoming events</h2>
-      <a href={`/${chapterSlug}/events`}>See all events</a>
-    </div>
-    <UpcomingEvent events={chapterEvents} responsive={true} client:load />
-  </section>
-  <section class="cnf-section">
-    <SubscribeCalendarLinks feedUrl={feedUrl} chapterName={chapter.name} />
-  </section>
 </BaseLayout>

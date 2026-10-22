@@ -10,6 +10,8 @@ const state = vi.hoisted(() => ({
   upsertError: null as Error | null,
   upsertRows: null as { member_id: string; chapter_id: number }[] | null,
   upsertOptions: null as Record<string, unknown> | null,
+  deleteError: null as Error | null,
+  deleteFilters: null as unknown[][] | null,
   membership: null as { chapter_id: number } | null,
   membershipError: null as Error | null,
   membershipFilters: [] as unknown[][],
@@ -32,6 +34,11 @@ vi.mock("../lib/supabase", async () => {
         members: () => stubQuery(() => ({ data: state.memberEmail ? { email: state.memberEmail } : null, error: null })),
         chapter_members: () =>
           stubQuery((calls) => {
+            const del = calls.find((call) => call.method === "delete");
+            if (del) {
+              state.deleteFilters = calls.filter((call) => call.method === "eq").map((call) => call.args);
+              return { error: state.deleteError };
+            }
             const upsert = calls.find((call) => call.method === "upsert");
             if (upsert) {
               state.upsertRows = upsert.args[0] as { member_id: string; chapter_id: number }[];
@@ -50,16 +57,19 @@ vi.mock("../lib/mailchimp", () => ({
   addChapterTag: vi.fn(async () => {
     if (state.tagError) throw state.tagError;
   }),
-  removeChapterTag: vi.fn(),
+  removeChapterTag: vi.fn(async () => {
+    if (state.tagError) throw state.tagError;
+  }),
 }));
 
-import { joinChapter, getChapterMembership } from "./chapterMembers";
-import { addChapterTag } from "../lib/mailchimp";
+import { joinChapter, leaveChapter, getChapterMembership } from "./chapterMembers";
+import { addChapterTag, removeChapterTag } from "../lib/mailchimp";
 
 type Handler<T> = {
   handler: (input: { chapterId: number }, context: { cookies: { get: (name: string) => { value: string } | null } }) => Promise<T>;
 };
 const join = joinChapter as unknown as Handler<{ joined: boolean }>;
+const leave = leaveChapter as unknown as Handler<{ joined: boolean }>;
 const membership = getChapterMembership as unknown as Handler<{ joined: boolean }>;
 
 function ctx(session?: string) {
@@ -73,12 +83,15 @@ beforeEach(() => {
   state.upsertError = null;
   state.upsertRows = null;
   state.upsertOptions = null;
+  state.deleteError = null;
+  state.deleteFilters = null;
   state.membership = null;
   state.membershipError = null;
   state.membershipFilters = [];
   state.memberEmail = "a@example.com";
   state.tagError = null;
   vi.mocked(addChapterTag).mockClear();
+  vi.mocked(removeChapterTag).mockClear();
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -110,6 +123,37 @@ describe("joinChapter", () => {
   it("still succeeds when the Mailchimp tag fails", async () => {
     state.tagError = new Error("mailchimp down");
     await expect(join.handler({ chapterId: 2 }, ctx("token"))).resolves.toEqual({ joined: true });
+  });
+});
+
+describe("leaveChapter", () => {
+  it("rejects a logged-out visitor", async () => {
+    await expect(leave.handler({ chapterId: 2 }, ctx())).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    expect(state.deleteFilters).toBeNull();
+  });
+
+  it("answers NOT_FOUND for a chapter that does not exist", async () => {
+    state.chapter = null;
+    await expect(leave.handler({ chapterId: 99 }, ctx("token"))).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(state.deleteFilters).toBeNull();
+  });
+
+  it("removes just that one membership and drops the Mailchimp tag", async () => {
+    await expect(leave.handler({ chapterId: 2 }, ctx("token"))).resolves.toEqual({ joined: false });
+    expect(state.deleteFilters).toEqual([["member_id", "member-1"], ["chapter_id", 2]]);
+    expect(removeChapterTag).toHaveBeenCalledWith("a@example.com", "online");
+    expect(addChapterTag).not.toHaveBeenCalled();
+  });
+
+  it("fails with INTERNAL_SERVER_ERROR when the delete fails, leaving the tag alone", async () => {
+    state.deleteError = new Error("boom");
+    await expect(leave.handler({ chapterId: 2 }, ctx("token"))).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+    expect(removeChapterTag).not.toHaveBeenCalled();
+  });
+
+  it("still succeeds when the Mailchimp tag removal fails", async () => {
+    state.tagError = new Error("mailchimp down");
+    await expect(leave.handler({ chapterId: 2 }, ctx("token"))).resolves.toEqual({ joined: false });
   });
 });
 

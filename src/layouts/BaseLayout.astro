@@ -13,6 +13,7 @@ const {
   description = "Club na Fealsúnachta is a philosophy discussion club meeting in Trieste, Italy.",
   ogImage = "/og-default.png",
   ogType = "website",
+  activeNav,
 } = Astro.props;
 
 const siteUrl = "https://clubnafealsunachta.com";
@@ -56,7 +57,7 @@ const ogImageUrl = new URL(ogImage, siteUrl).href;
     <slot name="head" />
   </head>
   <body>
-    <Header />
+    <Header activeNav={activeNav} />
     <AvatarHintScript />
     <main class="content">
       <slot />

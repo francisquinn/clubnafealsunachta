@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 import { actions } from "astro:actions";
 import { fetchSessionInfo } from "../../utils/session";
 
-type Status = "loading" | "logged-out" | "can-join" | "joining" | "joined" | "error";
+type Status = "loading" | "unavailable" | "logged-out" | "can-join" | "joining" | "joined" | "leaving" | "error";
 
-// The chapter page's "Join the chapter" button. Logged-out visitors get the
+// The chapter page's "Join chapter" button. Logged-out visitors get the
 // site's login modal (the header's trigger), logged-in members join in place
-// and then see that they are in. Renders nothing until the session and
-// membership are known, so the button never flashes the wrong state.
-export default function JoinChapterButton({ chapterId, chapterName }: { chapterId: number; chapterName: string }) {
+// and then see a "Member" button that takes them back out of the chapter.
+// Shows an empty placeholder until the session and membership are known, so
+// the button never flashes the wrong state.
+export default function JoinChapterButton({ chapterId }: { chapterId: number }) {
   const [status, setStatus] = useState<Status>("loading");
+  const [leaveFailed, setLeaveFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -21,7 +23,7 @@ export default function JoinChapterButton({ chapterId, chapterName }: { chapterI
         if (!session.loggedIn) {
           // A transient lookup failure ("degraded") is not proof of being
           // logged out: show nothing rather than a login prompt to a member.
-          setStatus(session.degraded ? "loading" : "logged-out");
+          setStatus(session.degraded ? "unavailable" : "logged-out");
           return;
         }
         const { data, error } = await actions.getChapterMembership({ chapterId });
@@ -55,10 +57,38 @@ export default function JoinChapterButton({ chapterId, chapterName }: { chapterI
     setStatus(error ? "error" : "joined");
   }
 
-  if (status === "loading") return null;
+  async function leave() {
+    setLeaveFailed(false);
+    setStatus("leaving");
+    const { error } = await actions.leaveChapter({ chapterId });
+    if (error) setLeaveFailed(true);
+    setStatus(error ? "joined" : "can-join");
+  }
 
-  if (status === "joined") {
-    return <p className="cnf-chapter-page__joined">You're part of the {chapterName} chapter.</p>;
+  // Holds the button's space while the session and membership load, so the
+  // content beside it (the WhatsApp link) doesn't jump when the button arrives.
+  if (status === "loading") return <div aria-hidden="true" style={{ height: "3.5rem", width: "9.5rem" }} />;
+  if (status === "unavailable") return null;
+
+  if (status === "joined" || status === "leaving") {
+    return (
+      <div>
+        <button
+          type="button"
+          className={`cnf-button cnf-button__gold-outline${status === "leaving" ? " cnf-button--loading" : ""}`}
+          onClick={leave}
+          disabled={status === "leaving"}
+          title="Click to leave this chapter"
+        >
+          <span className="cnf-button__text">Member</span>
+        </button>
+        {leaveFailed && (
+          <p className="cnf-rsvp__error" role="alert">
+            Something went wrong. Please try again.
+          </p>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -69,7 +99,7 @@ export default function JoinChapterButton({ chapterId, chapterName }: { chapterI
         onClick={join}
         disabled={status === "joining"}
       >
-        <span className="cnf-button__text">Join the {chapterName} chapter</span>
+        <span className="cnf-button__text">Join chapter</span>
       </button>
       {status === "error" && (
         <p className="cnf-rsvp__error" role="alert">

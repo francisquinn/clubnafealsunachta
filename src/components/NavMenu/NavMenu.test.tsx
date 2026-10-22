@@ -138,12 +138,13 @@ describe("NavMenu", () => {
     });
   });
 
-  it("lists the five site sections", () => {
+  it("lists the six site sections", () => {
     render(<NavMenu pathname="/" />);
 
     expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual([
       "About",
       "Values",
+      "Chapters",
       "Events",
       "Blog",
       "Library",
@@ -153,6 +154,7 @@ describe("NavMenu", () => {
   it.each([
     ["/about/", "About"],
     ["/values/", "Values"],
+    ["/chapters/", "Chapters"],
     [`/${DEFAULT_CHAPTER_SLUG}/events/`, "Events"],
     ["/blog/", "Blog"],
     ["/posts/some-post", "Blog"],
@@ -162,6 +164,13 @@ describe("NavMenu", () => {
 
     const active = screen.getAllByRole("link").filter((link) => link.classList.contains("tab-active"));
     expect(active.map((link) => link.textContent)).toEqual([activeLink]);
+  });
+
+  it("marks Chapters active on a chapter's own page, which the page names itself", () => {
+    render(<NavMenu pathname="/some-chapter/" activeNav="chapters" />);
+
+    const active = screen.getAllByRole("link").filter((link) => link.classList.contains("tab-active"));
+    expect(active.map((link) => link.textContent)).toEqual(["Chapters"]);
   });
 
   it("marks nothing as active on the home page", () => {

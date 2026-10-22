@@ -47,6 +47,12 @@
   background-color: hsl(var(--color-gold));
 }
 
+.cnf-button__gold-outline {
+  color: hsl(var(--color-gold));
+  background-color: transparent;
+  border: 2px solid hsl(var(--color-gold));
+}
+
 .cnf-button__link {
   background-color: transparent;
   color: hsl(var(--color-green));
@@ -88,6 +94,10 @@
    it was designed for. */
 .cnf-button__secondary.cnf-button--loading::after {
   border-top-color: hsl(var(--color-green));
+}
+
+.cnf-button__gold-outline.cnf-button--loading::after {
+  border-top-color: hsl(var(--color-gold));
 }
 
 .cnf-button:active {

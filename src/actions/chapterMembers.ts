@@ -177,6 +177,60 @@ export const joinChapter = defineAction({
   },
 });
 
+// The chapter page's "Member" button: take the member out of one chapter,
+// leaving their other memberships alone. Same side effects as unticking the
+// chapter in account settings, including dropping the Mailchimp tag. Leaving a
+// chapter the member is not in is a no-op.
+export const leaveChapter = defineAction({
+  input: z.object({ chapterId: z.number().int().positive() }),
+  handler: async ({ chapterId }, context) => {
+    const payload = await verifySession(context.cookies.get('session')?.value);
+    if (!payload) {
+      throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
+    }
+
+    if (!supabaseAdmin) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Supabase not configured' });
+    }
+
+    const { data: chapter, error: chapterError } = await supabaseAdmin
+      .from('chapters')
+      .select('id, slug')
+      .eq('id', chapterId)
+      .maybeSingle();
+    if (chapterError) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to leave chapter' });
+    }
+    if (!chapter) {
+      throw new ActionError({ code: 'NOT_FOUND', message: 'Chapter not found' });
+    }
+
+    const { error: deleteError } = await supabaseAdmin
+      .from('chapter_members')
+      .delete()
+      .eq('member_id', payload.memberId)
+      .eq('chapter_id', chapter.id);
+    if (deleteError) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to leave chapter' });
+    }
+
+    // Best effort, like joinChapter: a Mailchimp hiccup must not undo a leave
+    // that already succeeded.
+    try {
+      const { data: member } = await supabaseAdmin
+        .from('members')
+        .select('email')
+        .eq('id', payload.memberId)
+        .single();
+      if (member?.email) await removeChapterTag(member.email, chapter.slug);
+    } catch (err) {
+      console.error('Mailchimp chapter tag sync failed:', err);
+    }
+
+    return { joined: false };
+  },
+});
+
 // Whether the logged-in member is already in a chapter, so the button can show
 // "you're in" instead of offering to join again.
 export const getChapterMembership = defineAction({

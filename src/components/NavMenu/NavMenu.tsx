@@ -4,6 +4,9 @@ import { DEFAULT_CHAPTER_SLUG } from "../../lib/chapterDefaults";
 
 interface NavMenuProps {
   pathname: string;
+  // For a page whose URL doesn't show its section, e.g. a chapter's own page
+  // at /<chapter>/, which belongs under Chapters.
+  activeNav?: "chapters";
 }
 
 // #39: matches /[chapterSlug]/events or /[chapterSlug]/events/... — the `(\/|$)`
@@ -14,7 +17,7 @@ const CHAPTER_EVENTS_PATH = /^\/([^/]+)\/events(\/|$)/;
 // Must match the max-width of the overlay's media query in nav.css.
 const OVERLAY_QUERY = "(max-width: 575.98px)";
 
-export default function NavMenu({ pathname }: NavMenuProps) {
+export default function NavMenu({ pathname, activeNav }: NavMenuProps) {
   const toggleRef = useRef<HTMLButtonElement>(null);
   // Only the events pages are chapter-prefixed (About/Blog stay global), so
   // "current chapter" only means anything while already on one; elsewhere
@@ -68,6 +71,12 @@ export default function NavMenu({ pathname }: NavMenuProps) {
             href="/values/"
           >
             Values
+          </a>
+          <a
+            className={`cnf-nav__link ${pathname.startsWith("/chapters") || activeNav === "chapters" ? "tab-active" : ""}`}
+            href="/chapters/"
+          >
+            Chapters
           </a>
           <a
             className={`cnf-nav__link ${CHAPTER_EVENTS_PATH.test(pathname) ? "tab-active" : ""}`}

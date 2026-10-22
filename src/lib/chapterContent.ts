@@ -14,7 +14,8 @@ type ChapterContent = {
   meeting?: { when: string; where: string; whereUrl: string };
   // Invite link to the chapter's chat group; left out when there isn't one.
   chatUrl?: string;
-  // Short points for a first-timer; left out when a chapter has none yet.
+  // Short points for a first-timer, in the order they'll meet them: before
+  // coming, the evening, afterwards. Left out when a chapter has none yet.
   whatToExpect?: string[];
   // The chapter's social accounts; left out when it has none to point at.
   social?: SocialLink[];
@@ -23,16 +24,22 @@ type ChapterContent = {
 const CHAPTER_CONTENT: Record<string, ChapterContent> = {
   trieste: {
     description:
-      'Our home chapter. We meet in person in Trieste for thought-provoking philosophical discussions in a safe and friendly environment, where the aim is not to find the answers but to spark the curiosity to listen and question other opinions.',
+      'Our home chapter, where it all began.',
     photo: '/values/curiosity.jpg',
     meeting: { when: 'Thursdays @ 18:30', where: 'Polo Toti', whereUrl: 'https://maps.app.goo.gl/DmRP9s2jtz7Ju8sq5' },
-    // TODO: placeholder, replace with the real WhatsApp invite link.
-    chatUrl: 'https://chat.whatsapp.com/TEST',
-    // TODO: dummy copy, replace with the real points.
+    chatUrl: 'https://chat.whatsapp.com/DWWJHDzgH8OJzSslTIwP0u',
+    // TODO: draft copy, confirm before launch.
     whatToExpect: [
-      'A relaxed, friendly group: no philosophy background needed.',
-      'One question for the evening, discussed together for about two hours.',
-      'Come and go as you like. Nobody is put on the spot.',
+      'You don\'t need any philosophy background.',
+      'It\'s free of charge.',
+      'No booking needed, just turn up.',
+      'Sessions are held in English.',
+      'We meet outside Bar Barakin @ 18:00.',
+      'Each session is built around one central question or topic.',
+      'If there are many of us, we split into small groups, each with its own facilitator.',
+      'Some sessions use a different format, so the evening can vary.',
+      'Sessions last about an hour and a half.',
+      'Afterwards we head out for a bite and a pint, and keep the conversation flowing.',
     ],
     // The club-wide accounts, same as the footer's, until a chapter has its own.
     social: [
