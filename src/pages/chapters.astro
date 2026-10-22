@@ -5,7 +5,9 @@ import { getChapterContent } from "../lib/chapterContent";
 
 const pageTitle = "Chapters";
 // getAllChapters is memoized per build, so this is no extra query.
-const chapters = sortChaptersForPicker(await getAllChapters());
+const allChapters = await getAllChapters();
+// The picker order, but keeping each chapter's full row for its photo.
+const chapters = sortChaptersForPicker(allChapters).map(({ slug }) => allChapters.find((c) => c.slug === slug)!);
 ---
 
 <style>
@@ -65,7 +67,7 @@ const chapters = sortChaptersForPicker(await getAllChapters());
             <a class="cnf-chapter__link" href={`/${chapter.slug}/`}>
               <img
                 class="cnf-chapter__photo"
-                src={getChapterContent(chapter.slug).photo}
+                src={getChapterContent(chapter).photo}
                 alt=""
               />
               <h2 class="cnf-chapter__name">{chapter.name}</h2>

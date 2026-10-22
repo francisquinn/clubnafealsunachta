@@ -13,7 +13,7 @@ export const getStaticPaths = getChapterEventsStaticPaths;
 
 const { chapterSlug } = Astro.params;
 const { chapter, events } = Astro.props;
-const { description, photo, meeting, chatUrl, whatToExpect, social } = getChapterContent(chapterSlug!);
+const { description, photo, meeting, chatUrl, whatToExpect, social } = getChapterContent(chapter);
 const chapterEvents = events.map((e) => e.data);
 ---
 
@@ -117,10 +117,14 @@ const chapterEvents = events.map((e) => e.data);
           <div>
             <dt>Where</dt>
             <dd>
-              <a class="cnf-event-page__details-link" href={meeting.whereUrl} target="_blank">
-                <img src="/map-pin.svg" alt="" />
-                {meeting.where}
-              </a>
+              {meeting.whereUrl ? (
+                <a class="cnf-event-page__details-link" href={meeting.whereUrl} target="_blank">
+                  <img src="/map-pin.svg" alt="" />
+                  {meeting.where}
+                </a>
+              ) : (
+                meeting.where
+              )}
             </dd>
           </div>
         </dl>
