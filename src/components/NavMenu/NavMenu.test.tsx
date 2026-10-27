@@ -138,21 +138,23 @@ describe("NavMenu", () => {
     });
   });
 
-  it("lists the five site sections", () => {
+  it("lists the six site sections", () => {
     render(<NavMenu pathname="/" />);
 
     expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual([
       "About",
       "Values",
+      "Library",
+      "Chapters",
       "Events",
       "Blog",
-      "Library",
     ]);
   });
 
   it.each([
     ["/about/", "About"],
     ["/values/", "Values"],
+    ["/chapters/", "Chapters"],
     [`/${DEFAULT_CHAPTER_SLUG}/events/`, "Events"],
     ["/blog/", "Blog"],
     ["/posts/some-post", "Blog"],
@@ -162,6 +164,48 @@ describe("NavMenu", () => {
 
     const active = screen.getAllByRole("link").filter((link) => link.classList.contains("tab-active"));
     expect(active.map((link) => link.textContent)).toEqual([activeLink]);
+  });
+
+  describe("the Explore group", () => {
+    const explore = () => screen.getByRole("button", { name: "Explore" });
+
+    it("opens with the mobile menu when the page is inside it", () => {
+      render(<NavMenu pathname="/values/" />);
+      expect(explore()).toHaveAttribute("aria-expanded", "false");
+
+      fireEvent.click(getToggle());
+      expect(explore()).toHaveAttribute("aria-expanded", "true");
+    });
+
+    it("stays collapsed when the page is outside it", () => {
+      render(<NavMenu pathname="/blog/" />);
+
+      fireEvent.click(getToggle());
+      expect(explore()).toHaveAttribute("aria-expanded", "false");
+    });
+
+    it("stays collapsed on desktop, where it is a dropdown", () => {
+      overlayMatches = false;
+      render(<NavMenu pathname="/values/" />);
+
+      fireEvent.click(getToggle());
+      expect(explore()).toHaveAttribute("aria-expanded", "false");
+    });
+
+    it("can be collapsed again by the user", () => {
+      render(<NavMenu pathname="/values/" />);
+      fireEvent.click(getToggle());
+
+      fireEvent.click(explore());
+      expect(explore()).toHaveAttribute("aria-expanded", "false");
+    });
+  });
+
+  it("marks Chapters active on a chapter's own page, which the page names itself", () => {
+    render(<NavMenu pathname="/some-chapter/" activeNav="chapters" />);
+
+    const active = screen.getAllByRole("link").filter((link) => link.classList.contains("tab-active"));
+    expect(active.map((link) => link.textContent)).toEqual(["Chapters"]);
   });
 
   it("marks nothing as active on the home page", () => {

@@ -1,0 +1,84 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getAllChapters, sortChaptersForPicker } from "../lib/chapters";
+import { getChapterContent } from "../lib/chapterContent";
+
+const pageTitle = "Chapters";
+// getAllChapters is memoized per build, so this is no extra query.
+const allChapters = await getAllChapters();
+// The picker order, but keeping each chapter's full row for its photo.
+const chapters = sortChaptersForPicker(allChapters).map(({ slug }) => allChapters.find((c) => c.slug === slug)!);
+---
+
+<style>
+  .cnf-chapters__intro {
+    max-width: 720px;
+    margin-bottom: 2.5rem;
+  }
+
+  .cnf-chapters__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .cnf-chapter__photo {
+    aspect-ratio: 16 / 9;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-card);
+    display: block;
+    margin-bottom: 1.25rem;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  .cnf-chapter__link {
+    color: inherit;
+    display: block;
+    text-decoration: none;
+    transition: transform ease-in-out 0.2s;
+  }
+
+  /* Same lift as the event cards (event.css). */
+  .cnf-chapter__link:hover {
+    transform: translate(0, -3px);
+  }
+
+  .cnf-chapter__name {
+    margin: 0 0 0.5rem;
+  }
+
+  .cnf-chapter__description {
+    margin: 0;
+  }
+</style>
+
+<BaseLayout pageTitle={pageTitle}>
+  <section class="cnf-section">
+    <h1>{pageTitle}</h1>
+    <p class="cnf-chapters__intro">
+      Club na Fealsúnachta meets in chapters, each a group in one city with
+      its own events. Can't make it in person? Join the Online chapter from
+      anywhere.
+    </p>
+    <ul class="cnf-card-grid cnf-chapters__list">
+      {
+        chapters.map((chapter) => (
+          <li class="cnf-chapter">
+            <a class="cnf-chapter__link" href={`/${chapter.slug}/`}>
+              <img
+                class="cnf-chapter__photo"
+                src={getChapterContent(chapter).photo}
+                alt=""
+              />
+              <h2 class="cnf-chapter__name">{chapter.name}</h2>
+              <p class="cnf-chapter__description">
+                {getChapterContent(chapter).description}
+              </p>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</BaseLayout>

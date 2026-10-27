@@ -11,7 +11,7 @@ const latestBlogEntries = (await getCollection("blog"))
     <h2>Latest blog posts</h2>
     <a href="/blog">See all posts</a>
   </div>
-  <ul class="cnf-events--grid cnf-latest-posts__list">
+  <ul class="cnf-card-grid cnf-latest-posts__list">
     {
       latestBlogEntries.map((post) => (
         <BlogPost url={`/posts/${post.id}`} post={post.data} />

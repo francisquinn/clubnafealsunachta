@@ -3,6 +3,9 @@ import LoginButton from "./LoginButton/LoginButton";
 import NavMenu from "./NavMenu/NavMenu";
 import AccountMenu from "./AccountMenu/AccountMenu";
 const { pathname } = Astro.url;
+// A page whose URL doesn't reveal its nav section (a chapter's own page lives
+// at /<chapter>/) names it here.
+const { activeNav } = Astro.props;
 ---
 
 <header class="cnf-header">
@@ -25,6 +28,6 @@ const { pathname } = Astro.url;
       </button>
     </div>
     <LoginButton client:load />
-    <NavMenu client:load pathname={pathname} />
+    <NavMenu client:load pathname={pathname} activeNav={activeNav} />
   </nav>
 </header>

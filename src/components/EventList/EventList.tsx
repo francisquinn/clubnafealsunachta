@@ -60,13 +60,13 @@ export default function EventList(props: EventListProps) {
 
   function renderEvents(): JSX.Element {
     if (showUpcoming) {
-      return <div className="cnf-events--grid">
+      return <div className="cnf-card-grid">
         {upcomingEvents.length > 0
           ? upcomingEvents.map((event) => <UpcomingEvent events={[event.data]} key={event.data.slug} />)
           : <p>No upcoming events at the moment. Stay tuned for further updates!</p>}
       </div>;
     }
-    return <div className="cnf-events--grid">
+    return <div className="cnf-card-grid">
       {pastEvents.length > 0 ? renderPastEvents() : <p>No past events in {currentChapter?.name ?? "this chapter"}.</p>}
     </div>;
   }

@@ -1,4 +1,5 @@
 import { defineAction, ActionError } from 'astro:actions';
+import { z } from 'astro/zod';
 import { verifySession } from '../lib/auth';
 import { supabaseAdmin } from '../lib/supabase';
 import { addChapterTag, removeChapterTag } from '../lib/mailchimp';
@@ -117,5 +118,117 @@ export const updateChapterMemberships = defineAction({
     }
 
     return { success: true, chapter_ids: selectedChapterIds };
+  },
+});
+
+// The chapter page's "Join the chapter" button: add the member to one chapter,
+// leaving their other memberships alone (updateChapterMemberships replaces the
+// whole set, so it can't be used for a single join). Same side effects as
+// ticking the chapter in account settings, except that nothing is sent to
+// Mailchimp: joining a chapter on its page never touches the mailing list.
+export const joinChapter = defineAction({
+  input: z.object({ chapterId: z.number().int().positive() }),
+  handler: async ({ chapterId }, context) => {
+    const payload = await verifySession(context.cookies.get('session')?.value);
+    if (!payload) {
+      throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
+    }
+
+    if (!supabaseAdmin) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Supabase not configured' });
+    }
+
+    const { data: chapter, error: chapterError } = await supabaseAdmin
+      .from('chapters')
+      .select('id, slug')
+      .eq('id', chapterId)
+      .maybeSingle();
+    if (chapterError) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to join chapter' });
+    }
+    if (!chapter) {
+      throw new ActionError({ code: 'NOT_FOUND', message: 'Chapter not found' });
+    }
+
+    // ignoreDuplicates makes a repeat join (double click, second tab) a no-op.
+    const { error: insertError } = await supabaseAdmin
+      .from('chapter_members')
+      .upsert(
+        [{ member_id: payload.memberId, chapter_id: chapter.id }],
+        { onConflict: 'member_id,chapter_id', ignoreDuplicates: true }
+      );
+    if (insertError) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to join chapter' });
+    }
+
+    return { joined: true };
+  },
+});
+
+// The chapter page's "Member" button: take the member out of one chapter,
+// leaving their other memberships alone. Like joinChapter, it does not touch
+// Mailchimp. Leaving a chapter the member is not in is a no-op.
+export const leaveChapter = defineAction({
+  input: z.object({ chapterId: z.number().int().positive() }),
+  handler: async ({ chapterId }, context) => {
+    const payload = await verifySession(context.cookies.get('session')?.value);
+    if (!payload) {
+      throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
+    }
+
+    if (!supabaseAdmin) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Supabase not configured' });
+    }
+
+    const { data: chapter, error: chapterError } = await supabaseAdmin
+      .from('chapters')
+      .select('id, slug')
+      .eq('id', chapterId)
+      .maybeSingle();
+    if (chapterError) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to leave chapter' });
+    }
+    if (!chapter) {
+      throw new ActionError({ code: 'NOT_FOUND', message: 'Chapter not found' });
+    }
+
+    const { error: deleteError } = await supabaseAdmin
+      .from('chapter_members')
+      .delete()
+      .eq('member_id', payload.memberId)
+      .eq('chapter_id', chapter.id);
+    if (deleteError) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to leave chapter' });
+    }
+
+    return { joined: false };
+  },
+});
+
+// Whether the logged-in member is already in a chapter, so the button can show
+// "you're in" instead of offering to join again.
+export const getChapterMembership = defineAction({
+  input: z.object({ chapterId: z.number().int().positive() }),
+  handler: async ({ chapterId }, context) => {
+    const payload = await verifySession(context.cookies.get('session')?.value);
+    if (!payload) {
+      throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
+    }
+
+    if (!supabaseAdmin) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Supabase not configured' });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('chapter_members')
+      .select('chapter_id')
+      .eq('member_id', payload.memberId)
+      .eq('chapter_id', chapterId)
+      .maybeSingle();
+    if (error) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to load membership' });
+    }
+
+    return { joined: data !== null };
   },
 });

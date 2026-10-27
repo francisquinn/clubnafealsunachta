@@ -83,12 +83,6 @@
   height: 100%;
 }
 
-.cnf-events--grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 25px;
-}
-
 .cnf-events__tabs {
   display: flex;
   gap: 0.5rem;
@@ -255,14 +249,6 @@
 }
 
 @media (min-width: 576px) {
-  .cnf-events--grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .cnf-events--grid:has(p) {
-    grid-template-columns: 1fr;
-  }
-
   .cnf-event--responsive {
     grid-template-columns: 1fr auto;
     grid-template-rows: 1fr;

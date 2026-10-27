@@ -196,6 +196,33 @@ button[aria-expanded="true"] + .cnf-dropdown__panel {
   text-underline-offset: calc(0.25em + 0.375rem);
 }
 
+/* A group of links (NavSubmenu): a dropdown on desktop, an accordion in the
+   mobile overlay. */
+.cnf-nav__submenu {
+  position: relative;
+}
+
+.cnf-nav__submenu .cnf-dropdown__panel {
+  left: 0;
+  right: auto;
+}
+
+.cnf-nav__submenu-toggle::after {
+  content: "";
+  display: inline-block;
+  width: 0.4em;
+  height: 0.4em;
+  margin-left: 0.5em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-0.15em) rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.cnf-nav__submenu-toggle[aria-expanded="true"]::after {
+  transform: translateY(0.05em) rotate(-135deg);
+}
+
 @keyframes cnf-nav-link-in {
   from {
     opacity: 0;
@@ -268,6 +295,45 @@ button[aria-expanded="true"] + .cnf-dropdown__panel {
   button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(4) { animation-delay: 0.08s; }
   button[aria-expanded="true"] + .cnf-dropdown__panel--collapsible .cnf-nav__link:nth-child(5) { animation-delay: 0.1s; }
 
+  /* Accordion: the trigger is a full-width row, and its links sit indented
+     beneath it, a step smaller than the top-level links, once open. */
+  .cnf-nav__submenu-toggle {
+    display: block;
+    width: 100%;
+    text-align: left;
+  }
+
+  .cnf-nav__submenu .cnf-nav__link:not(.cnf-nav__submenu-toggle) {
+    font-size: 1.5rem;
+    padding: 0.5rem 1rem 0.5rem 2rem;
+  }
+
+  .cnf-nav__submenu .cnf-dropdown__panel {
+    display: none;
+    position: static;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    border-radius: 0;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+    transition: none;
+  }
+
+  .cnf-nav__submenu-toggle[aria-expanded="true"] + .cnf-dropdown__panel {
+    display: flex;
+  }
+
+  /* The open accordion shows the current page by its own link, so the trigger
+     isn't underlined too. */
+  .cnf-dropdown__panel .cnf-nav__submenu-toggle.tab-active {
+    text-decoration: none;
+  }
+
   html:has(.cnf-nav__toggle[aria-expanded="true"]) {
     overflow: hidden;
   }
@@ -280,6 +346,12 @@ button[aria-expanded="true"] + .cnf-dropdown__panel {
 
   .cnf-nav__link {
     padding: 0.3rem 0.75rem;
+  }
+
+  /* On desktop the current page is shown on the group's trigger, so the link
+     inside the dropdown isn't underlined too. */
+  .cnf-nav__submenu .cnf-dropdown__panel .cnf-nav__link.tab-active {
+    text-decoration: none;
   }
 
   .cnf-dropdown__panel--collapsible {
