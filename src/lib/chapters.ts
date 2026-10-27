@@ -3,7 +3,26 @@ import { supabaseAdmin } from './supabase';
 import type { EventCollection } from '../types/types';
 import { ONLINE_CHAPTER_SLUG } from './chapterDefaults';
 
-export type Chapter = { id: number; name: string; slug: string };
+// The page copy columns (#132) are all nullable; see chapterContent.ts for how
+// a chapter without them is shown.
+export type Chapter = {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string | null;
+  photo?: string | null;
+  meeting_when?: string | null;
+  meeting_venue?: { name: string; url: string | null } | null;
+  chat_url?: string | null;
+  what_to_expect?: string[] | null;
+  social?: { name: string; href: string; icon: string }[] | null;
+  // IANA zone the chapter's event times are in. Not read yet — see
+  // DEFAULT_CHAPTER_TIMEZONE.
+  timezone?: string;
+};
+
+const CHAPTER_COLUMNS =
+  'id, name, slug, description, photo, meeting_when, meeting_venue:venues!meeting_venue_id(name, url), chat_url, what_to_expect, social, timezone';
 
 // Re-exported for server-side call sites (actions, page frontmatter) that
 // already import from this module — see src/lib/chapterDefaults.ts for why the
@@ -31,7 +50,7 @@ async function fetchAllChapters(): Promise<Chapter[]> {
     throw new Error('Supabase is not configured — set SUPABASE_PROJECT_URL and SUPABASE_SECRET_KEY');
   }
 
-  const { data, error } = await supabaseAdmin.from('chapters').select('id, name, slug');
+  const { data, error } = await supabaseAdmin.from('chapters').select(CHAPTER_COLUMNS);
   if (error) {
     throw new Error(`Failed to fetch chapters from Supabase: ${error.message}`);
   }
@@ -40,7 +59,9 @@ async function fetchAllChapters(): Promise<Chapter[]> {
     throw new Error('getAllChapters() returned zero chapters — refusing to silently build zero chapter pages. Check the chapters table and Supabase config.');
   }
 
-  return data;
+  // Without generated types the client types the venue embed as an array; it's
+  // a many-to-one, so at runtime it's a single object (or null).
+  return data as unknown as Chapter[];
 }
 
 export async function getAllChapters(): Promise<Chapter[]> {

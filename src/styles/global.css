@@ -142,6 +142,26 @@ blockquote {
   text-align: center;
 }
 
+/* The grid for a list of cards (events, blog posts, chapters): one column,
+   two from 576px up. A grid whose own child is a message (an empty-state <p>)
+   stays one column. Lives here, not in event.css, because it is used on pages
+   that don't load event.css. */
+.cnf-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 25px;
+}
+
+@media (min-width: 576px) {
+  .cnf-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cnf-card-grid:has(> p) {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (min-width: 576px) {
   .cnf-section {
     width: 80vw;

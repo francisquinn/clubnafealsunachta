@@ -37,6 +37,12 @@ const values = [
     margin-bottom: 2.5rem;
   }
 
+  /* The intro's own gap (as on chapters and library) replaces the usual
+     section gap before the first value. */
+  .cnf-values__header {
+    margin-bottom: 0;
+  }
+
   .cnf-value__media {
     position: relative;
     aspect-ratio: 3 / 2;
@@ -92,7 +98,7 @@ const values = [
   pageTitle={pageTitle}
   description="The values Club na Fealsúnachta brings to every discussion: curiosity, open-mindedness, respect, and community."
 >
-  <section class="cnf-section">
+  <section class="cnf-section cnf-values__header">
     <h1>{pageTitle}</h1>
     <p class="cnf-values__intro">
       These are the values we try to bring to every discussion, agreed on
