@@ -171,13 +171,17 @@ describe("NavMenu", () => {
   describe("the Explore group", () => {
     const explore = () => screen.getByRole("button", { name: "Explore" });
 
-    it("opens with the mobile menu when the page is inside it", () => {
-      render(<NavMenu pathname="/values/" />);
-      expect(explore()).toHaveAttribute("aria-expanded", "false");
+    it.each(["/about/", "/how-it-works/", "/values/", "/library/"])(
+      "is current, and opens with the mobile menu, on %s",
+      (pathname) => {
+        render(<NavMenu pathname={pathname} />);
+        expect(explore()).toHaveClass("tab-active");
+        expect(explore()).toHaveAttribute("aria-expanded", "false");
 
-      fireEvent.click(getToggle());
-      expect(explore()).toHaveAttribute("aria-expanded", "true");
-    });
+        fireEvent.click(getToggle());
+        expect(explore()).toHaveAttribute("aria-expanded", "true");
+      }
+    );
 
     it("stays collapsed when the page is outside it", () => {
       render(<NavMenu pathname="/blog/" />);
