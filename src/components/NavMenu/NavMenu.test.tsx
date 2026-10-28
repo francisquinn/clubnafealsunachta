@@ -138,11 +138,12 @@ describe("NavMenu", () => {
     });
   });
 
-  it("lists the six site sections", () => {
+  it("lists every site section in order", () => {
     render(<NavMenu pathname="/" />);
 
     expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual([
       "About",
+      "How it works",
       "Values",
       "Library",
       "Chapters",
@@ -153,6 +154,7 @@ describe("NavMenu", () => {
 
   it.each([
     ["/about/", "About"],
+    ["/how-it-works/", "How it works"],
     ["/values/", "Values"],
     ["/chapters/", "Chapters"],
     [`/${DEFAULT_CHAPTER_SLUG}/events/`, "Events"],
@@ -169,13 +171,17 @@ describe("NavMenu", () => {
   describe("the Explore group", () => {
     const explore = () => screen.getByRole("button", { name: "Explore" });
 
-    it("opens with the mobile menu when the page is inside it", () => {
-      render(<NavMenu pathname="/values/" />);
-      expect(explore()).toHaveAttribute("aria-expanded", "false");
+    it.each(["/about/", "/how-it-works/", "/values/", "/library/"])(
+      "is current, and opens with the mobile menu, on %s",
+      (pathname) => {
+        render(<NavMenu pathname={pathname} />);
+        expect(explore()).toHaveClass("tab-active");
+        expect(explore()).toHaveAttribute("aria-expanded", "false");
 
-      fireEvent.click(getToggle());
-      expect(explore()).toHaveAttribute("aria-expanded", "true");
-    });
+        fireEvent.click(getToggle());
+        expect(explore()).toHaveAttribute("aria-expanded", "true");
+      }
+    );
 
     it("stays collapsed when the page is outside it", () => {
       render(<NavMenu pathname="/blog/" />);
