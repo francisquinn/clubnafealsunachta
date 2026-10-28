@@ -138,11 +138,12 @@ describe("NavMenu", () => {
     });
   });
 
-  it("lists the six site sections", () => {
+  it("lists every site section in order", () => {
     render(<NavMenu pathname="/" />);
 
     expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual([
       "About",
+      "How it works",
       "Values",
       "Library",
       "Chapters",
@@ -153,6 +154,7 @@ describe("NavMenu", () => {
 
   it.each([
     ["/about/", "About"],
+    ["/how-it-works/", "How it works"],
     ["/values/", "Values"],
     ["/chapters/", "Chapters"],
     [`/${DEFAULT_CHAPTER_SLUG}/events/`, "Events"],

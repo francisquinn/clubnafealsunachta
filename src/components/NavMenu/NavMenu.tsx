@@ -20,9 +20,9 @@ const OVERLAY_QUERY = "(max-width: 575.98px)";
 
 export default function NavMenu({ pathname, activeNav }: NavMenuProps) {
   const toggleRef = useRef<HTMLButtonElement>(null);
-  // About, Values and Library share one dropdown on desktop, so the trigger is
-  // the current page when any of them is.
-  const clubActive = ["/about", "/values", "/library"].some((path) => pathname.startsWith(path));
+  // About, How it works, Values and Library share one dropdown on desktop, so
+  // the trigger is the current page when any of them is.
+  const clubActive = ["/about", "/how-it-works", "/values", "/library"].some((path) => pathname.startsWith(path));
   // Only the events pages are chapter-prefixed (About/Blog stay global), so
   // "current chapter" only means anything while already on one; elsewhere
   // (home, blog, about, profile) there's no chapter in the URL to read, so the
@@ -77,6 +77,12 @@ export default function NavMenu({ pathname, activeNav }: NavMenuProps) {
               href="/about/"
             >
               About
+            </a>
+            <a
+              className={`cnf-nav__link ${pathname.startsWith("/how-it-works") ? "tab-active" : ""}`}
+              href="/how-it-works/"
+            >
+              How it works
             </a>
             <a
               className={`cnf-nav__link ${pathname.startsWith("/values") ? "tab-active" : ""}`}
