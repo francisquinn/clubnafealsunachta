@@ -1,4 +1,4 @@
-import { useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import UpcomingEvent from "../UpcomingEvent";
 import { isEventExpired } from "../../utils/script";
 import EventCard from "../../layouts/EventCard";
@@ -7,8 +7,26 @@ import Selector from "../Selector/Selector";
 import type { EventCollection } from "../../types/types";
 import { DEFAULT_CHAPTER_TIMEZONE } from "../../lib/chapterDefaults";
 
+// #185: the chosen tab lives in the URL, so going back from an event's page
+// returns to the same tab instead of resetting to Upcoming.
+const PAST_HASH = "#past";
+
 export default function EventList(props: EventListProps) {
   const [showUpcoming, setShowUpcoming] = useState<boolean>(true);
+
+  // The page is prerendered, so the hash can only be read once it's mounted.
+  useEffect(() => {
+    setShowUpcoming(window.location.hash !== PAST_HASH);
+  }, []);
+
+  function selectTab(upcoming: boolean) {
+    setShowUpcoming(upcoming);
+    // replaceState, not a #hash link: switching tabs shouldn't add a history
+    // entry, or back would step through tabs instead of leaving the page.
+    const { pathname, search } = window.location;
+    window.history.replaceState(window.history.state, "", pathname + search + (upcoming ? "" : PAST_HASH));
+  }
+
   // #177: each [chapterSlug]/events page already holds just that chapter's
   // events (Online included, now that it's a chapter), so there's nothing
   // to filter here — the picker switches chapter by going to its page.
@@ -43,13 +61,13 @@ export default function EventList(props: EventListProps) {
         <div className="cnf-events__tabs">
           <a
             className={`cnf-events__tab ${showUpcoming ? "tab-active" : ""}`}
-            onClick={() => setShowUpcoming(true)}
+            onClick={() => selectTab(true)}
           >
             Upcoming
           </a>
           <a
             className={`cnf-events__tab ${!showUpcoming ? "tab-active" : ""}`}
-            onClick={() => setShowUpcoming(false)}
+            onClick={() => selectTab(false)}
           >
             Past
           </a>
