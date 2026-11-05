@@ -203,3 +203,16 @@ blockquote {
     width: 45vw;
   }
 }
+
+/* The chapter's chat link, on the chapter page and in its welcome modal
+   (JoinChapterButton), so global rather than scoped to the page. */
+.cnf-chapter-page__chat {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.cnf-chapter-page__chat-icon {
+  height: 1.5rem;
+  width: 1.5rem;
+}

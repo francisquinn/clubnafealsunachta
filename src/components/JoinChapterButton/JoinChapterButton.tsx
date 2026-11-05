@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { actions } from "astro:actions";
 import { fetchSessionInfo } from "../../utils/session";
+import Modal from "../Modal/Modal";
+import Checkbox from "../Checkbox/Checkbox";
 
 type Status = "loading" | "unavailable" | "logged-out" | "can-join" | "joining" | "joined" | "leaving" | "error";
 
@@ -9,9 +11,25 @@ type Status = "loading" | "unavailable" | "logged-out" | "can-join" | "joining" 
 // and then see a "Member" button that takes them back out of the chapter.
 // Shows an empty placeholder until the session and membership are known, so
 // the button never flashes the wrong state.
-export default function JoinChapterButton({ chapterId }: { chapterId: number }) {
+// #211: a successful join opens a welcome modal whose unticked checkbox is the
+// member's opt-in to the chapter's event emails. Closing it without saving
+// leaves them off.
+interface Props {
+  chapterId: number;
+  chapterName: string;
+  meetingWhen?: string;
+  chatUrl?: string;
+}
+
+export default function JoinChapterButton({ chapterId, chapterName, meetingWhen, chatUrl }: Props) {
   const [status, setStatus] = useState<Status>("loading");
   const [leaveFailed, setLeaveFailed] = useState(false);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [wantsEmails, setWantsEmails] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const memberButtonRef = useRef<HTMLButtonElement>(null);
+  const welcomeTitleId = `join-chapter-${chapterId}-title`;
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +73,81 @@ export default function JoinChapterButton({ chapterId }: { chapterId: number }) 
     setStatus("joining");
     const { error } = await actions.joinChapter({ chapterId });
     setStatus(error ? "error" : "joined");
+    if (!error) {
+      setWantsEmails(false);
+      setSaveFailed(false);
+      setWelcomeOpen(true);
+    }
   }
+
+  async function saveWelcome() {
+    if (!wantsEmails) {
+      setWelcomeOpen(false);
+      return;
+    }
+    setSaving(true);
+    setSaveFailed(false);
+    const { error } = await actions.setChapterEmails({ chapterId, enabled: true });
+    setSaving(false);
+    if (error) setSaveFailed(true);
+    else setWelcomeOpen(false);
+  }
+
+  const welcome = (
+    <Modal
+      isOpen={welcomeOpen}
+      // Stays open while a save is in flight, so a failure isn't shown on a
+      // closed modal to a member who thinks they opted in.
+      onClose={() => {
+        if (!saving) setWelcomeOpen(false);
+      }}
+      labelledBy={welcomeTitleId}
+      returnFocusRef={memberButtonRef}
+    >
+      <h2 id={welcomeTitleId}>Welcome to {chapterName}!</h2>
+      {meetingWhen && <p>We meet {meetingWhen}.</p>}
+      {chatUrl && (
+        <p>
+          <a className="cnf-chapter-page__chat" href={chatUrl} target="_blank" rel="noopener">
+            <img className="cnf-chapter-page__chat-icon" src="/whatsapp.svg" alt="" />
+            Join the WhatsApp group
+          </a>
+        </p>
+      )}
+      <form
+        className="cnf-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          saveWelcome();
+        }}
+      >
+        <div className="cnf-form__group">
+          <Checkbox
+            id={`chapter-${chapterId}-emails`}
+            name="emails_enabled"
+            label="Email me about upcoming events"
+            onChange={(e) => setWantsEmails(e.target.checked)}
+          />
+          <p className="cnf-form__hint">You can change this any time in your profile settings.</p>
+        </div>
+        {saveFailed && (
+          <p className="cnf-rsvp__error" role="alert">
+            Something went wrong. Please try again.
+          </p>
+        )}
+        <button
+          type="submit"
+          className={`cnf-button cnf-button__gold${saving ? " cnf-button--loading" : ""}`}
+          // Sized to its label at every width, unlike other forms' full-width
+          // mobile submit; the grid would otherwise stretch it.
+          style={{ justifySelf: "start" }}
+          disabled={saving}
+        >
+          <span className="cnf-button__text">Save</span>
+        </button>
+      </form>
+    </Modal>
+  );
 
   async function leave() {
     setLeaveFailed(false);
@@ -73,7 +165,9 @@ export default function JoinChapterButton({ chapterId }: { chapterId: number }) 
   if (status === "joined" || status === "leaving") {
     return (
       <div>
+        {welcome}
         <button
+          ref={memberButtonRef}
           type="button"
           className={`cnf-button cnf-button__gold-outline${status === "leaving" ? " cnf-button--loading" : ""}`}
           onClick={leave}

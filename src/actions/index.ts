@@ -6,7 +6,7 @@ import { signup } from './signup';
 import { changePassword } from './changePassword';
 import { requestPasswordReset, resetPassword } from './passwordReset';
 import { updateUsername } from './updateUsername';
-import { updateChapterMemberships, joinChapter, leaveChapter, getChapterMembership } from './chapterMembers';
+import { updateChapterMemberships, joinChapter, leaveChapter, getChapterMembership, setChapterEmails } from './chapterMembers';
 import { getEventRsvps, setEventRsvp } from './rsvps';
 import { uploadAvatar } from './avatar';
 
@@ -30,6 +30,7 @@ export const server = {
   joinChapter,
   leaveChapter,
   getChapterMembership,
+  setChapterEmails,
   getEventRsvps,
   setEventRsvp,
   uploadAvatar,

@@ -90,17 +90,6 @@ const chapterEvents = events.map((e) => e.data);
     height: 30px;
     width: 30px;
   }
-
-  .cnf-chapter-page__chat {
-    align-items: center;
-    display: inline-flex;
-    gap: 0.5rem;
-  }
-
-  .cnf-chapter-page__chat-icon {
-    height: 1.5rem;
-    width: 1.5rem;
-  }
 </style>
 
 <BaseLayout pageTitle={chapter.name} description={description} activeNav="chapters">
@@ -131,7 +120,13 @@ const chapterEvents = events.map((e) => e.data);
       )
     }
     <div class="cnf-chapter-page__actions">
-      <JoinChapterButton chapterId={chapter.id} client:load />
+      <JoinChapterButton
+        chapterId={chapter.id}
+        chapterName={chapter.name}
+        meetingWhen={meeting?.when}
+        chatUrl={chatUrl}
+        client:load
+      />
       {
         chatUrl && (
           <a class="cnf-chapter-page__chat" href={chatUrl} target="_blank" rel="noopener">
