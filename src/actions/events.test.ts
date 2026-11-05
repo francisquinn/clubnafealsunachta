@@ -7,8 +7,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // clients are mocked per table with state controlling each query's response.
 // requireAdmin is stubbed directly (rather than faking cookies/JWTs) since
 // isChapterInScope/scopeToAdminChapters — the two scoping helpers this file actually
-// exercises — are pure and kept real via importOriginal. sendMailchimpEmail
-// and triggerNetlifyBuild are stubbed as plain side-effect recorders.
+// exercises — are pure and kept real via importOriginal. triggerNetlifyBuild
+// is stubbed as a plain side-effect recorder.
 const state = vi.hoisted(() => {
   return {
     supabaseConfigured: true,
@@ -43,8 +43,8 @@ const state = vi.hoisted(() => {
     upsertedVenueRow: null as { id: number; name: string; url: string | null; chapter_id: number } | null,
     venueUpsertError: null as Error | null,
 
-    // chapters (admin client): slug lookup for the Mailchimp draft in createEvent,
-    // and the #177 Online chapter lookup by slug in resolveEventChapterId.
+    // chapters (admin client): the #177 Online chapter lookup by slug in
+    // resolveEventChapterId.
     chapterBySlugLookup: null as { slug: string } | null,
     onlineChapterRow: { id: 8 } as { id: number } | null,
     onlineChapterError: null as Error | null,
@@ -63,9 +63,10 @@ const state = vi.hoisted(() => {
     venuesScopeFilter: null as { col: string; vals: number[] } | null,
 
     // side effects.
-    mailchimpCall: null as unknown,
-    mailchimpError: null as Error | null,
     netlifyBuildCalled: false,
+    // Set only once the hook's request settles, so a caller that doesn't
+    // await it returns first.
+    netlifyBuildSettled: false,
   };
 });
 
@@ -79,16 +80,15 @@ vi.mock('../lib/auth', async (importOriginal) => {
   };
 });
 
-vi.mock('../lib/mailchimp', () => ({
-  sendMailchimpEmail: (event: unknown) => {
-    state.mailchimpCall = event;
-    return state.mailchimpError ? Promise.reject(state.mailchimpError) : Promise.resolve();
-  },
-}));
-
 vi.mock('../lib/netlifyBuildHook', () => ({
   triggerNetlifyBuild: () => {
     state.netlifyBuildCalled = true;
+    return new Promise<void>((resolve) =>
+      setTimeout(() => {
+        state.netlifyBuildSettled = true;
+        resolve();
+      }, 0),
+    );
   },
 }));
 
@@ -322,9 +322,8 @@ beforeEach(() => {
   state.venuesList = [];
   state.venuesListError = null;
   state.venuesScopeFilter = null;
-  state.mailchimpCall = null;
-  state.mailchimpError = null;
   state.netlifyBuildCalled = false;
+  state.netlifyBuildSettled = false;
 });
 
 describe('createEvent', () => {
@@ -425,13 +424,11 @@ describe('createEvent', () => {
     // audit stamp as a member's own RSVP does.
     expect(state.rsvpInsertPayload).toMatchObject({ member_id: 'admin-1', event_id: 42, status: 'going' });
     expect(state.rsvpInsertPayload?.updated_at).toEqual(expect.any(String));
-    expect(state.netlifyBuildCalled).toBe(true);
-    // #177: an online event belongs to the Online chapter, so the email
-    // goes to Online's members and links to its page.
-    expect(state.mailchimpCall).toMatchObject({
-      slug: 'philosophy-night',
-      chapter_slug: 'online',
-    });
+    // #205: awaited, since this build is what publishes and announces it.
+    expect(state.netlifyBuildSettled).toBe(true);
+    // #205: left unannounced (announced_at null) for the deploy this build
+    // triggers to email; no Mailchimp draft any more.
+    expect(state.insertedEvent).not.toHaveProperty('announced_at');
   });
 
   it("creates an in-person event via an existing venue, using the venue's chapter", async () => {
@@ -458,10 +455,6 @@ describe('createEvent', () => {
     // A plain string the type checker can't see: without chapter_id the venue fails the scope check.
     expect(state.venueLookupSelect).toBe('id, name, url, chapter_id');
     expect(state.rsvpInsertPayload).toMatchObject({ member_id: 'admin-2', event_id: 43, status: 'going' });
-    expect(state.mailchimpCall).toMatchObject({
-      chapter_slug: 'galway',
-      venue_name: 'The Reading Room',
-    });
   });
 
   it('still creates the event when seeding the host RSVP fails', async () => {
@@ -473,17 +466,6 @@ describe('createEvent', () => {
 
     expect(result).toEqual({ success: true });
     expect(consoleError).toHaveBeenCalled();
-    consoleError.mockRestore();
-  });
-
-  it('still creates the event when the Mailchimp draft fails', async () => {
-    state.admin = SUPER_ADMIN;
-    state.mailchimpError = new Error('Mailchimp is down');
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    const result = await createHandler(form(ONLINE_FORM), context());
-
-    expect(result).toEqual({ success: true });
     consoleError.mockRestore();
   });
 
@@ -507,7 +489,6 @@ describe('createEvent', () => {
 
     expect(result).toEqual({ success: true });
     expect(state.insertedEvent).toMatchObject({ slug: 'philosophy-night-2' });
-    expect(state.mailchimpCall).toMatchObject({ slug: 'philosophy-night-2' });
   });
 
   it('keeps incrementing past -2 when that is also taken', async () => {
@@ -631,15 +612,6 @@ describe('createEvent', () => {
     ).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
   });
 
-  it('throws INTERNAL_SERVER_ERROR when the chapter-slug lookup for the Mailchimp draft fails', async () => {
-    state.admin = SUPER_ADMIN;
-    state.insertedEventRow = { id: 46 };
-    state.chapterLookupError = new Error('boom');
-
-    await expect(
-      createHandler(form({ ...ONLINE_FORM, event_chapter_id: '3' }), context())
-    ).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
-  });
 });
 
 describe('updateEvent', () => {
