@@ -2,11 +2,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // #205: the deploy-succeeded function only announces from production
-// deploys, and only events saved before the deploy started.
+// deploys, and only events saved before the deploy started. This test lives
+// outside netlify/functions: Netlify deploys every file there as a function,
+// and a name like deploy-succeeded.test fails the deploy.
 const announce = vi.hoisted(() => vi.fn());
-vi.mock("../../src/lib/eventAnnouncements", () => ({ announcePendingEvents: announce }));
+vi.mock("../src/lib/eventAnnouncements", () => ({ announcePendingEvents: announce }));
 
-import deploySucceeded from "./deploy-succeeded";
+import deploySucceeded from "./functions/deploy-succeeded";
 
 const call = (payload: Record<string, unknown>) =>
   deploySucceeded(
