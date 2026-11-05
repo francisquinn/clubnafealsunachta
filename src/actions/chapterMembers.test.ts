@@ -6,27 +6,17 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // `ActionError` is stubbed with the same shape the real class throws
 // (`code` + `message`). The Supabase admin client is mocked table by table,
 // same chained shape as real supabase-js, with `state` letting each test
-// control exactly what comes back. Mailchimp is mocked wholesale so no test
-// can make a live API call (see #55) — state.tagError forces a tag call to
-// fail so the best-effort sync path can be exercised.
+// control exactly what comes back and recording every write.
+// #211: profile settings can only leave chapters and switch their emails, and
+// only for the chapters the form showed (`chapter_shown`) and, for emails,
+// only boxes that changed (`chapter_emails_was`), so a stale form can't undo
+// a join or an email choice made in another tab.
+type Write = { method: "delete" | "update"; values?: unknown; memberId: unknown; chapterIds: unknown };
+
 const state = vi.hoisted(() => ({
   payload: { memberId: "member-1", isAdmin: false } as { memberId: string; isAdmin: boolean } | null,
-  existingChapterIds: [] as number[],
-  chaptersQueryError: null as Error | null,
-  insertError: null as Error | null,
-  insertRows: [] as { member_id: string; chapter_id: number }[],
-  deleteError: null as Error | null,
-  deleteMemberId: null as string | null,
-  deleteNotOp: null as string | null,
-  deleteNotColumn: null as string | null,
-  upsertOptions: null as Record<string, unknown> | null,
-  // #55: data the Mailchimp tag sync reads back (member email + every
-  // chapter's id/slug), plus a way to make a tag call fail.
-  memberEmail: null as string | null,
-  memberEmailError: null as Error | null,
-  allChapters: [] as { id: number; slug: string }[],
-  allChaptersError: null as Error | null,
-  tagError: null as Error | null,
+  writeError: null as Error | null,
+  writes: [] as Write[],
 }));
 
 vi.mock("astro:actions", async () => (await import("../test/astroActions")).mockActionModule());
@@ -46,58 +36,26 @@ vi.mock("../lib/supabase", async () => {
   return {
     supabaseAdmin: {
       from: stubFrom({
-        // #55: chapter validation is `select('id').in(...)`; the Mailchimp tag
-        // sync reads every chapter with `select('id, slug')`. Branch on the
-        // field list to serve each shape.
-        chapters: () =>
-          stubQuery((calls) => {
-            if (callArgs(calls, "select")[0] === "id, slug") {
-              return { data: state.allChapters, error: state.allChaptersError };
-            }
-            const ids = (callArgs(calls, "in")[1] ?? []) as number[];
-            return {
-              data: ids.filter((id) => state.existingChapterIds.includes(id)).map((id) => ({ id })),
-              error: state.chaptersQueryError,
-            };
-          }),
-        members: () =>
-          stubQuery(() => ({
-            data: state.memberEmail ? { email: state.memberEmail } : null,
-            error: state.memberEmailError,
-          })),
         chapter_members: () =>
           stubQuery((calls) => {
-            if (calls.some((call) => call.method === "upsert")) {
-              state.insertRows = callArgs(calls, "upsert")[0] as { member_id: string; chapter_id: number }[];
-              state.upsertOptions = callArgs(calls, "upsert")[1] as Record<string, unknown>;
-              return { error: state.insertError };
+            const write = calls.find((call) => call.method === "delete" || call.method === "update");
+            if (write) {
+              state.writes.push({
+                method: write.method as Write["method"],
+                values: write.args[0],
+                memberId: callArgs(calls, "eq")[1],
+                chapterIds: callArgs(calls, "in")[1],
+              });
+              return { error: state.writeError };
             }
-            // delete().eq() is awaitable as-is (every chapter unselected) or
-            // followed by .not().
-            state.deleteMemberId = callArgs(calls, "eq")[1] as string;
-            const notArgs = callArgs(calls, "not");
-            if (notArgs.length) {
-              state.deleteNotColumn = notArgs[0] as string;
-              state.deleteNotOp = notArgs[2] as string;
-            }
-            return { error: state.deleteError };
+            throw new Error("unexpected chapter_members read");
           }),
       }),
     },
   };
 });
 
-vi.mock("../lib/mailchimp", () => ({
-  addChapterTag: vi.fn(async () => {
-    if (state.tagError) throw state.tagError;
-  }),
-  removeChapterTag: vi.fn(async () => {
-    if (state.tagError) throw state.tagError;
-  }),
-}));
-
 import { updateChapterMemberships } from "./chapterMembers";
-import { addChapterTag, removeChapterTag } from "../lib/mailchimp";
 
 // The mocked defineAction above returns the definition object (not Astro's
 // real client wrapper), so the raw handler is what reaches `handler`.
@@ -117,176 +75,95 @@ function run(formData: FormData, session = "session-token") {
   return action.handler(formData, makeContext(session));
 }
 
+function form(fields: Record<string, string[]>) {
+  const formData = new FormData();
+  for (const [name, values] of Object.entries(fields)) {
+    for (const value of values) formData.append(name, value);
+  }
+  return formData;
+}
+
+function writeOf(method: Write["method"], values?: unknown) {
+  return state.writes.find((write) => write.method === method && (values === undefined || JSON.stringify(write.values) === JSON.stringify(values)));
+}
+
 describe("updateChapterMemberships", () => {
   beforeEach(() => {
     state.payload = { memberId: "member-1", isAdmin: false };
-    state.existingChapterIds = [];
-    state.chaptersQueryError = null;
-    state.insertError = null;
-    state.insertRows = [];
-    state.deleteError = null;
-    state.deleteMemberId = null;
-    state.deleteNotOp = null;
-    state.deleteNotColumn = null;
-    state.upsertOptions = null;
-    state.memberEmail = null;
-    state.memberEmailError = null;
-    state.allChapters = [];
-    state.allChaptersError = null;
-    state.tagError = null;
-    vi.mocked(addChapterTag).mockClear();
-    vi.mocked(removeChapterTag).mockClear();
+    state.writeError = null;
+    state.writes = [];
   });
 
   it("rejects with UNAUTHORIZED when there is no session cookie", async () => {
     await expect(run(new FormData(), "")).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    expect(addChapterTag).not.toHaveBeenCalled();
-    expect(removeChapterTag).not.toHaveBeenCalled();
+    expect(state.writes).toEqual([]);
   });
 
   it("rejects with UNAUTHORIZED when the session token does not verify", async () => {
     state.payload = null;
 
     await expect(run(new FormData(), "session-token")).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    expect(addChapterTag).not.toHaveBeenCalled();
-    expect(removeChapterTag).not.toHaveBeenCalled();
+    expect(state.writes).toEqual([]);
   });
 
-  it("registers to each selected chapter and tags on in Mailchimp", async () => {
-    state.existingChapterIds = [1, 2];
-    state.memberEmail = "member@example.com";
-    state.allChapters = [
-      { id: 1, slug: "trieste" },
-      { id: 2, slug: "rome" },
-      { id: 3, slug: "venice" },
-    ];
-    const formData = new FormData();
-    formData.append("chapter_id", "1");
-    formData.append("chapter_id", "2");
-    formData.append("chapter_id", "1"); // duplicate — one membership per (member, chapter)
+  it("keeps ticked chapters, leaves unticked ones and switches the emails that changed", async () => {
+    const result = await run(
+      form({ chapter_shown: ["1", "2", "3"], chapter_id: ["1", "2", "1"], chapter_emails: ["2", "3"], chapter_emails_was: ["1"] })
+    );
 
-    await expect(run(formData)).resolves.toEqual({ success: true, chapter_ids: [1, 2] });
-
-    expect(state.insertRows).toEqual([
-      { member_id: "member-1", chapter_id: 1 },
-      { member_id: "member-1", chapter_id: 2 },
-    ]);
-    expect(state.deleteMemberId).toBe("member-1");
-    expect(state.deleteNotOp).toBe("(1,2)");
-    // Plain strings the type checker can't see: must match chapter_members' key and column.
-    expect(state.upsertOptions).toEqual({ onConflict: "member_id,chapter_id", ignoreDuplicates: true });
-    expect(state.deleteNotColumn).toBe("chapter_id");
-
-    // #55: selected chapters tagged on; unselected chapter left behind tagged off.
-    expect(addChapterTag).toHaveBeenCalledWith("member@example.com", "trieste");
-    expect(addChapterTag).toHaveBeenCalledWith("member@example.com", "rome");
-    expect(removeChapterTag).toHaveBeenCalledWith("member@example.com", "venice");
-    expect(addChapterTag).toHaveBeenCalledTimes(2);
-    expect(removeChapterTag).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ success: true, chapter_ids: [1, 2] });
+    expect(writeOf("delete")).toEqual({ method: "delete", values: undefined, memberId: "member-1", chapterIds: [3] });
+    // Chapter 3's email tick is ignored: it's being left.
+    expect(writeOf("update", { emails_enabled: true })).toMatchObject({ memberId: "member-1", chapterIds: [2] });
+    expect(writeOf("update", { emails_enabled: false })).toMatchObject({ memberId: "member-1", chapterIds: [1] });
+    expect(state.writes).toHaveLength(3);
   });
 
-  it("unregisters from every chapter and tags every chapter off when nothing is checked", async () => {
-    state.memberEmail = "member@example.com";
-    state.allChapters = [
-      { id: 1, slug: "trieste" },
-      { id: 2, slug: "rome" },
-    ];
+  it("leaves every shown chapter when nothing is ticked", async () => {
+    await expect(run(form({ chapter_shown: ["1", "2"] }))).resolves.toEqual({ success: true, chapter_ids: [] });
 
+    expect(state.writes).toEqual([{ method: "delete", values: undefined, memberId: "member-1", chapterIds: [1, 2] }]);
+  });
+
+  it("writes nothing when the form showed no chapters", async () => {
     await expect(run(new FormData())).resolves.toEqual({ success: true, chapter_ids: [] });
-
-    expect(state.insertRows).toEqual([]);
-    expect(state.deleteMemberId).toBe("member-1");
-    expect(state.deleteNotOp).toBeNull();
-
-    expect(addChapterTag).not.toHaveBeenCalled();
-    expect(removeChapterTag).toHaveBeenCalledWith("member@example.com", "trieste");
-    expect(removeChapterTag).toHaveBeenCalledWith("member@example.com", "rome");
+    expect(state.writes).toEqual([]);
   });
 
-  it("ignores blank or malformed chapter_id values instead of treating them as chapter ids", async () => {
-    state.existingChapterIds = [1];
-    state.memberEmail = "member@example.com";
-    state.allChapters = [{ id: 1, slug: "trieste" }];
-    const formData = new FormData();
-    formData.append("chapter_id", "1");
-    formData.append("chapter_id", "");
+  it("leaves alone a chapter the form didn't show, e.g. one joined in another tab since", async () => {
+    // A stale tab showed only chapter 1; the member has since joined 2 and
+    // opted in to its emails elsewhere.
+    await run(form({ chapter_shown: ["1"], chapter_id: ["1"], chapter_emails_was: ["1"] }));
 
-    await expect(run(formData)).resolves.toEqual({ success: true, chapter_ids: [1] });
-
-    expect(state.insertRows).toEqual([{ member_id: "member-1", chapter_id: 1 }]);
-    expect(state.deleteNotOp).toBe("(1)");
+    expect(writeOf("delete")).toBeUndefined();
+    expect(state.writes).toEqual([{ method: "update", values: { emails_enabled: false }, memberId: "member-1", chapterIds: [1] }]);
   });
 
-  it("skips the Mailchimp sync entirely when the member has no stored email", async () => {
-    state.existingChapterIds = [1];
-    state.memberEmail = null;
-    state.allChapters = [{ id: 1, slug: "trieste" }];
-    const formData = new FormData();
-    formData.append("chapter_id", "1");
+  it("leaves an untouched email box alone, so a stale tab can't undo an opt-out made elsewhere", async () => {
+    // The tab loaded with chapter 1's emails on and the box still ticked;
+    // the member has since turned them off in another tab.
+    await run(form({ chapter_shown: ["1"], chapter_id: ["1"], chapter_emails: ["1"], chapter_emails_was: ["1"] }));
 
-    await expect(run(formData)).resolves.toEqual({ success: true, chapter_ids: [1] });
-
-    expect(addChapterTag).not.toHaveBeenCalled();
-    expect(removeChapterTag).not.toHaveBeenCalled();
+    expect(state.writes).toEqual([]);
   });
 
-  it("keeps the membership update successful when a Mailchimp tag call fails", async () => {
-    state.existingChapterIds = [1];
-    state.memberEmail = "member@example.com";
-    state.allChapters = [{ id: 1, slug: "trieste" }];
-    state.tagError = new Error("Mailchimp is down");
-    const formData = new FormData();
-    formData.append("chapter_id", "1");
+  it("never touches a ticked chapter that wasn't shown, so the form can't be used to join", async () => {
+    await run(form({ chapter_shown: ["1"], chapter_id: ["1", "2"], chapter_emails: ["2"] }));
 
-    await expect(run(formData)).resolves.toEqual({ success: true, chapter_ids: [1] });
-
-    expect(addChapterTag).toHaveBeenCalledWith("member@example.com", "trieste");
+    expect(state.writes.flatMap((write) => write.chapterIds as number[])).not.toContain(2);
   });
 
-  it("rejects with BAD_REQUEST when a selected chapter does not exist", async () => {
-    state.existingChapterIds = [1];
-    state.memberEmail = "member@example.com";
-    state.allChapters = [{ id: 1, slug: "trieste" }];
-    const formData = new FormData();
-    formData.append("chapter_id", "1");
-    formData.append("chapter_id", "99");
+  it("ignores blank or malformed chapter ids instead of treating them as chapter ids", async () => {
+    const result = await run(form({ chapter_shown: ["1", ""], chapter_id: ["1", "", "abc"], chapter_emails: ["", "1"] }));
 
-    await expect(run(formData)).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(state.insertRows).toEqual([]);
-    expect(addChapterTag).not.toHaveBeenCalled();
-    expect(removeChapterTag).not.toHaveBeenCalled();
+    expect(result).toEqual({ success: true, chapter_ids: [1] });
+    expect(writeOf("delete")).toBeUndefined();
+    expect(writeOf("update", { emails_enabled: true })).toMatchObject({ chapterIds: [1] });
   });
 
-  it("rejects with INTERNAL_SERVER_ERROR when the chapters lookup fails", async () => {
-    state.existingChapterIds = [1];
-    state.chaptersQueryError = new Error("boom");
-    const formData = new FormData();
-    formData.append("chapter_id", "1");
+  it("rejects with INTERNAL_SERVER_ERROR when a write fails", async () => {
+    state.writeError = new Error("boom");
 
-    await expect(run(formData)).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
-    expect(addChapterTag).not.toHaveBeenCalled();
-    expect(removeChapterTag).not.toHaveBeenCalled();
-  });
-
-  it("rejects with INTERNAL_SERVER_ERROR when the membership insert fails", async () => {
-    state.existingChapterIds = [1];
-    state.insertError = new Error("boom");
-    const formData = new FormData();
-    formData.append("chapter_id", "1");
-
-    await expect(run(formData)).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
-    expect(addChapterTag).not.toHaveBeenCalled();
-    expect(removeChapterTag).not.toHaveBeenCalled();
-  });
-
-  it("rejects with INTERNAL_SERVER_ERROR when the membership delete fails", async () => {
-    state.existingChapterIds = [1];
-    state.deleteError = new Error("boom");
-    const formData = new FormData();
-    formData.append("chapter_id", "1");
-
-    await expect(run(formData)).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
-    expect(addChapterTag).not.toHaveBeenCalled();
-    expect(removeChapterTag).not.toHaveBeenCalled();
+    await expect(run(form({ chapter_shown: ["1", "2"], chapter_id: ["1"] }))).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
   });
 });

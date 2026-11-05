@@ -1,15 +1,12 @@
 import { DEFAULT_CHAPTER_TIMEZONE } from './chapterDefaults';
-import { createHash } from 'crypto';
 
 const MAILCHIMP_API_KEY = process.env.MAILCHIMP_API_KEY;
 const MAILCHIMP_AUDIENCE_ID = process.env.MAILCHIMP_AUDIENCE_ID;
 const DC = MAILCHIMP_API_KEY?.split('-')[1];
 
-// #55: chapter subscriptions are mirrored onto Mailchimp member tags named
-// chapter:<slug> (e.g. chapter:trieste). The anonymous newsletter form
-// (subscribe.ts) creates untagged contacts; this is the tagged lane.
-// #178: renamed from club:<slug>; existing members are re-tagged and the
-// segments rebuilt on the new tags in the same deploy.
+// #55: event campaigns target the audience segment named chapter:<slug>
+// (e.g. chapter:trieste). #211 stopped syncing chapter memberships onto these
+// tags, and #205 replaces the event campaign with the site's own email.
 export const CHAPTER_TAG_PREFIX = 'chapter:';
 
 export function chapterTagFor(chapterSlug: string): string {
@@ -27,10 +24,6 @@ export const mailchimpRuntime = {
 
 function isConfigured(): boolean {
   return Boolean(MAILCHIMP_API_KEY && MAILCHIMP_AUDIENCE_ID && DC);
-}
-
-function subscriberHash(email: string): string {
-  return createHash('md5').update(email.trim().toLowerCase()).digest('hex');
 }
 
 async function mailchimpError(res: Response): Promise<Error> {
@@ -287,48 +280,6 @@ function buildPostEmailHtml(post: PostDraft): string {
     ctaText: 'Read post',
     ctaUrl: `${SITE_URL}/posts/${post.slug}`,
   });
-}
-
-// The tags endpoint only updates the tags explicitly named in the request —
-// setting one "inactive" is how a tag is removed (the contact stays on the
-// audience). A 404 means the contact has never been on the audience at all
-// (e.g. a member who is only ever unsubscribing), so there is nothing to
-// untag: treat it as done.
-async function setMemberTags(email: string, tags: { name: string; status: 'active' | 'inactive' }[]): Promise<void> {
-  const res = await mailchimp(`/lists/${MAILCHIMP_AUDIENCE_ID}/members/${subscriberHash(email)}/tags`, {
-    method: 'POST',
-    body: { tags },
-  });
-  if (res.ok || res.status === 404) return;
-  throw new Error(`Mailchimp tag update failed: ${(await mailchimpError(res)).message}`);
-}
-
-// Join a chapter: make sure the member's email is on the audience (creating the
-// contact as subscribed if new, leaving an existing contact's status
-// untouched) and carry the chapter:<slug> tag. Not dev-gated like the campaign
-// send — same posture as subscribe.ts, a real user gesture.
-export async function addChapterTag(email: string, chapterSlug: string): Promise<void> {
-  if (!isConfigured()) {
-    console.warn('Mailchimp not configured — skipping tag update');
-    return;
-  }
-  const res = await mailchimp(`/lists/${MAILCHIMP_AUDIENCE_ID}/members/${subscriberHash(email)}`, {
-    method: 'PUT',
-    body: { email_address: email, status_if_new: 'subscribed' },
-  });
-  if (!res.ok) {
-    throw new Error(`Mailchimp member upsert failed: ${(await mailchimpError(res)).message}`);
-  }
-  await setMemberTags(email, [{ name: chapterTagFor(chapterSlug), status: 'active' }]);
-}
-
-// Leave a chapter: keep the contact, drop the chapter:<slug> tag.
-export async function removeChapterTag(email: string, chapterSlug: string): Promise<void> {
-  if (!isConfigured()) {
-    console.warn('Mailchimp not configured — skipping tag update');
-    return;
-  }
-  await setMemberTags(email, [{ name: chapterTagFor(chapterSlug), status: 'inactive' }]);
 }
 
 // Mailchimp's segments list endpoint pages by default; 1000 is the API's own

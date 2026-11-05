@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Handler-level tests for joinChapter and getChapterMembership; same mocking
-// approach as chapterMembers.test.ts (defineAction returns the definition, the
-// Supabase admin client is a per-table stub, Mailchimp is mocked wholesale).
+// Handler-level tests for joinChapter, leaveChapter, getChapterMembership and
+// setChapterEmails; same mocking approach as chapterMembers.test.ts
+// (defineAction returns the definition, the Supabase admin client is a
+// per-table stub).
 const state = vi.hoisted(() => ({
   payload: { memberId: "member-1", isAdmin: false } as { memberId: string; isAdmin: boolean } | null,
   chapter: { id: 2, slug: "online" } as { id: number; slug: string } | null,
@@ -15,6 +16,10 @@ const state = vi.hoisted(() => ({
   membership: null as { chapter_id: number } | null,
   membershipError: null as Error | null,
   membershipFilters: [] as unknown[][],
+  updateValues: null as unknown,
+  updateFilters: null as unknown[][] | null,
+  updatedRows: [] as { chapter_id: number }[],
+  updateError: null as Error | null,
 }));
 
 vi.mock("astro:actions", async () => (await import("../test/astroActions")).mockActionModule());
@@ -36,6 +41,12 @@ vi.mock("../lib/supabase", async () => {
               state.deleteFilters = calls.filter((call) => call.method === "eq").map((call) => call.args);
               return { error: state.deleteError };
             }
+            const update = calls.find((call) => call.method === "update");
+            if (update) {
+              state.updateValues = update.args[0];
+              state.updateFilters = calls.filter((call) => call.method === "eq").map((call) => call.args);
+              return { data: state.updatedRows, error: state.updateError };
+            }
             const upsert = calls.find((call) => call.method === "upsert");
             if (upsert) {
               state.upsertRows = upsert.args[0] as { member_id: string; chapter_id: number }[];
@@ -50,13 +61,7 @@ vi.mock("../lib/supabase", async () => {
   };
 });
 
-vi.mock("../lib/mailchimp", () => ({
-  addChapterTag: vi.fn(async () => {}),
-  removeChapterTag: vi.fn(async () => {}),
-}));
-
-import { joinChapter, leaveChapter, getChapterMembership } from "./chapterMembers";
-import { addChapterTag, removeChapterTag } from "../lib/mailchimp";
+import { joinChapter, leaveChapter, getChapterMembership, setChapterEmails } from "./chapterMembers";
 
 type Handler<T> = {
   handler: (input: { chapterId: number }, context: { cookies: { get: (name: string) => { value: string } | null } }) => Promise<T>;
@@ -64,6 +69,9 @@ type Handler<T> = {
 const join = joinChapter as unknown as Handler<{ joined: boolean }>;
 const leave = leaveChapter as unknown as Handler<{ joined: boolean }>;
 const membership = getChapterMembership as unknown as Handler<{ joined: boolean }>;
+const setEmails = setChapterEmails as unknown as {
+  handler: (input: { chapterId: number; enabled: boolean }, context: ReturnType<typeof ctx>) => Promise<{ emailsEnabled: boolean }>;
+};
 
 function ctx(session?: string) {
   return { cookies: { get: (name: string) => (name === "session" && session ? { value: session } : null) } };
@@ -81,8 +89,10 @@ beforeEach(() => {
   state.membership = null;
   state.membershipError = null;
   state.membershipFilters = [];
-  vi.mocked(addChapterTag).mockClear();
-  vi.mocked(removeChapterTag).mockClear();
+  state.updateValues = null;
+  state.updateFilters = null;
+  state.updatedRows = [];
+  state.updateError = null;
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -98,18 +108,17 @@ describe("joinChapter", () => {
     expect(state.upsertRows).toBeNull();
   });
 
-  it("adds just that one membership, tolerating a repeat, without touching Mailchimp", async () => {
+  it("adds just that one membership, tolerating a repeat, with emails left off", async () => {
     await expect(join.handler({ chapterId: 2 }, ctx("token"))).resolves.toEqual({ joined: true });
     expect(state.upsertRows).toEqual([{ member_id: "member-1", chapter_id: 2 }]);
     expect(state.upsertOptions).toMatchObject({ onConflict: "member_id,chapter_id", ignoreDuplicates: true });
-    expect(addChapterTag).not.toHaveBeenCalled();
-    expect(removeChapterTag).not.toHaveBeenCalled();
+    // #211: no emails_enabled in the row, so the column default (false) applies.
+    expect(state.upsertRows?.[0]).not.toHaveProperty("emails_enabled");
   });
 
   it("fails with INTERNAL_SERVER_ERROR when the insert fails", async () => {
     state.upsertError = new Error("boom");
     await expect(join.handler({ chapterId: 2 }, ctx("token"))).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
-    expect(addChapterTag).not.toHaveBeenCalled();
   });
 });
 
@@ -125,17 +134,14 @@ describe("leaveChapter", () => {
     expect(state.deleteFilters).toBeNull();
   });
 
-  it("removes just that one membership without touching Mailchimp", async () => {
+  it("removes just that one membership", async () => {
     await expect(leave.handler({ chapterId: 2 }, ctx("token"))).resolves.toEqual({ joined: false });
     expect(state.deleteFilters).toEqual([["member_id", "member-1"], ["chapter_id", 2]]);
-    expect(removeChapterTag).not.toHaveBeenCalled();
-    expect(addChapterTag).not.toHaveBeenCalled();
   });
 
   it("fails with INTERNAL_SERVER_ERROR when the delete fails", async () => {
     state.deleteError = new Error("boom");
     await expect(leave.handler({ chapterId: 2 }, ctx("token"))).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
-    expect(removeChapterTag).not.toHaveBeenCalled();
   });
 });
 
@@ -157,5 +163,28 @@ describe("getChapterMembership", () => {
   it("fails with INTERNAL_SERVER_ERROR on a query error", async () => {
     state.membershipError = new Error("boom");
     await expect(membership.handler({ chapterId: 2 }, ctx("token"))).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+  });
+});
+
+describe("setChapterEmails", () => {
+  it("rejects a logged-out visitor", async () => {
+    await expect(setEmails.handler({ chapterId: 2, enabled: true }, ctx())).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    expect(state.updateValues).toBeNull();
+  });
+
+  it("switches the emails for this member's membership of that chapter", async () => {
+    state.updatedRows = [{ chapter_id: 2 }];
+    await expect(setEmails.handler({ chapterId: 2, enabled: true }, ctx("token"))).resolves.toEqual({ emailsEnabled: true });
+    expect(state.updateValues).toEqual({ emails_enabled: true });
+    expect(state.updateFilters).toEqual([["member_id", "member-1"], ["chapter_id", 2]]);
+  });
+
+  it("answers NOT_FOUND for a chapter the member isn't in, so it can't be used to join", async () => {
+    await expect(setEmails.handler({ chapterId: 2, enabled: true }, ctx("token"))).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("fails with INTERNAL_SERVER_ERROR when the update fails", async () => {
+    state.updateError = new Error("boom");
+    await expect(setEmails.handler({ chapterId: 2, enabled: false }, ctx("token"))).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
   });
 });

@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
-import { createHash } from 'crypto';
 
 // The module captures MAILCHIMP_API_KEY/DC at import time, so the env must be
 // set before the import below evaluates (vi.hoisted runs before imports).
@@ -9,15 +8,12 @@ vi.hoisted(() => {
 });
 
 import {
-  addChapterTag,
-  removeChapterTag,
   sendMailchimpEmail,
   chapterTagFor,
   mailchimpRuntime,
 } from './mailchimp';
 
 const US1 = 'https://us1.api.mailchimp.com/3.0';
-const HASH = createHash('md5').update('member@example.com').digest('hex');
 
 // Stub the network: every Mailchimp call goes through global fetch, so
 // replacing it means no test can reach the live API (see #55 acceptance).
@@ -35,10 +31,6 @@ function fakeResponse(body: unknown, status = 200) {
   } as unknown as Response;
 }
 
-function memberUpsertResponse() {
-  return fakeResponse({ id: 'member-id', email_address: 'member@example.com', status: 'subscribed' });
-}
-
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
@@ -52,78 +44,6 @@ afterAll(() => {
 describe('chapterTagFor', () => {
   it('namespaces a chapter slug under chapter:', () => {
     expect(chapterTagFor('trieste')).toBe('chapter:trieste');
-  });
-});
-
-describe('addChapterTag', () => {
-  beforeEach(() => {
-    globalThis.fetch = vi.fn();
-  });
-
-  it('upserts the member into the audience then activates the chapter tag', async () => {
-    fetchMock()
-      .mockResolvedValueOnce(memberUpsertResponse())
-      .mockResolvedValueOnce(fakeResponse({}, 200));
-
-    // Member email in the URL hash is lowercased/trimmed; the body keeps the
-    // stored casing.
-    await addChapterTag('Member@Example.COM ', 'trieste');
-
-    expect(fetchMock()).toHaveBeenCalledTimes(2);
-
-    const [upsertUrl, upsertInit] = fetchMock().mock.calls[0] as [string, RequestInit];
-    expect(upsertUrl).toBe(`${US1}/lists/audience-123/members/${HASH}`);
-    expect(upsertInit.method).toBe('PUT');
-    expect(JSON.parse(String(upsertInit.body))).toEqual({
-      email_address: 'Member@Example.COM ',
-      status_if_new: 'subscribed',
-    });
-    expect(String(new Headers(upsertInit.headers).get('Authorization'))).toMatch(/^Basic /);
-
-    const [tagUrl, tagInit] = fetchMock().mock.calls[1] as [string, RequestInit];
-    expect(tagUrl).toBe(`${US1}/lists/audience-123/members/${HASH}/tags`);
-    expect(tagInit.method).toBe('POST');
-    expect(JSON.parse(String(tagInit.body))).toEqual({
-      tags: [{ name: 'chapter:trieste', status: 'active' }],
-    });
-  });
-
-  it('throws when the member upsert is rejected by the API', async () => {
-    fetchMock().mockResolvedValueOnce(
-      fakeResponse({ title: 'Invalid Resource', detail: 'The resource submitted could not be validated.' }, 400)
-    );
-
-    await expect(addChapterTag('member@example.com', 'trieste')).rejects.toThrow(
-      /Mailchimp member upsert failed: The resource submitted could not be validated\./
-    );
-    expect(fetchMock()).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('removeChapterTag', () => {
-  beforeEach(() => {
-    globalThis.fetch = vi.fn();
-  });
-
-  it('drops the chapter tag but leaves the contact on the audience', async () => {
-    fetchMock().mockResolvedValueOnce(fakeResponse({}, 200));
-
-    await removeChapterTag('member@example.com', 'trieste');
-
-    expect(fetchMock()).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock().mock.calls[0] as [string, RequestInit];
-    expect(url).toBe(`${US1}/lists/audience-123/members/${HASH}/tags`);
-    expect(init.method).toBe('POST');
-    expect(JSON.parse(String(init.body))).toEqual({
-      tags: [{ name: 'chapter:trieste', status: 'inactive' }],
-    });
-  });
-
-  it('treats a missing contact (404) as already untagged', async () => {
-    fetchMock().mockResolvedValueOnce(fakeResponse({ title: 'Resource Not Found' }, 404));
-
-    await expect(removeChapterTag('member@example.com', 'trieste')).resolves.toBeUndefined();
-    expect(fetchMock()).toHaveBeenCalledTimes(1);
   });
 });
 

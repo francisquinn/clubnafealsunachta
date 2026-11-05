@@ -2,44 +2,16 @@ import { defineAction, ActionError } from 'astro:actions';
 import { z } from 'astro/zod';
 import { verifySession } from '../lib/auth';
 import { supabaseAdmin } from '../lib/supabase';
-import { addChapterTag, removeChapterTag } from '../lib/mailchimp';
-
-// #55: mirror the member's chapter subscriptions onto Mailchimp member tags
-// (chapter:<slug>) so event emails can target one chapter's audience. Everything
-// checked stays tagged on, everything not checked (against the full chapter
-// list) is tagged off — an idempotent upsert, so saving the same choice
-// again is a no-op, and a member with no stored email just skips out.
-async function syncMailchimpChapterTags(memberId: string, selectedChapterIds: number[]): Promise<void> {
-  if (!supabaseAdmin) return;
-
-  const { data: member, error: memberError } = await supabaseAdmin
-    .from('members')
-    .select('email')
-    .eq('id', memberId)
-    .single();
-  if (memberError || !member?.email) return;
-
-  const { data: chapters, error: chaptersError } = await supabaseAdmin
-    .from('chapters')
-    .select('id, slug');
-  if (chaptersError) return;
-
-  const slugById = new Map((chapters ?? []).map((chapter) => [chapter.id, chapter.slug]));
-  const leavingChapterIds = (chapters ?? []).map((chapter) => chapter.id).filter((id) => !selectedChapterIds.includes(id));
-
-  for (const id of selectedChapterIds) {
-    const slug = slugById.get(id);
-    if (slug) await addChapterTag(member.email, slug);
-  }
-  for (const id of leavingChapterIds) {
-    const slug = slugById.get(id);
-    if (slug) await removeChapterTag(member.email, slug);
-  }
-}
-
-// #38: any logged-in member can register to any chapter — this is purely an
-// opt-in to that chapter's news/updates, not a gate on browsing/RSVP (which
-// stay open regardless), so there's no admin-scope check here at all.
+// Profile settings' chapter list (#211): members can only leave a chapter or
+// switch its event emails here, never join one — joining is the chapter
+// page's button. `chapter_shown` lists the chapters the form showed,
+// `chapter_id` the shown ones still ticked, `chapter_emails` those with
+// event emails ticked and `chapter_emails_was` those whose emails were on
+// when the form loaded. Only shown chapters are touched, and a chapter's
+// emails are only written when its box changed, so saving a stale form
+// can't undo a join, an opt-in or an opt-out made in another tab. Every
+// write is an update or delete of the member's own rows, so nothing here
+// can join.
 export const updateChapterMemberships = defineAction({
   accept: 'form',
   handler: async (formData, context) => {
@@ -56,76 +28,43 @@ export const updateChapterMemberships = defineAction({
     // Number("") is 0, not NaN, so a blank/malformed value would otherwise
     // slip past Number.isInteger — filter those out explicitly (chapter ids are
     // sequence-backed starting at 1, see chapters_id_seq).
-    const selectedChapterIds = [...new Set(
-      formData.getAll('chapter_id')
+    const chapterIdsFrom = (field: string) => [...new Set(
+      formData.getAll(field)
         .map((value) => Number(value))
         .filter((id) => Number.isInteger(id) && id > 0)
     )];
+    const shownChapterIds = chapterIdsFrom('chapter_shown');
+    const tickedChapterIds = chapterIdsFrom('chapter_id');
+    const emailChapterIds = chapterIdsFrom('chapter_emails');
+    const emailsWereOnIds = chapterIdsFrom('chapter_emails_was');
 
-    // Validate against real chapters up front so a stale/tampered id fails with
-    // a clear 400 here instead of an opaque FK-violation 500 down at insert.
-    if (selectedChapterIds.length > 0) {
-      const { data: validChapters, error: chaptersError } = await supabaseAdmin
-        .from('chapters')
-        .select('id')
-        .in('id', selectedChapterIds);
+    const keptChapterIds = shownChapterIds.filter((id) => tickedChapterIds.includes(id));
+    const leftChapterIds = shownChapterIds.filter((id) => !tickedChapterIds.includes(id));
+    const emailsOnIds = keptChapterIds.filter((id) => emailChapterIds.includes(id) && !emailsWereOnIds.includes(id));
+    const emailsOffIds = keptChapterIds.filter((id) => !emailChapterIds.includes(id) && emailsWereOnIds.includes(id));
 
-      if (chaptersError) {
-        throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to update chapter subscriptions' });
-      }
-      if ((validChapters ?? []).length !== selectedChapterIds.length) {
-        throw new ActionError({ code: 'BAD_REQUEST', message: 'One or more selected chapters do not exist' });
-      }
+    const writes = [
+      leftChapterIds.length > 0 &&
+        supabaseAdmin.from('chapter_members').delete().eq('member_id', payload.memberId).in('chapter_id', leftChapterIds),
+      emailsOnIds.length > 0 &&
+        supabaseAdmin.from('chapter_members').update({ emails_enabled: true }).eq('member_id', payload.memberId).in('chapter_id', emailsOnIds),
+      emailsOffIds.length > 0 &&
+        supabaseAdmin.from('chapter_members').update({ emails_enabled: false }).eq('member_id', payload.memberId).in('chapter_id', emailsOffIds),
+    ].filter((write) => write !== false);
+
+    const results = await Promise.all(writes);
+    if (results.some((result) => result.error)) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to update chapter settings' });
     }
 
-    // Replace the member's full membership set with an insert first, then a
-    // delete of whatever's left over — not the other way around. If the
-    // insert fails partway, the member still has their prior memberships
-    // intact; a delete-first ordering would instead leave them with nothing
-    // if the following insert failed. `ignoreDuplicates` makes the insert
-    // tolerant of a same-request repeat (e.g. a racing double-submit)
-    // instead of surfacing a raw unique-violation error.
-    if (selectedChapterIds.length > 0) {
-      const { error: insertError } = await supabaseAdmin
-        .from('chapter_members')
-        .upsert(
-          selectedChapterIds.map((chapter_id) => ({ member_id: payload.memberId, chapter_id })),
-          { onConflict: 'member_id,chapter_id', ignoreDuplicates: true }
-        );
-      if (insertError) {
-        throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to update chapter subscriptions' });
-      }
-    }
-
-    let deleteQuery = supabaseAdmin.from('chapter_members').delete().eq('member_id', payload.memberId);
-    if (selectedChapterIds.length > 0) {
-      deleteQuery = deleteQuery.not('chapter_id', 'in', `(${selectedChapterIds.join(',')})`);
-    }
-    const { error: deleteError } = await deleteQuery;
-
-    if (deleteError) {
-      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to update chapter subscriptions' });
-    }
-
-    // #55: keep the Mailchimp tags in line with the new membership set.
-    // Best effort never fails the request — same posture as the event email
-    // in createEvent — so a transient Mailchimp outage can't strand the
-    // member with a half-applied chapter change.
-    try {
-      await syncMailchimpChapterTags(payload.memberId, selectedChapterIds);
-    } catch (err) {
-      console.error('Mailchimp chapter tag sync failed:', err);
-    }
-
-    return { success: true, chapter_ids: selectedChapterIds };
+    return { success: true, chapter_ids: keptChapterIds };
   },
 });
 
 // The chapter page's "Join the chapter" button: add the member to one chapter,
-// leaving their other memberships alone (updateChapterMemberships replaces the
-// whole set, so it can't be used for a single join). Same side effects as
-// ticking the chapter in account settings, except that nothing is sent to
-// Mailchimp: joining a chapter on its page never touches the mailing list.
+// leaving their other memberships alone. It's the only way into a chapter
+// (#211), and joins with event emails off: the welcome modal's checkbox
+// (setChapterEmails) is where the member opts in.
 export const joinChapter = defineAction({
   input: z.object({ chapterId: z.number().int().positive() }),
   handler: async ({ chapterId }, context) => {
@@ -166,8 +105,8 @@ export const joinChapter = defineAction({
 });
 
 // The chapter page's "Member" button: take the member out of one chapter,
-// leaving their other memberships alone. Like joinChapter, it does not touch
-// Mailchimp. Leaving a chapter the member is not in is a no-op.
+// leaving their other memberships alone. Leaving a chapter the member is not
+// in is a no-op.
 export const leaveChapter = defineAction({
   input: z.object({ chapterId: z.number().int().positive() }),
   handler: async ({ chapterId }, context) => {
@@ -230,5 +169,37 @@ export const getChapterMembership = defineAction({
     }
 
     return { joined: data !== null };
+  },
+});
+
+// The welcome modal's "Email me about upcoming events" checkbox (#211): turn a
+// chapter's event emails on or off for the logged-in member. Only for a
+// chapter they're in, so it can't be used to join one.
+export const setChapterEmails = defineAction({
+  input: z.object({ chapterId: z.number().int().positive(), enabled: z.boolean() }),
+  handler: async ({ chapterId, enabled }, context) => {
+    const payload = await verifySession(context.cookies.get('session')?.value);
+    if (!payload) {
+      throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
+    }
+
+    if (!supabaseAdmin) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Supabase not configured' });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('chapter_members')
+      .update({ emails_enabled: enabled })
+      .eq('member_id', payload.memberId)
+      .eq('chapter_id', chapterId)
+      .select('chapter_id');
+    if (error) {
+      throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to save email preference' });
+    }
+    if (!data || data.length === 0) {
+      throw new ActionError({ code: 'NOT_FOUND', message: 'Not a member of this chapter' });
+    }
+
+    return { emailsEnabled: enabled };
   },
 });

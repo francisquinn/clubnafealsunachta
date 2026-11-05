@@ -7,9 +7,15 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  // id of the heading that names the dialog for screen readers.
+  labelledBy?: string;
+  // Where focus goes on close. The browser returns it to whatever opened the
+  // dialog, which is lost when that element is gone (e.g. a Join button
+  // swapped for a Member button).
+  returnFocusRef?: React.RefObject<HTMLElement | null>;
 }
 
-export default function Modal({ isOpen, onClose, children }: ModalProps) {
+export default function Modal({ isOpen, onClose, children, labelledBy, returnFocusRef }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [isClosing, setIsClosing] = useState(false);
 
@@ -28,12 +34,13 @@ export default function Modal({ isOpen, onClose, children }: ModalProps) {
         dialog.close();
         document.body.classList.remove("cnf-modal-open");
         setIsClosing(false);
+        returnFocusRef?.current?.focus();
       }, ANIMATION_MS);
       return () => clearTimeout(timer);
     }
 
     return undefined;
-  }, [isOpen]);
+  }, [isOpen, returnFocusRef]);
 
   useEffect(() => {
     return () => document.body.classList.remove("cnf-modal-open");
@@ -48,6 +55,7 @@ export default function Modal({ isOpen, onClose, children }: ModalProps) {
     <dialog
       ref={dialogRef}
       className={`cnf-modal ${isClosing ? "cnf-modal--closing" : ""}`}
+      aria-labelledby={labelledBy}
       onCancel={handleCancel}
       onClick={(e) => {
         if (e.target === dialogRef.current) onClose();
