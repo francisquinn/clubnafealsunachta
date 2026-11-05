@@ -6,8 +6,8 @@ import { buildGoogleCalendarUrl, toEventIcsData } from "../../../lib/ics";
 import "../../../styles/event.css";
 import Banner from "../../../layouts/Banner.astro";
 import EventRsvp from "../../../components/EventRsvp/EventRsvp";
-import JoinEventButton from "../../../components/JoinEventButton/JoinEventButton";
-import AddToCalendarButton from "../../../components/AddToCalendarButton/AddToCalendarButton";
+import EventLiveActions from "../../../components/EventLiveActions/EventLiveActions";
+import EventLocation from "../../../components/EventLocation/EventLocation";
 import { getDisplayName } from "../../../lib/memberDisplay";
 import Avatar from "../../../components/Avatar/Avatar.astro";
 import { getEventChapterStaticPaths } from "../../../lib/chapters";
@@ -31,7 +31,8 @@ const { chapterSlug } = Astro.params;
 // a `download` filename for every browser except real Safari (confirmed live
 // 2026-09-04: without it, Chrome saves a generic "download.ics") — that part
 // is unaffected by the swap since it works the same on a real URL. Past
-// events get no button.
+// events get no button at build; #197: EventLiveActions then refreshes from
+// live data on hydration (both directions).
 const isCalendarVisible = !isEventExpired(event.data);
 const icsEventData = toEventIcsData(event);
 const icsHref = `/${chapterSlug}/events/${event.data.slug}.ics`;
@@ -52,20 +53,13 @@ const tagLabels = normalizeTags(event.data.tags ?? []).flatMap((slug) => getTagL
       <span class="cnf-event-page__details-info"
         >{formatEventDate(new Date(event.data.date))}–{formatEventEndTime(new Date(event.data.endDate))}</span
       >
-      {
-        event.data.isOnline
-          ? <a href={event.data.meetingUrl} class="cnf-event-page__details-link" target="_blank">
-              Online
-            </a>
-          : event.data.venue?.url
-            ? <a href={event.data.venue.url} class="cnf-event-page__details-link" target="_blank">
-                <img src="/map-pin.svg" />
-                {event.data.venue.name}
-              </a>
-            : event.data.venue?.name
-              ? <span class="cnf-event-page__details-info">{event.data.venue.name}</span>
-              : null
-      }
+      <EventLocation
+        slug={event.data.slug}
+        isOnline={event.data.isOnline}
+        meetingUrl={event.data.meetingUrl}
+        venue={event.data.venue}
+        client:load
+      />
     </div>
     {event.data.description && (
       <div class="cnf-event-page__description">
@@ -90,17 +84,17 @@ const tagLabels = normalizeTags(event.data.tags ?? []).flatMap((slug) => getTagL
       >
     </div>
     <div class="cnf-event-page__details">
-      <JoinEventButton event={event.data} />
-      {
-        isCalendarVisible && (
-          <AddToCalendarButton
-            icsHref={icsHref}
-            icsFilename={icsFilename}
-            googleUrl={googleCalendarUrl}
-            client:load
-          />
-        )
-      }
+      <EventLiveActions
+        slug={event.data.slug}
+        visibleAtBuild={isCalendarVisible}
+        endDate={event.data.endDate}
+        isOnline={event.data.isOnline}
+        meetingUrl={event.data.meetingUrl}
+        icsHref={icsHref}
+        icsFilename={icsFilename}
+        googleUrl={googleCalendarUrl}
+        client:load
+      />
     </div>
   </section>
 

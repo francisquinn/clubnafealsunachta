@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import "@testing-library/jest-dom";
 import { render, screen, fireEvent } from "@testing-library/react";
 import EventList from "./EventList";
@@ -131,6 +131,46 @@ describe("EventList", () => {
       renderList(events);
       fireEvent.click(screen.getByText("Past"));
       expect(screen.getByText(/no past events in Trieste/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("remembering the tab (#185)", () => {
+    const events = [makeEvent("Future Event", futureDate1), makeEvent("Past Event", pastDate1)];
+
+    afterEach(() => {
+      window.history.replaceState(null, "", "/");
+    });
+
+    it("opens on the Past tab when the URL says #past, as when going back from an event", () => {
+      window.history.replaceState(null, "", "/trieste/events/#past");
+      renderList(events);
+      expect(screen.getByTestId("past-event")).toHaveTextContent("Past Event");
+      expect(screen.queryByTestId("upcoming-event")).not.toBeInTheDocument();
+    });
+
+    it("opens on Upcoming when the URL has no hash", () => {
+      renderList(events);
+      expect(screen.getByTestId("upcoming-event")).toHaveTextContent("Future Event");
+    });
+
+    it("puts #past in the URL when Past is chosen, and drops it for Upcoming", () => {
+      window.history.replaceState(null, "", "/trieste/events/");
+      renderList(events);
+
+      fireEvent.click(screen.getByText("Past"));
+      expect(window.location.pathname + window.location.hash).toBe("/trieste/events/#past");
+
+      fireEvent.click(screen.getByText("Upcoming"));
+      expect(window.location.pathname + window.location.hash).toBe("/trieste/events/");
+    });
+
+    it("switches tabs without adding history entries", () => {
+      renderList(events);
+      const entries = window.history.length;
+
+      fireEvent.click(screen.getByText("Past"));
+      fireEvent.click(screen.getByText("Upcoming"));
+      expect(window.history.length).toBe(entries);
     });
   });
 

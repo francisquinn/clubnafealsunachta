@@ -6,10 +6,12 @@ interface CheckboxProps {
   label: string;
   value?: string;
   defaultChecked?: boolean;
+  disabled?: boolean;
+  describedBy?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export default function Checkbox({ id, name, label, value, defaultChecked, onChange }: CheckboxProps) {
+export default function Checkbox({ id, name, label, value, defaultChecked, disabled, describedBy, onChange }: CheckboxProps) {
   return (
     <label className="cnf-checkbox" htmlFor={id}>
       <span className="cnf-checkbox__control">
@@ -19,6 +21,8 @@ export default function Checkbox({ id, name, label, value, defaultChecked, onCha
           name={name}
           value={value}
           defaultChecked={defaultChecked}
+          disabled={disabled}
+          aria-describedby={describedBy}
           onChange={onChange}
           className="cnf-checkbox__input"
         />

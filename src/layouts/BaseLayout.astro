@@ -13,6 +13,9 @@ const {
   description = "Club na Fealsúnachta is a philosophy discussion club meeting in Trieste, Italy.",
   ogImage = "/og-default.png",
   ogType = "website",
+  activeNav,
+  // No header or footer, for standalone pages opened from an email link.
+  bare = false,
 } = Astro.props;
 
 const siteUrl = "https://clubnafealsunachta.com";
@@ -56,11 +59,15 @@ const ogImageUrl = new URL(ogImage, siteUrl).href;
     <slot name="head" />
   </head>
   <body>
-    <Header />
-    <AvatarHintScript />
-    <main class="content">
+    {!bare && (
+      <>
+        <Header activeNav={activeNav} />
+        <AvatarHintScript />
+      </>
+    )}
+    <main class:list={["content", { "content--bare": bare }]}>
       <slot />
     </main>
-    <Footer />
+    {!bare && <Footer />}
   </body>
 </html>

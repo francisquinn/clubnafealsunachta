@@ -1,0 +1,38 @@
+---
+export const prerender = false;
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { resolveUnsubscribePage } from "../../lib/eventAnnouncements";
+
+// #205: the unsubscribe link in a chapter event email. Opening it only shows
+// a button; pressing it unsubscribes (see resolveUnsubscribePage).
+const pageTitle = "Unsubscribe";
+
+const { state, chapterName } = await resolveUnsubscribePage(Astro.url.searchParams.get("t"), Astro.request.method);
+---
+
+<BaseLayout pageTitle={pageTitle} bare>
+  <section class="cnf-section">
+    <h1>{pageTitle}</h1>
+    {
+      state === "confirm" && (
+        <form method="post" class="cnf-form">
+          <p>Stop getting emails about new events in {chapterName}? You'll stay a member of the chapter.</p>
+          <button type="submit" class="cnf-button cnf-button__gold" style="justify-self: start;">
+            <span class="cnf-button__text">Unsubscribe from {chapterName}</span>
+          </button>
+        </form>
+      )
+    }
+    {
+      state === "done" && (
+        <p>
+          You won't get emails about new events in {chapterName} any more. You can switch them back on in your{" "}
+          <a href="/profile/edit#email-notifications">email notifications</a>.
+        </p>
+      )
+    }
+    {state === "invalid" && <p>This unsubscribe link isn't valid. You can manage your emails in your <a href="/profile/edit#email-notifications">email notifications</a>.</p>}
+    {state === "error" && <p>Something went wrong unsubscribing you. Please try again later.</p>}
+    <p><a href="/">Back to homepage</a></p>
+  </section>
+</BaseLayout>

@@ -69,6 +69,11 @@ select {
   margin: 0 auto 4rem auto;
 }
 
+/* A page with no header (BaseLayout's `bare`) gets its top space here. */
+.content--bare {
+  padding-top: 4rem;
+}
+
 .cnf-section__header {
   display: flex;
   align-items: baseline;
@@ -142,6 +147,26 @@ blockquote {
   text-align: center;
 }
 
+/* The grid for a list of cards (events, blog posts, chapters): one column,
+   two from 576px up. A grid whose own child is a message (an empty-state <p>)
+   stays one column. Lives here, not in event.css, because it is used on pages
+   that don't load event.css. */
+.cnf-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 25px;
+}
+
+@media (min-width: 576px) {
+  .cnf-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cnf-card-grid:has(> p) {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (min-width: 576px) {
   .cnf-section {
     width: 80vw;
@@ -182,4 +207,17 @@ blockquote {
   .cnf-section {
     width: 45vw;
   }
+}
+
+/* The chapter's chat link, on the chapter page and in its welcome modal
+   (JoinChapterButton), so global rather than scoped to the page. */
+.cnf-chapter-page__chat {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.cnf-chapter-page__chat-icon {
+  height: 1.5rem;
+  width: 1.5rem;
 }

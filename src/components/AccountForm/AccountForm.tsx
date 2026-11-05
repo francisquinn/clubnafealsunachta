@@ -27,8 +27,8 @@ interface Props {
   initialFullName: string | null;
   initialDisplayFullName: boolean;
   initialAvatarUrl: string | null;
-  chapters: { id: number; name: string }[];
-  initialChapterIds: number[];
+  showChapters: boolean;
+  chapters: { id: number; name: string; emailsEnabled: boolean }[];
 }
 
 function capitalize(label: string): string {
@@ -49,13 +49,16 @@ export default function AccountForm({
   initialFullName,
   initialDisplayFullName,
   initialAvatarUrl,
+  showChapters,
   chapters,
-  initialChapterIds,
 }: Props) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  // Chapters unticked under memberships (left on save): their email line is
+  // disabled with a note, since saving drops their email setting anyway.
+  const [leavingChapterIds, setLeavingChapterIds] = useState<number[]>([]);
 
   const hasChapters = chapters.length > 0;
   // Real display name (not a generic "your photo" label) so the letter-avatar
@@ -332,24 +335,88 @@ export default function AccountForm({
         </div>
       </fieldset>
 
-      {hasChapters && (
+      {showChapters && (
         <fieldset className="cnf-form__fieldset">
           <legend>Chapter memberships</legend>
 
-          <p className="cnf-form__hint">Select the chapters you're part of.</p>
+          {hasChapters ? (
+            <>
+              <p className="cnf-form__hint">Untick a chapter to leave it. To join one, use the button on its page.</p>
 
-          <div className="cnf-form__group">
-            {chapters.map((chapter) => (
-              <Checkbox
-                key={chapter.id}
-                id={`chapter-${chapter.id}`}
-                name="chapter_id"
-                value={String(chapter.id)}
-                defaultChecked={initialChapterIds.includes(chapter.id)}
-                label={chapter.name}
-              />
-            ))}
-          </div>
+              <div className="cnf-form__group">
+                {/* Tells the server which chapters this form showed, so a
+                    chapter joined in another tab since isn't read as left. */}
+                {chapters.map((chapter) => (
+                  <input key={`shown-${chapter.id}`} type="hidden" name="chapter_shown" value={String(chapter.id)} />
+                ))}
+                {chapters.map((chapter) => (
+                  <Checkbox
+                    key={chapter.id}
+                    id={`chapter-${chapter.id}`}
+                    name="chapter_id"
+                    value={String(chapter.id)}
+                    defaultChecked
+                    label={chapter.name}
+                    onChange={(e) => {
+                      const leaving = !e.target.checked;
+                      setLeavingChapterIds((ids) =>
+                        leaving ? [...ids, chapter.id] : ids.filter((id) => id !== chapter.id)
+                      );
+                    }}
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="cnf-form__hint">
+              You haven't joined a chapter yet. Find one on the <a href="/chapters">chapters page</a>.
+            </p>
+          )}
+        </fieldset>
+      )}
+
+      {showChapters && (
+        <fieldset id="email-notifications" className="cnf-form__fieldset">
+          <legend>Email notifications</legend>
+
+          {hasChapters ? (
+            <>
+              <p className="cnf-form__hint">Get an email when a chapter you're in posts a new event.</p>
+
+              <div className="cnf-form__group">
+                {/* Which boxes started ticked, so the server only writes the
+                    ones the member changed and a stale tab can't undo a
+                    change made elsewhere. */}
+                {chapters.filter((chapter) => chapter.emailsEnabled).map((chapter) => (
+                  <input key={`emails-was-${chapter.id}`} type="hidden" name="chapter_emails_was" value={String(chapter.id)} />
+                ))}
+                {chapters.map((chapter) => {
+                  const leaving = leavingChapterIds.includes(chapter.id);
+                  const noteId = `chapter-${chapter.id}-leaving`;
+                  return (
+                    <div key={chapter.id}>
+                      <Checkbox
+                        id={`chapter-${chapter.id}-emails`}
+                        name="chapter_emails"
+                        value={String(chapter.id)}
+                        defaultChecked={chapter.emailsEnabled}
+                        disabled={leaving}
+                        describedBy={leaving ? noteId : undefined}
+                        label={`Upcoming events in ${chapter.name}`}
+                      />
+                      {/* Always rendered so screen readers announce the note
+                          when unticking the chapter fills it in. */}
+                      <p id={noteId} className="cnf-form__hint" aria-live="polite">
+                        {leaving && `You'll leave ${chapter.name} when you save.`}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <p className="cnf-form__hint">Join a chapter to get emails about its events.</p>
+          )}
         </fieldset>
       )}
 
