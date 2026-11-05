@@ -18,8 +18,8 @@ vi.mock("astro:actions", async () =>
   })),
 );
 
-const TRESTE = { id: 1, name: "Trieste" };
-const DUBLIN = { id: 2, name: "Dublin" };
+const TRESTE = { id: 1, name: "Trieste", emailsEnabled: true };
+const DUBLIN = { id: 2, name: "Dublin", emailsEnabled: false };
 
 function submittedFormData() {
   return mockUpdateChapterMemberships.mock.calls[0]?.[0] as FormData;
@@ -33,8 +33,8 @@ function renderForm(overrides: Partial<Parameters<typeof AccountForm>[0]> = {}) 
       initialFullName={null}
       initialDisplayFullName={false}
       initialAvatarUrl={null}
+      showChapters
       chapters={[]}
-      initialChapterIds={[]}
       {...overrides}
     />
   );
@@ -57,8 +57,8 @@ describe("AccountForm", () => {
         initialFullName="Old Name"
         initialDisplayFullName={true}
         initialAvatarUrl={null}
+        showChapters
         chapters={[]}
-        initialChapterIds={[]}
       />
     );
     expect(screen.getByLabelText("Username")).toHaveValue("oldname");
@@ -70,18 +70,44 @@ describe("AccountForm", () => {
     expect(screen.getAllByRole("button", { name: /save/i })).toHaveLength(1);
   });
 
-  it("doesn't render a chapter section when there are no chapters", () => {
-    renderForm({ chapters: [] });
+  it("doesn't render a chapter section when the memberships couldn't be loaded", () => {
+    renderForm({ showChapters: false, chapters: [] });
     expect(screen.queryByText(/chapter memberships/i)).not.toBeInTheDocument();
   });
 
-  it("renders a checkbox per chapter, reflecting current associations on load", () => {
-    renderForm({ chapters: [TRESTE, DUBLIN], initialChapterIds: [1] });
+  it("points a member with no chapters to the chapters page instead of offering to join here", () => {
+    renderForm({ chapters: [] });
+    expect(screen.getByText(/you haven't joined a chapter yet/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /chapters page/i })).toHaveAttribute("href", "/chapters");
+    expect(screen.queryByRole("checkbox", { name: /email me/i })).not.toBeInTheDocument();
+  });
+
+  it("lists only the member's chapters, ticked, with their email settings in a separate section", () => {
+    renderForm({ chapters: [TRESTE, DUBLIN] });
 
     expect(screen.getByRole("checkbox", { name: "Trieste" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Dublin" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Dublin" })).toBeChecked();
+    expect(document.getElementById("chapter-1-emails")).toBeChecked();
+    expect(document.getElementById("chapter-2-emails")).not.toBeChecked();
+    expect(screen.getByRole("group", { name: "Email notifications" })).toHaveAttribute("id", "email-notifications");
+    expect(screen.getByRole("checkbox", { name: "Upcoming events in Trieste" })).toBeChecked();
     // still exactly one save button for the whole form
     expect(screen.getAllByRole("button", { name: /save/i })).toHaveLength(1);
+  });
+
+  it("disables a chapter's email setting with a note while it's unticked to leave", () => {
+    renderForm({ chapters: [TRESTE, DUBLIN] });
+    const emails = screen.getByRole("checkbox", { name: "Upcoming events in Trieste" });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Trieste" }));
+    expect(emails).toBeDisabled();
+    expect(screen.getByText("You'll leave Trieste when you save.")).toHaveAttribute("aria-live", "polite");
+    expect(emails).toHaveAccessibleDescription("You'll leave Trieste when you save.");
+    expect(screen.getByRole("checkbox", { name: "Upcoming events in Dublin" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Trieste" }));
+    expect(emails).toBeEnabled();
+    expect(screen.queryByText("You'll leave Trieste when you save.")).toBeNull();
   });
 
   it("blocks submission and shows a field error when the username is invalid", async () => {
@@ -166,12 +192,13 @@ describe("AccountForm", () => {
     mockUpdateUsername.mockResolvedValue({ data: { success: true } });
     mockChangePassword.mockResolvedValue({ data: { success: true } });
     mockUpdateChapterMemberships.mockResolvedValue({ data: { success: true, chapter_ids: [1, 2] } });
-    renderForm({ chapters: [TRESTE, DUBLIN], initialChapterIds: [1] });
+    renderForm({ chapters: [TRESTE, DUBLIN] });
 
     fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "OldPassword1" } });
     fireEvent.change(screen.getByLabelText(/^new password$/i), { target: { value: "NewPassword1" } });
     fireEvent.change(screen.getByLabelText(/confirm new password/i), { target: { value: "NewPassword1" } });
-    fireEvent.click(screen.getByRole("checkbox", { name: "Dublin" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Trieste" }));
+    fireEvent.click(document.getElementById("chapter-2-emails")!);
     fireEvent.submit(document.querySelector("form")!);
 
     await waitFor(() => {
@@ -181,7 +208,12 @@ describe("AccountForm", () => {
     expect(mockChangePassword).toHaveBeenCalledTimes(1);
     expect(mockUpdateChapterMemberships).toHaveBeenCalledTimes(1);
     // all three save together off one shared FormData
-    expect(submittedFormData().getAll("chapter_id")).toEqual(["1", "2"]);
+    // Trieste unticked (left, so its disabled email box isn't sent), Dublin
+    // kept with its emails switched on.
+    expect(submittedFormData().getAll("chapter_shown")).toEqual(["1", "2"]);
+    expect(submittedFormData().getAll("chapter_id")).toEqual(["2"]);
+    expect(submittedFormData().getAll("chapter_emails")).toEqual(["2"]);
+    expect(submittedFormData().getAll("chapter_emails_was")).toEqual(["1"]);
   });
 
   // changePassword revokes the old session and re-issues it, so the other
@@ -191,7 +223,7 @@ describe("AccountForm", () => {
     mockChangePassword.mockReturnValue(new Promise((resolve) => (finishPassword = resolve)));
     mockUpdateUsername.mockResolvedValue({ data: { success: true } });
     mockUpdateChapterMemberships.mockResolvedValue({ data: { success: true, chapter_ids: [1] } });
-    renderForm({ chapters: [TRESTE], initialChapterIds: [1] });
+    renderForm({ chapters: [TRESTE] });
 
     fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "OldPassword1" } });
     fireEvent.change(screen.getByLabelText(/^new password$/i), { target: { value: "NewPassword1" } });
@@ -230,7 +262,7 @@ describe("AccountForm", () => {
     mockUpdateUsername.mockResolvedValue({ data: { success: true } });
     mockChangePassword.mockResolvedValue({ data: { success: true } });
     mockUpdateChapterMemberships.mockResolvedValue({ error: { message: "One or more selected chapters do not exist" } });
-    renderForm({ chapters: [TRESTE], initialChapterIds: [] });
+    renderForm({ chapters: [TRESTE] });
 
     fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "OldPassword1" } });
     fireEvent.change(screen.getByLabelText(/^new password$/i), { target: { value: "NewPassword1" } });
@@ -275,7 +307,7 @@ describe("AccountForm", () => {
     const tooLarge = { code: "CONTENT_TOO_LARGE", message: "Request body exceeds 1048576 bytes" };
     mockUpdateUsername.mockResolvedValue({ error: tooLarge });
     mockUpdateChapterMemberships.mockResolvedValue({ error: tooLarge });
-    renderForm({ chapters: [TRESTE], initialChapterIds: [] });
+    renderForm({ chapters: [TRESTE] });
 
     fireEvent.submit(document.querySelector("form")!);
 

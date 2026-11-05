@@ -6,6 +6,7 @@ import { formatBlogDate } from "../../utils/script";
 import { getDisplayName } from "../../lib/memberDisplay";
 import Avatar from "../../components/Avatar/Avatar.astro";
 import Banner from "../../layouts/Banner.astro";
+import { DONATE_URL } from "../../lib/links";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
@@ -69,7 +70,7 @@ const { Content } = await render(post);
     description="If you're enjoying what we're at, why not chip in and help keep things going!"
     location={{
       name: "Supply the tea",
-      url: "https://ko-fi.com/clubnafealsunachta",
+      url: DONATE_URL,
       isExternal: true,
     }}
   />

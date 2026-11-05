@@ -8,25 +8,21 @@ const values = [
     title: "Curiosity",
     description:
       "We ask the bigger questions of life, not to settle on final answers or convince one another, but to enrich ourselves with each other's perspectives and keep exploring.",
-    image: "/values/curiosity.jpg",
   },
   {
     title: "Open-mindedness",
     description:
       "We listen to views different from our own, and stay open to being changed by them.",
-    image: "/values/open-mindedness.jpg",
   },
   {
     title: "Respect",
     description:
       "We hear each other out in a safe, friendly space, always challenging the argument, not the person.",
-    image: "/values/respect.jpg",
   },
   {
     title: "Community",
     description:
       "We bring together people from all walks of life, making real connections on topics that touch us all.",
-    image: "/values/community.jpg",
   },
 ];
 ---
@@ -37,50 +33,36 @@ const values = [
     margin-bottom: 2.5rem;
   }
 
-  .cnf-value__media {
-    position: relative;
-    aspect-ratio: 3 / 2;
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    box-shadow: var(--box-shadow-card);
-    margin-bottom: 1.25rem;
+  /* The intro's own gap (as on chapters and library) replaces the usual
+     section gap before the first value. */
+  .cnf-values__header {
+    margin-bottom: 0;
   }
 
-  @media (min-width: 768px) {
-    .cnf-value {
-      display: flex;
-      align-items: center;
-      gap: 2.5rem;
-    }
-
-    .cnf-value--reverse {
-      flex-direction: row-reverse;
-    }
-
-    .cnf-value__media {
-      margin-bottom: 0;
-      flex: 1 1 60%;
-    }
-
-    .cnf-value__body {
-      flex: 1 1 40%;
-    }
+  /* One numbered list, so the values sit closer than separate sections
+     would. The number goes before each title via a counter. */
+  .cnf-values__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 2rem;
+    counter-reset: value;
   }
 
-  .cnf-value__photo {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    display: block;
-    width: 100%;
-    height: 130%;
-    object-fit: cover;
-    transform: translateY(-50%);
-    will-change: transform;
+  .cnf-value {
+    counter-increment: value;
   }
 
+  /* Set here because an li's larger text would otherwise scale the
+     heading up past other pages' h2. */
   .cnf-value h2 {
+    font-size: 1.5rem;
     margin-bottom: 0.5rem;
+  }
+
+  .cnf-value h2::before {
+    content: counter(value) ". ";
   }
 
   .cnf-value p {
@@ -92,43 +74,23 @@ const values = [
   pageTitle={pageTitle}
   description="The values Club na Fealsúnachta brings to every discussion: curiosity, open-mindedness, respect, and community."
 >
-  <section class="cnf-section">
+  <section class="cnf-section cnf-values__header">
     <h1>{pageTitle}</h1>
     <p class="cnf-values__intro">
       These are the values we try to bring to every discussion, agreed on
       together as a club.
     </p>
   </section>
-  {values.map((value, i) => (
-    <section class={`cnf-section cnf-value ${i % 2 === 1 ? "cnf-value--reverse" : ""}`}>
-      <div class="cnf-value__media">
-        <img class="cnf-value__photo" src={value.image} alt="" />
-      </div>
-      <div class="cnf-value__body">
-        <h2>{value.title}</h2>
-        <p>{value.description}</p>
-      </div>
-    </section>
-  ))}
+  <section class="cnf-section">
+    <!-- role="list": Safari drops list semantics once list-style is none. -->
+    <ol class="cnf-values__list" role="list">
+      {values.map((value) => (
+        <li class="cnf-value">
+          <h2>{value.title}</h2>
+          <p>{value.description}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
 </BaseLayout>
 
-<script>
-  const maxShiftPx = 40;
-  const photos = document.querySelectorAll<HTMLElement>(".cnf-value__photo");
-
-  function updateParallax() {
-    const viewportHeight = window.innerHeight;
-    photos.forEach((photo) => {
-      const box = photo.parentElement;
-      if (!box) return;
-      const rect = box.getBoundingClientRect();
-      const progress = (viewportHeight - rect.top) / (viewportHeight + rect.height);
-      const offset = (progress - 0.5) * maxShiftPx * 2;
-      photo.style.transform = `translateY(calc(-50% + ${offset}px))`;
-    });
-  }
-
-  updateParallax();
-  window.addEventListener("scroll", updateParallax, { passive: true });
-  window.addEventListener("resize", updateParallax);
-</script>

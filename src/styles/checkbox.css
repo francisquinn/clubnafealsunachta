@@ -67,3 +67,13 @@
 .cnf-checkbox__label {
   font-size: 1.125rem;
 }
+
+/* Same faded, not-allowed look as a disabled form button. */
+.cnf-checkbox:has(.cnf-checkbox__input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cnf-checkbox__input:disabled {
+  cursor: not-allowed;
+}

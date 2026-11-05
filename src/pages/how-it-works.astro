@@ -1,0 +1,219 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { DONATE_URL } from "../lib/links";
+
+const pageTitle = "How it works";
+---
+
+<style>
+  .cnf-how {
+    max-width: 720px;
+  }
+
+  .cnf-how ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+  }
+
+  .cnf-how li + li {
+    margin-top: 0.5rem;
+  }
+
+  /* FAQ: native <details>, so answers open without JS and find-in-page still
+     reaches closed ones. */
+  .cnf-how__faq {
+    margin-top: 1rem;
+    border-top: 1px solid hsla(var(--color-green), 0.2);
+  }
+
+  .cnf-how__question {
+    border-bottom: 1px solid hsla(var(--color-green), 0.2);
+  }
+
+  .cnf-how__question summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    color: hsl(var(--color-green));
+    font-family: "Playfair Display", serif;
+    font-size: 1.25rem;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .cnf-how__question summary::-webkit-details-marker {
+    display: none;
+  }
+
+  /* Same chevron as the nav's Explore menu. */
+  .cnf-how__question summary::after {
+    content: "";
+    flex-shrink: 0;
+    width: 0.5em;
+    height: 0.5em;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: translateY(-0.15em) rotate(45deg);
+    transition: transform 0.2s ease;
+  }
+
+  .cnf-how__question[open] summary::after {
+    transform: translateY(0.1em) rotate(-135deg);
+  }
+
+  .cnf-how__question summary:focus-visible {
+    outline: 2px solid hsl(var(--color-green));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  .cnf-how__question p {
+    margin: 0 0 1rem;
+  }
+</style>
+
+<BaseLayout
+  pageTitle={pageTitle}
+  description="How Club na Fealsúnachta works: what happens at a session, how to come along, RSVPs, membership, and how topics are chosen."
+>
+  <section class="cnf-section">
+    <h1>{pageTitle}</h1>
+    <div class="cnf-how">
+      <p>
+        New to the club? Here's what happens at a session and how to come along
+        to your first one.
+      </p>
+
+    </div>
+  </section>
+  <section class="cnf-section">
+    <div class="cnf-how">
+      <h2>At a session</h2>
+      <p>
+        Each session is built around a question or a theme. There are no
+        lectures and no right answers. We share our take, listen, and challenge
+        each other's views, all in good spirits.
+      </p>
+      <p>
+        A facilitator guides the discussion and keeps it moving, while the
+        group decides where it goes. If there's a smaller crowd, we usually stay
+        as one group. If there's a big crowd, we split into small groups, each
+        with its own facilitator. Members are encouraged to have a go at
+        facilitating. Every now and again we mix up the format too, to keep
+        things fresh.
+      </p>
+      <p>
+        Sessions run for about an hour and a half, in English, and you don't
+        need any philosophy background. Afterwards, we head out for food and
+        drinks, and the chat carries on.
+      </p>
+
+    </div>
+  </section>
+  <section class="cnf-section">
+    <div class="cnf-how">
+      <h2>Coming along</h2>
+      <p>
+        The club meets in chapters, each one a group in its own city, plus an
+        Online chapter you can join from anywhere. Pick <a href="/chapters/"
+          >your chapter</a
+        > to see when and where it meets, and check its events for the next topic.
+      </p>
+      <ul>
+        <li>
+          <strong>In person:</strong> just turn up at the venue at the time on the
+          event page.
+        </li>
+        <li>
+          <strong>Online:</strong> use the join button on the upcoming event's page
+          when it's time.
+        </li>
+      </ul>
+      <p>
+        You can also subscribe to a chapter's calendar from its events page, so
+        new sessions appear in your own calendar.
+      </p>
+
+    </div>
+  </section>
+  <section class="cnf-section">
+    <div class="cnf-how">
+      <h2>Common questions</h2>
+      <div class="cnf-how__faq">
+        <details class="cnf-how__question">
+          <summary>Is it free?</summary>
+          <p>
+            Yes, sessions and membership are both free. If you'd like to support
+            the club, you can <a href={DONATE_URL} target="_blank" rel="noopener"
+              >donate</a
+            >.
+          </p>
+        </details>
+
+        <details class="cnf-how__question">
+          <summary>Do I need to be a member?</summary>
+          <p>
+            No, anyone can come along. A free account lets you RSVP to events,
+            join your chapter for its news, and have a profile on the site.
+          </p>
+        </details>
+
+        <details class="cnf-how__question" id="rsvp">
+          <summary>Do I need to RSVP?</summary>
+          <p>
+            It's not required, but it helps. An RSVP on the event page gives us a
+            headcount, which is handy when space is tight. You'll need a free
+            account to RSVP.
+          </p>
+        </details>
+
+        <details class="cnf-how__question">
+          <summary>Do I have to speak?</summary>
+          <p>
+            Not at all. You're welcome to just listen, especially at your first
+            session. Everyone joins in at their own pace, and no one will put you
+            on the spot.
+          </p>
+        </details>
+
+        <details class="cnf-how__question">
+          <summary>Do I need to prepare anything?</summary>
+          <p>
+            No, just bring yourself and your curiosity. The topic's up on the
+            event page beforehand if you want to mull it over, but there's no
+            reading or homework.
+          </p>
+        </details>
+
+        <details class="cnf-how__question">
+          <summary>What language are sessions in?</summary>
+          <p>
+            English. Plenty of us aren't native speakers, so nobody minds if you
+            take your time finding the words. Ideas matter more than perfect
+            grammar.
+          </p>
+        </details>
+
+        <details class="cnf-how__question">
+          <summary>Can I bring a friend?</summary>
+          <p>
+            Absolutely, the more the merrier. They don't need an account to come
+            along.
+          </p>
+        </details>
+
+        <details class="cnf-how__question">
+          <summary>How are topics chosen?</summary>
+          <p>
+            The organisers pick them, often following on from the last session
+            or as part of a wider theme over a few weeks. Anyone can <a
+              href="/suggest-topic/">suggest a topic</a
+            >, and we draw on suggestions when choosing what's next.
+          </p>
+        </details>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

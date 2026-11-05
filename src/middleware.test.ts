@@ -1,4 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
+const mockMoved = vi.hoisted(() => vi.fn());
+vi.mock("./lib/movedEventRedirect", () => ({ findMovedEventPath: mockMoved }));
+
 import { onRequest } from "./middleware";
 
 function makeContext(
@@ -63,6 +66,26 @@ describe("middleware CSRF check", () => {
     expect(next).toHaveBeenCalled();
     expect(result).toBe("next-response");
   });
+
+  // #205: Gmail's one-click unsubscribe POSTs with no Origin; the endpoint
+  // checks a signed token instead.
+  it("lets a POST with no Origin through to the one-click unsubscribe endpoint", async () => {
+    const next = vi.fn().mockResolvedValue("next-response");
+    for (const path of ["/api/unsubscribe", "/api/unsubscribe/"]) {
+      const result = await onRequest(makeContext(`https://clubnafealsunachta.com${path}?t=x`, { method: "POST" }), next);
+      expect(result).toBe("next-response");
+    }
+  });
+
+  it("still blocks a cross-site POST to the unsubscribe page, which isn't the one-click endpoint", async () => {
+    const next = vi.fn();
+    const result = await onRequest(
+      makeContext("https://clubnafealsunachta.com/email/unsubscribe?t=x", { method: "POST", headers: { origin: "https://evil.example.com" } }),
+      next,
+    );
+    expect(next).not.toHaveBeenCalled();
+    expect((result as Response).status).toBe(403);
+  });
 });
 
 describe("middleware admin gate", () => {
@@ -76,5 +99,99 @@ describe("middleware admin gate", () => {
     expect(redirect).toHaveBeenCalledWith("/?login=1");
     expect(next).not.toHaveBeenCalled();
     expect(result).toBe("redirect-response");
+  });
+});
+
+describe("middleware moved-event redirect (#195)", () => {
+  it("redirects a 404 on a stale event URL to the event's current chapter", async () => {
+    const next = vi.fn().mockResolvedValue({ status: 404 });
+    const redirect = vi.fn().mockReturnValue("redirect-response");
+    const context = { ...makeContext("https://clubnafealsunachta.com/trieste/events/talk-one"), redirect };
+    mockMoved.mockResolvedValue("/gorizia/events/talk-one");
+
+    const result = await onRequest(context as Parameters<typeof onRequest>[0], next);
+
+    expect(redirect).toHaveBeenCalledWith("/gorizia/events/talk-one", 302);
+    expect(result).toBe("redirect-response");
+  });
+
+  it("leaves a 404 alone when no event moved", async () => {
+    const response = { status: 404 };
+    const next = vi.fn().mockResolvedValue(response);
+    mockMoved.mockResolvedValue(null);
+
+    const result = await onRequest(makeContext("https://clubnafealsunachta.com/trieste/events/nope"), next);
+
+    expect(result).toBe(response);
+  });
+
+  it("does not look anything up for a successful response", async () => {
+    mockMoved.mockClear();
+    const response = { status: 200 };
+    const next = vi.fn().mockResolvedValue(response);
+
+    await onRequest(makeContext("https://clubnafealsunachta.com/trieste/events/talk-two"), next);
+
+    expect(mockMoved).not.toHaveBeenCalled();
+  });
+
+  it("redirects a HEAD request too", async () => {
+    const next = vi.fn().mockResolvedValue({ status: 404 });
+    const redirect = vi.fn().mockReturnValue("redirect-response");
+    const context = {
+      ...makeContext("https://clubnafealsunachta.com/trieste/events/talk-one", { method: "HEAD" }),
+      redirect,
+    };
+    mockMoved.mockResolvedValue("/gorizia/events/talk-one");
+
+    expect(await onRequest(context as Parameters<typeof onRequest>[0], next)).toBe("redirect-response");
+  });
+
+  it("does not redirect a POST that 404s", async () => {
+    mockMoved.mockClear();
+    const response = { status: 404 };
+    const next = vi.fn().mockResolvedValue(response);
+    const context = makeContext("https://clubnafealsunachta.com/trieste/events/talk-one", {
+      method: "POST",
+      headers: { origin: "https://clubnafealsunachta.com" },
+    });
+
+    expect(await onRequest(context, next)).toBe(response);
+    expect(mockMoved).not.toHaveBeenCalled();
+  });
+
+  it("never runs the lookup for /admin paths", async () => {
+    mockMoved.mockClear();
+    const next = vi.fn().mockResolvedValue({ status: 404 });
+    const context = { ...makeContext("https://clubnafealsunachta.com/admin/events/x"), redirect: vi.fn() };
+
+    await onRequest(context as Parameters<typeof onRequest>[0], next);
+
+    expect(mockMoved).not.toHaveBeenCalled();
+  });
+
+  it("keeps the query string on the redirect", async () => {
+    const next = vi.fn().mockResolvedValue({ status: 404 });
+    const redirect = vi.fn().mockReturnValue("redirect-response");
+    const context = {
+      ...makeContext("https://clubnafealsunachta.com/trieste/events/talk-one?ref=x"),
+      redirect,
+    };
+    mockMoved.mockResolvedValue("/gorizia/events/talk-one");
+
+    await onRequest(context as Parameters<typeof onRequest>[0], next);
+
+    expect(redirect).toHaveBeenCalledWith("/gorizia/events/talk-one?ref=x", 302);
+  });
+
+  it("returns the original 404 when the lookup throws", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const response = { status: 404 };
+    const next = vi.fn().mockResolvedValue(response);
+    mockMoved.mockRejectedValue(new Error("boom"));
+
+    const result = await onRequest(makeContext("https://clubnafealsunachta.com/trieste/events/talk-one"), next);
+
+    expect(result).toBe(response);
   });
 });
