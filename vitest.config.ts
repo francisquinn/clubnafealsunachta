@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -8,6 +8,8 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
+    // netlify dev copies functions (and their tests) into .netlify.
+    exclude: [...configDefaults.exclude, '.netlify/**'],
   },
   resolve: {
     alias: {

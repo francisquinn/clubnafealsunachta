@@ -66,6 +66,26 @@ describe("middleware CSRF check", () => {
     expect(next).toHaveBeenCalled();
     expect(result).toBe("next-response");
   });
+
+  // #205: Gmail's one-click unsubscribe POSTs with no Origin; the endpoint
+  // checks a signed token instead.
+  it("lets a POST with no Origin through to the one-click unsubscribe endpoint", async () => {
+    const next = vi.fn().mockResolvedValue("next-response");
+    for (const path of ["/api/unsubscribe", "/api/unsubscribe/"]) {
+      const result = await onRequest(makeContext(`https://clubnafealsunachta.com${path}?t=x`, { method: "POST" }), next);
+      expect(result).toBe("next-response");
+    }
+  });
+
+  it("still blocks a cross-site POST to the unsubscribe page, which isn't the one-click endpoint", async () => {
+    const next = vi.fn();
+    const result = await onRequest(
+      makeContext("https://clubnafealsunachta.com/email/unsubscribe?t=x", { method: "POST", headers: { origin: "https://evil.example.com" } }),
+      next,
+    );
+    expect(next).not.toHaveBeenCalled();
+    expect((result as Response).status).toBe(403);
+  });
 });
 
 describe("middleware admin gate", () => {

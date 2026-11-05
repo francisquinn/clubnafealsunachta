@@ -14,6 +14,8 @@ const {
   ogImage = "/og-default.png",
   ogType = "website",
   activeNav,
+  // No header or footer, for standalone pages opened from an email link.
+  bare = false,
 } = Astro.props;
 
 const siteUrl = "https://clubnafealsunachta.com";
@@ -57,11 +59,15 @@ const ogImageUrl = new URL(ogImage, siteUrl).href;
     <slot name="head" />
   </head>
   <body>
-    <Header activeNav={activeNav} />
-    <AvatarHintScript />
-    <main class="content">
+    {!bare && (
+      <>
+        <Header activeNav={activeNav} />
+        <AvatarHintScript />
+      </>
+    )}
+    <main class:list={["content", { "content--bare": bare }]}>
       <slot />
     </main>
-    <Footer />
+    {!bare && <Footer />}
   </body>
 </html>

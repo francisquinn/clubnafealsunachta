@@ -69,6 +69,11 @@ select {
   margin: 0 auto 4rem auto;
 }
 
+/* A page with no header (BaseLayout's `bare`) gets its top space here. */
+.content--bare {
+  padding-top: 4rem;
+}
+
 .cnf-section__header {
   display: flex;
   align-items: baseline;

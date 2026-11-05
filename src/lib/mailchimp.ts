@@ -1,17 +1,8 @@
-import { DEFAULT_CHAPTER_TIMEZONE } from './chapterDefaults';
+import { IG_IMG, FB_IMG, WEB_IMG, emailImageUrl } from './emailIcons';
 
 const MAILCHIMP_API_KEY = process.env.MAILCHIMP_API_KEY;
 const MAILCHIMP_AUDIENCE_ID = process.env.MAILCHIMP_AUDIENCE_ID;
 const DC = MAILCHIMP_API_KEY?.split('-')[1];
-
-// #55: event campaigns target the audience segment named chapter:<slug>
-// (e.g. chapter:trieste). #211 stopped syncing chapter memberships onto these
-// tags, and #205 replaces the event campaign with the site's own email.
-export const CHAPTER_TAG_PREFIX = 'chapter:';
-
-export function chapterTagFor(chapterSlug: string): string {
-  return `${CHAPTER_TAG_PREFIX}${chapterSlug}`;
-}
 
 // Test seam: vitest runs with import.meta.env.DEV === true, which would
 // otherwise silently no-op every campaign send. Spying this flag in unit
@@ -52,49 +43,11 @@ const SITE_URL = 'https://clubnafealsunachta.com';
 const GREEN = '#314837';
 const BEIGE = '#faf6e9';
 
-// Shared with src/lib/emailTemplate.ts's footer — same brand icons, kept
-// here since this file is where they were first built for the campaign
-// template.
-export const ICON_GREY = '#9a9a9a';
-export const IG_IMG = `<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDQ5IiBoZWlnaHQ9IjQ0OSIgdmlld0JveD0iMCAwIDQ0OSA0NDkiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0yMjQuMyAxMTBDMTYwLjggMTA5LjggMTA5LjIgMTYxLjIgMTA5IDIyNC43QzEwOC44IDI4OC4yIDE2MC4yIDMzOS44IDIyMy43IDM0MEMyODcuMiAzNDAuMiAzMzguOCAyODguOCAzMzkgMjI1LjNDMzM5LjIgMTYxLjggMjg3LjggMTEwLjIgMjI0LjMgMTEwWk0yMjMuNyAxNTAuNEMyNjQuOSAxNTAuMiAyOTguNCAxODMuNSAyOTguNiAyMjQuN0MyOTguOCAyNjUuOSAyNjUuNSAyOTkuNCAyMjQuMyAyOTkuNkMxODMuMSAyOTkuOCAxNDkuNiAyNjYuNSAxNDkuNCAyMjUuM0MxNDkuMiAxODQuMSAxODIuNSAxNTAuNiAyMjMuNyAxNTAuNFpNMzE3LjEgMTA1LjNDMzE3LjEgOTAuNDk5OSAzMjkuMSA3OC40OTk5IDM0My45IDc4LjQ5OTlDMzU4LjcgNzguNDk5OSAzNzAuNyA5MC40OTk5IDM3MC43IDEwNS4zQzM3MC43IDEyMC4xIDM1OC43IDEzMi4xIDM0My45IDEzMi4xQzMyOS4xIDEzMi4xIDMxNy4xIDEyMC4xIDMxNy4xIDEwNS4zWk00NDYuOCAxMzIuNUM0NDUuMSA5Ni42IDQzNi45IDY0LjggNDEwLjYgMzguNkMzODQuNCAxMi40IDM1Mi42IDQuMTk5OTUgMzE2LjcgMi4zOTk5NUMyNzkuNyAwLjI5OTk1MSAxNjguOCAwLjI5OTk1MSAxMzEuOCAyLjM5OTk1Qzk2IDQuMDk5OTUgNjQuMiAxMi4yOTk5IDM3LjkgMzguNUMxMS42IDY0LjcgMy41IDk2LjQ5OTkgMS43IDEzMi40Qy0wLjQgMTY5LjQgLTAuNCAyODAuMyAxLjcgMzE3LjNDMy40IDM1My4yIDExLjYgMzg1IDM3LjkgNDExLjJDNjQuMiA0MzcuNCA5NS45IDQ0NS42IDEzMS44IDQ0Ny40QzE2OC44IDQ0OS41IDI3OS43IDQ0OS41IDMxNi43IDQ0Ny40QzM1Mi42IDQ0NS43IDM4NC40IDQzNy41IDQxMC42IDQxMS4yQzQzNi44IDM4NSA0NDUgMzUzLjIgNDQ2LjggMzE3LjNDNDQ4LjkgMjgwLjMgNDQ4LjkgMTY5LjUgNDQ2LjggMTMyLjVaTTM5OSAzNTdDMzkxLjIgMzc2LjYgMzc2LjEgMzkxLjcgMzU2LjQgMzk5LjZDMzI2LjkgNDExLjMgMjU2LjkgNDA4LjYgMjI0LjMgNDA4LjZDMTkxLjcgNDA4LjYgMTIxLjYgNDExLjIgOTIuMiAzOTkuNkM3Mi42IDM5MS44IDU3LjUgMzc2LjcgNDkuNiAzNTdDMzcuOSAzMjcuNSA0MC42IDI1Ny41IDQwLjYgMjI0LjlDNDAuNiAxOTIuMyAzOCAxMjIuMiA0OS42IDkyLjc5OTlDNTcuNCA3My4xOTk5IDcyLjUgNTguMDk5OSA5Mi4yIDUwLjE5OTlDMTIxLjcgMzguNDk5OSAxOTEuNyA0MS4xOTk5IDIyNC4zIDQxLjE5OTlDMjU2LjkgNDEuMTk5OSAzMjcgMzguNTk5OSAzNTYuNCA1MC4xOTk5QzM3NiA1Ny45OTk5IDM5MS4xIDczLjA5OTkgMzk5IDkyLjc5OTlDNDEwLjcgMTIyLjMgNDA4IDE5Mi4zIDQwOCAyMjQuOUM0MDggMjU3LjUgNDEwLjcgMzI3LjYgMzk5IDM1N1oiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=" width="20" height="20" alt="Instagram" style="display:block;border:0;">`;
-export const FB_IMG = `<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMSIgdmlld0JveD0iMCAwIDUxMiA1MTEiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik01MTIgMjU2QzUxMiAxMTQuNiAzOTcuNCAwIDI1NiAwQzExNC42IDAgMCAxMTQuNiAwIDI1NkMwIDM3NiA4Mi43IDQ3Ni44IDE5NC4yIDUwNC41VjMzNC4ySDE0MS40VjI1NkgxOTQuMlYyMjIuM0MxOTQuMiAxMzUuMiAyMzMuNiA5NC44IDMxOS4yIDk0LjhDMzM1LjQgOTQuOCAzNjMuNCA5OCAzNzQuOSAxMDEuMlYxNzJDMzY4LjkgMTcxLjQgMzU4LjQgMTcxIDM0NS4zIDE3MUMzMDMuMyAxNzEgMjg3LjEgMTg2LjkgMjg3LjEgMjI4LjJWMjU2SDM3MC43TDM1Ni4zIDMzNC4ySDI4N1Y1MTAuMUM0MTMuOCA0OTQuOCA1MTIgMzg2LjkgNTEyIDI1NloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=" width="20" height="20" alt="Facebook" style="display:block;border:0;">`;
-export const MEETUP_IMG = `<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTI5IiBoZWlnaHQ9IjUxMyIgdmlld0JveD0iMCAwIDUyOSA1MTMiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xMDAuMSA0MTUuM0MxMDEuMiA0MjEgOTcuOCA0MjYuNCA5Mi4xIDQyNy42Qzg2LjcgNDI4LjcgODEuMiA0MjUuMyA4MC4xIDQxOS42Qzc5IDQxNC4yIDgyLjQgNDA4LjUgODcuOCA0MDcuM0M5My4yIDQwNi4xIDk4LjkgNDA5LjYgMTAwLjEgNDE1LjNaTTI0My4yIDQ4Ni43QzIzNi45IDQ5MS4zIDIzNS4yIDUwMC4xIDIzOS41IDUwNi43QzI0NC4xIDUxMy4zIDI1Mi45IDUxNSAyNTkuNSA1MTAuNEMyNjUuOCA1MDUuOCAyNjcuNSA0OTcgMjYyLjkgNDkwLjRDMjU4LjcgNDgzLjkgMjQ5LjggNDgyLjEgMjQzLjIgNDg2LjdaTTE1Ny4yIDI0LjM5OTlDMTYxLjYgMjMuNzk5OSAxNjUuMyAyMC43OTk5IDE2Ni44IDE2LjU5OTlDMTY4LjMgMTIuNDk5OSAxNjcuMyA3Ljc5OTk0IDE2NC4zIDQuNDk5OTRDMTYxLjIgMS4yOTk5NCAxNTYuNiAwLjA5OTkzOTEgMTUyLjMgMS4zOTk5NEMxNDcuOSAxLjk5OTk0IDE0NC4yIDQuOTk5OTMgMTQyLjcgOS4xOTk5M0MxNDEuMiAxMy4yOTk5IDE0Mi4yIDE3Ljk5OTkgMTQ1LjIgMjEuMjk5OUMxNDguMyAyNC40OTk5IDE1Mi45IDI1LjY5OTkgMTU3LjIgMjQuMzk5OVpNMzUuNSAyMjcuM0MyNS4zIDIyMC41IDExLjUgMjIzLjIgNC42OTk5NyAyMzMuNEMtMi4xMDAwMyAyNDMuNiAwLjU5OTk3MyAyNTcuNCAxMC44IDI2NC4yQzIxIDI3MSAzNC44IDI2OC4zIDQxLjYgMjU4LjFDNDguNCAyNDcuOSA0NS43IDIzNC4xIDM1LjUgMjI3LjNaTTMwNy41IDU2LjM5OTlDMzE0LjggNTIuNjk5OSAzMTkuNSA0NS4xOTk5IDMxOS42IDM2Ljk5OTlDMzE5LjcgMjguNjk5OSAzMTUuMiAyMS4wOTk5IDMwOCAxNy4xOTk5QzMwMC43IDEzLjI5OTkgMjkxLjkgMTMuNzk5OSAyODUuMSAxOC4zOTk5QzI3Ny44IDIyLjA5OTkgMjczLjEgMjkuNTk5OSAyNzMgMzcuNzk5OUMyNzIuOSA0Ni4wOTk5IDI3Ny40IDUzLjY5OTkgMjg0LjYgNTcuNTk5OUMyOTEuOSA2MS40OTk5IDMwMC43IDYwLjk5OTkgMzA3LjUgNTYuMzk5OVpNMTE2LjQgMTE0LjRDMTIxLjkgMTExLjIgMTI1LjEgMTA1LjMgMTI0LjggOTguOTk5OUMxMjQuNSA5Mi42OTk5IDEyMC44IDg3LjA5OTkgMTE1IDg0LjM5OTlDMTA5LjMgODEuNzk5OSAxMDIuNiA4Mi40OTk5IDk3LjYgODYuMzk5OUM5Mi4xIDg5LjU5OTkgODguOSA5NS40OTk5IDg5LjIgMTAxLjhDODkuNSAxMDguMSA5My4yIDExMy43IDk5IDExNi40QzEwNC43IDExOSAxMTEuNCAxMTguMyAxMTYuNCAxMTQuNFpNNDg4LjcgMjcwLjRDNDgxLjMgMjcyLjEgNDc2LjQgMjc5LjUgNDc4LjEgMjg3LjNDNDc5LjUgMjk0LjcgNDg3IDI5OS42IDQ5NC40IDI5Ny45QzUwMS44IDI5Ni41IDUwNi43IDI4OSA1MDUgMjgxLjNDNTAzLjUgMjczLjkgNDk2LjEgMjY5IDQ4OC43IDI3MC40Wk01MjguNCAyMTMuNkM1MjcuMiAyMDguMSA1MjEuOCAyMDQuNyA1MTYuNCAyMDUuOUM1MTAuOSAyMDcgNTA3LjQgMjEyLjQgNTA4LjYgMjE3LjlDNTA5LjggMjIzLjQgNTE1LjIgMjI2LjggNTIwLjcgMjI1LjdDNTI2LjEgMjI0LjUgNTI5LjYgMjE5LjEgNTI4LjQgMjEzLjZaTTQ0OC4xIDEzOS45QzQ0MiAxNDMuNCA0MzguNCAxNTAgNDM4LjcgMTU2LjlDNDM5IDE2My45IDQ0My4xIDE3MC4yIDQ0OS40IDE3My4yQzQ1NS44IDE3Ni4yIDQ2My4yIDE3NS40IDQ2OC44IDE3MS4yQzQ3NC45IDE2Ny43IDQ3OC41IDE2MS4xIDQ3OC4yIDE1NC4yQzQ3Ny45IDE0Ny4yIDQ3My44IDE0MC45IDQ2Ny41IDEzNy45QzQ2MS4xIDEzNC45IDQ1My43IDEzNS43IDQ0OC4xIDEzOS45Wk00NDEuOCAyNzkuM0M0NjguMSAzMjIuNCA0NTYuOSAzNzkuMyA0MTUuNSA0MDguNEMzOTguMSA0MjAuNyAzNzguNCA0MjYuMSAzNTguNiA0MjUuNUMzNDYuNiA0NzIuNiAyODkuMiA0OTAuMSAyNTMuNSA0NTguMUMyNTIuNCA0NTkgMjUwLjkgNDU5LjggMjQ5LjggNDYxQzIxMC43IDQ4OC4xIDE1Ny41IDQ3OC40IDEzMC40IDQzOC43QzEyMC43IDQyNC40IDExNS44IDQwOC4xIDExNS4zIDM5MS44QzQ5LjkgMzgwLjkgMjUuMyAyOTcuOCA3NC4yIDI1Mi4xQzQ1LjkgMjA1LjIgNzQuOCAxNDQuNyAxMjcuNiAxMzcuMkMxNTIuNyA3MC45OTk5IDIzNS4yIDM5LjU5OTkgMjkxLjIgODIuOTk5OUMzNTguNiA2MC42OTk5IDQyNy41IDExMi40IDQyMi4xIDE4NC4xQzQ2My4yIDE5Ni43IDQ3NC45IDI1MSA0NDEuOCAyNzkuM1pNMzcxLjggMzUzLjZDMzY4LjcgMzMzIDMzMC45IDM0OSAzMjguNyAzMjYuNUMzMjUuNiAyOTQuNSAzNzIuNCAyMjUuNCAzNjguNyAxOTguNUMzNjUuMyAxNzQuNSAzNDkuMyAxNjkuNCAzMzUuMyAxNjkuMUMzMjEuOSAxNjguOCAzMTguNCAxNzEuMSAzMTMuOSAxNzMuN0MzMTEgMTc1LjQgMzA3LjMgMTc4LjYgMzAyLjIgMTczLjRDMjk1LjkgMTY3LjQgMjkxLjEgMTYxLjcgMjgyLjggMTYwLjVDMjcwLjUgMTU4LjUgMjY1LjEgMTYyLjUgMjU2LjIgMTcwLjJDMjUyLjggMTczLjEgMjQ0LjIgMTgzLjEgMjM2LjIgMTc5LjNDMjMyLjggMTc3LjYgMjIwLjggMTcxLjYgMjEyLjIgMTY3LjlDMTk1LjkgMTYwLjggMTcyLjIgMTcyLjUgMTYzLjYgMTg3LjlDMTUwLjcgMjEwLjggMTI1LjYgMzAxIDEyMS45IDMxM0MxMTMuMyAzMzkuNiAxMzIuOCAzNjEuNiAxNTguOCAzNjAuMUMxNjkuOSAzNTkuNSAxNzcuMSAzNTUuNSAxODQuMiAzNDIuN0MxODguMiAzMzUuMyAyMjUuOSAyMzUgMjI4LjggMjMwLjFDMjMwLjggMjI2LjcgMjM3LjcgMjIyLjEgMjQzLjQgMjI1QzI0OS4xIDIyOC4xIDI1MC4zIDIzNC40IDI0OS40IDI0MC4xQzI0OC4zIDI0OS44IDIyMS40IDMxMSAyMjAuNSAzMTcuOEMyMTcuMSAzNDAuNyAyNDcuNCAzNDQuNCAyNTkuMSAzMjEuOEMyNjIuOCAzMTQuNyAzMDQuOCAyMjkuMiAzMDguNSAyMjMuNUMzMTIuOCAyMTcuMiAzMTUuOSAyMTUuMiAzMjAuMiAyMTUuNUMzMjMuMyAyMTUuNSAzMjguNSAyMTYuNCAzMjcuMyAyMjYuNEMzMjUuOSAyMzUuOCAyOTIuMiAyOTguNyAyODguNCAzMTQuMUMyODMuOCAzMzQuNyAyOTUgMzU1LjUgMzEzLjMgMzY0LjdDMzI0LjcgMzcwLjQgMzc1LjggMzgwLjQgMzcxLjggMzUzLjZaTTM3Ny41IDQ0NS45QzM3MCA0NTAuMyAzNjUuNSA0NTguNSAzNjYgNDY3LjJDMzY2LjQgNDc1LjkgMzcxLjcgNDgzLjYgMzc5LjYgNDg3LjJDMzg3LjYgNDkwLjggMzk2LjkgNDg5LjcgNDAzLjcgNDg0LjNDNDExLjIgNDc5LjkgNDE1LjcgNDcxLjcgNDE1LjIgNDYzQzQxNC44IDQ1NC4zIDQwOS41IDQ0Ni42IDQwMS42IDQ0M0MzOTMuNiA0MzkuNCAzODQuMyA0NDAuNSAzNzcuNSA0NDUuOVoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=" width="20" height="20" alt="Meetup" style="display:block;border:0;">`;
-const WEB_IMG = `<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cGF0aCBkPSJNMzUyIDI1NmMwIDIyLjItMS4yIDQzLjYtMy4zIDY0SDE2My4zQzE2MS4yIDI5OS42IDE2MCAyNzguMiAxNjAgMjU2czEuMi00My42IDMuMy02NEgzNDguN2MyLjEgMjAuNCAzLjMgNDEuOCAzLjMgNjR6bTI4LjgtNjRINTAzLjljNS4zIDIwLjUgOC4xIDQxLjkgOC4xIDY0cy0yLjggNDMuNS04LjEgNjRIMzgwLjhjMi4xLTIwLjQgMy4yLTQxLjggMy4yLTY0cy0xLjEtNDMuNi0zLjItNjR6bTExMi42LTMySDM3Ni43Yy0xMC02My45LTI5LjgtMTE3LjQtNTUuMy0xNTEuNkMzOTkuNCAyOS4xIDQ2MyA4NS45IDQ5My40IDE2MHpNMzQ0LjMgMTYwSDE2Ny43YzYuMS0zNi40IDE1LjUtNjguNiAyNy05NC43YzEwLjUtMjMuNiAyMi4yLTQwLjcgMzMuNS01MS41QzIzOS40IDMuMiAyNDguNyAwIDI1NiAwczE2LjYgMy4yIDI3LjggMTMuOGMxMS4zIDEwLjggMjMgMjcuOSAzMy41IDUxLjVjMTEuNSAyNiAyMC45IDU4LjIgMjcgOTQuN3ptLTIwOSAwSDE4LjZDNDguNiA4NS45IDExMi4yIDI5LjEgMTkwLjYgOC40QzE2NS4xIDQyLjYgMTQ1LjMgOTYuMSAxMzUuMyAxNjB6TTguMSAxOTJIMTMxLjJjLTIuMSAyMC40LTMuMiA0MS44LTMuMiA2NHMxLjEgNDMuNiAzLjIgNjRIOC4xQzIuOCAyOTkuNSAwIDI3OC4xIDAgMjU2czIuOC00My41IDguMS02NHptMTg2LjYgMjU0LjZjLTExLjYtMjYtMjAuOS01OC4yLTI3LTk0LjZIMzQ0LjNjLTYuMSAzNi40LTE1LjUgNjguNi0yNyA5NC42Yy0xMC41IDIzLjYtMjIuMiA0MC43LTMzLjUgNTEuNUMyNzIuNiA1MDguOCAyNjMuMyA1MTIgMjU2IDUxMnMtMTYuNi0zLjItMjcuOC0xMy44Yy0xMS4zLTEwLjgtMjMtMjcuOS0zMy41LTUxLjV6TTEzNS4zIDM1MmMxMCA2My45IDI5LjggMTE3LjQgNTUuMyAxNTEuNkMxMTIuMiA0ODIuOSA0OC42IDQyNi4xIDE4LjYgMzUySDEzNS4zem0zNTguMSAwYy0zMCA3NC4xLTkzLjYgMTMwLjktMTcxLjkgMTUxLjZjMjUuNS0zNC4yIDQ1LjItODcuNyA1NS4zLTE1MS42SDQ5My40eiIgZmlsbD0id2hpdGUiLz48L3N2Zz4K" width="20" height="20" alt="Website" style="display:block;border:0;">`;
-
-export interface EventDraft {
-  name: string;
-  date: string;
-  slug: string;
-  // The event's chapter: where the CTA links (#39) and which chapter segment
-  // receives the draft (#55).
-  chapter_slug: string;
-  meeting_url?: string | null;
-  venue_name?: string | null;
-  venue_url?: string | null;
-}
 
 export interface PostDraft {
   title: string;
   slug: string;
   body: string;
-}
-
-// `date` is a true UTC instant (see src/lib/timezone.ts) — rendered in the
-// chapter's own local time, same as the site's own formatEventDate, not raw
-// UTC. Previously pinned timeZone: 'UTC' here, which only produced the
-// correct-looking digits because of a separate storage bug that stored
-// Trieste wall-clock digits mislabeled as UTC in the first place.
-function formatEventDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const datePart = date.toLocaleDateString('en-IE', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-    timeZone: DEFAULT_CHAPTER_TIMEZONE,
-  });
-  const timePart = date.toLocaleTimeString('en-IE', {
-    hour: '2-digit', minute: '2-digit',
-    timeZone: DEFAULT_CHAPTER_TIMEZONE,
-  });
-  return `${datePart} @ ${timePart}`;
 }
 
 function extractFirstParagraph(markdown: string): string {
@@ -151,7 +104,7 @@ function buildEmailHtml({ label, title, cardHtml, ctaText, ctaUrl }: {
           <!-- Logo -->
           <tr>
             <td align="center" style="padding-bottom:36px;">
-              <img src="${SITE_URL}/cnf-logo.svg" width="74" height="80" alt="Club na Féalscúnachta" style="display:block;border:0;height:auto;max-width:74px;">
+              <img src="${emailImageUrl('cnf-logo.png')}" width="74" height="80" alt="Club na Fealsúnachta" style="display:block;border:0;height:auto;max-width:74px;">
             </td>
           </tr>
 
@@ -212,17 +165,17 @@ function buildEmailHtml({ label, title, cardHtml, ctaText, ctaUrl }: {
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="padding:0 8px;">
-                    <a href="https://www.instagram.com/clubnafealsunachta" style="display:inline-block;width:44px;height:44px;background-color:${ICON_GREY};border-radius:22px;text-align:center;text-decoration:none;line-height:44px;">
+                    <a href="https://www.instagram.com/clubnafealsunachta" style="display:inline-block;width:44px;height:44px;text-align:center;text-decoration:none;line-height:44px;">
                       <table role="presentation" width="44" height="44" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="middle">${IG_IMG}</td></tr></table>
                     </a>
                   </td>
                   <td style="padding:0 8px;">
-                    <a href="https://www.facebook.com/clubnafealsunachta" style="display:inline-block;width:44px;height:44px;background-color:${ICON_GREY};border-radius:22px;text-align:center;text-decoration:none;line-height:44px;">
+                    <a href="https://www.facebook.com/clubnafealsunachta" style="display:inline-block;width:44px;height:44px;text-align:center;text-decoration:none;line-height:44px;">
                       <table role="presentation" width="44" height="44" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="middle">${FB_IMG}</td></tr></table>
                     </a>
                   </td>
                   <td style="padding:0 8px;">
-                    <a href="${SITE_URL}" style="display:inline-block;width:44px;height:44px;background-color:${ICON_GREY};border-radius:22px;text-align:center;text-decoration:none;line-height:44px;">
+                    <a href="${SITE_URL}" style="display:inline-block;width:44px;height:44px;text-align:center;text-decoration:none;line-height:44px;">
                       <table role="presentation" width="44" height="44" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="middle">${WEB_IMG}</td></tr></table>
                     </a>
                   </td>
@@ -254,24 +207,6 @@ function buildEmailHtml({ label, title, cardHtml, ctaText, ctaUrl }: {
 </html>`;
 }
 
-function buildEventEmailHtml(event: EventDraft): string {
-  const venueHtml = event.meeting_url
-    ? `<span style="display:block;text-align:center;"><a href="${event.meeting_url}" style="color:${GREEN};text-decoration:underline;font-family:'Noto Sans',Arial,sans-serif;font-size:15px;">Join online</a></span>`
-    : event.venue_name
-      ? event.venue_url
-        ? `<span style="display:block;text-align:center;"><a href="${event.venue_url}" style="color:${GREEN};text-decoration:underline;font-family:'Noto Sans',Arial,sans-serif;font-size:15px;">${event.venue_name}</a></span>`
-        : `<span style="display:block;text-align:center;color:${GREEN};">${event.venue_name}</span>`
-      : '';
-
-  return buildEmailHtml({
-    label: 'Upcoming event',
-    title: event.name,
-    cardHtml: `<span style="display:block;text-align:center;">${formatEventDate(event.date)}</span>${venueHtml}`,
-    ctaText: 'View event',
-    ctaUrl: `${SITE_URL}/${event.chapter_slug}/events/${event.slug}`,
-  });
-}
-
 function buildPostEmailHtml(post: PostDraft): string {
   return buildEmailHtml({
     label: 'New blog post',
@@ -280,30 +215,6 @@ function buildPostEmailHtml(post: PostDraft): string {
     ctaText: 'Read post',
     ctaUrl: `${SITE_URL}/posts/${post.slug}`,
   });
-}
-
-// Mailchimp's segments list endpoint pages by default; 1000 is the API's own
-// max count per page. Without paging through, a chapter whose segment falls
-// past the first page would be indistinguishable from "no segment yet".
-const SEGMENTS_PAGE_SIZE = 1000;
-
-// Resolve the audience segment id whose name is the chapter's tag. Tags are
-// static segments on the audience (same name), so targeting one chapter's
-// subscribers is a saved_segment_id in the campaign recipients (see #55).
-async function chapterSegmentId(chapterSlug: string): Promise<number | null> {
-  const targetName = chapterTagFor(chapterSlug);
-  let offset = 0;
-  while (true) {
-    const res = await mailchimp(`/lists/${MAILCHIMP_AUDIENCE_ID}/segments?count=${SEGMENTS_PAGE_SIZE}&offset=${offset}`);
-    if (!res.ok) {
-      throw new Error(`Mailchimp segment lookup failed: ${(await mailchimpError(res)).message}`);
-    }
-    const body = (await res.json()) as { segments?: { id: number; name: string }[] };
-    const match = body.segments?.find((segment) => segment.name === targetName);
-    if (match) return match.id;
-    if (!body.segments || body.segments.length < SEGMENTS_PAGE_SIZE) return null;
-    offset += SEGMENTS_PAGE_SIZE;
-  }
 }
 
 async function sendCampaign({ subjectLine, previewText, html, recipients }: {
@@ -331,7 +242,7 @@ async function sendCampaign({ subjectLine, previewText, html, recipients }: {
       settings: {
         subject_line: subjectLine,
         preview_text: previewText,
-        from_name: 'Club na Féalscúnachta',
+        from_name: 'Club na Fealsúnachta',
         reply_to: process.env.EMAIL_INFO,
       },
     },
@@ -359,37 +270,6 @@ async function sendCampaign({ subjectLine, previewText, html, recipients }: {
   if (!sendRes.ok) {
     throw new Error(`Mailchimp send failed: ${(await mailchimpError(sendRes)).message}`);
   }
-}
-
-export async function sendMailchimpEmail(event: EventDraft): Promise<void> {
-  if (!isConfigured()) {
-    console.warn('Mailchimp not configured — skipping email send');
-    return;
-  }
-  if (mailchimpRuntime.isLocalDev()) {
-    console.warn(`Mailchimp campaign skipped in local dev: "Upcoming event - ${event.name}"`);
-    return;
-  }
-
-  // #55: route the event draft to the event's chapter segment — never the
-  // whole audience. A chapter nobody has subscribed to yet has no segment at
-  // all, which means no one has actually opted in to that email, so it's
-  // skipped rather than blasting everyone (that "whole audience" fallback
-  // silently included newsletter-only subscribers, contradicting the
-  // segment-only direction above — dropped once this was noticed).
-  const segmentId = await chapterSegmentId(event.chapter_slug);
-  if (segmentId == null) {
-    console.warn(`No Mailchimp segment for "${chapterTagFor(event.chapter_slug)}" — skipping event email`);
-    return;
-  }
-  const recipients = { list_id: MAILCHIMP_AUDIENCE_ID, segment_opts: { saved_segment_id: segmentId } };
-
-  await sendCampaign({
-    subjectLine: `Upcoming event - ${event.name}`,
-    previewText: `Join us for ${event.name} — ${formatEventDate(event.date)}`,
-    html: buildEventEmailHtml(event),
-    recipients,
-  });
 }
 
 export async function sendMailchimpPostEmail(post: PostDraft): Promise<void> {

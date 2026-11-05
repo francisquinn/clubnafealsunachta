@@ -5,8 +5,17 @@ import { findMovedEventPath } from "./lib/movedEventRedirect";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
+// #205: Gmail's and Apple Mail's one-click unsubscribe POST carries no
+// Origin. It doesn't use the session cookie; it checks a signed token
+// instead, so CSRF doesn't apply.
+const TOKEN_AUTH_PATHS = new Set(["/api/unsubscribe"]);
+
 export const onRequest = defineMiddleware(async (context, next) => {
-  if (!SAFE_METHODS.has(context.request.method) && !isTrustedOrigin(context.request)) {
+  if (
+    !SAFE_METHODS.has(context.request.method) &&
+    !TOKEN_AUTH_PATHS.has(context.url.pathname.replace(/\/$/, "")) &&
+    !isTrustedOrigin(context.request)
+  ) {
     return new Response("Invalid origin", { status: 403 });
   }
 

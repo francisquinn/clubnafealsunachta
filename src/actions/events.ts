@@ -1,7 +1,6 @@
 import { defineAction, ActionError } from 'astro:actions';
 import { z } from 'astro/zod';
 import { supabase, supabaseAdmin } from '../lib/supabase';
-import { sendMailchimpEmail } from '../lib/mailchimp';
 import { requireAdmin, isChapterInScope, scopeToAdminChapters, type AdminScope } from '../lib/auth';
 import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
 import { fetchLiveEvent } from '../lib/liveEvent';
@@ -150,7 +149,7 @@ export const createEvent = defineAction({
     // rawDate/rawEndDate are naive "YYYY-MM-DDTHH:mm" from timezone-less
     // datetime-local inputs — always the chapter's own local wall-clock time
     // (see DEFAULT_CHAPTER_TIMEZONE), never UTC. Converted to real UTC instants
-    // here, once, before either reaches storage or the Mailchimp draft below.
+    // here, once, before either reaches storage.
     const date = localWallTimeToUtc(rawDate, DEFAULT_CHAPTER_TIMEZONE).toISOString();
     const end_date = localWallTimeToUtc(rawEndDate, DEFAULT_CHAPTER_TIMEZONE).toISOString();
 
@@ -197,35 +196,18 @@ export const createEvent = defineAction({
     // shows up in the named "Going" list, and the host can clear it later via
     // the same RSVP widget if their plans change. Goes through the same
     // write path setEventRsvp uses, so the row can't drift out of shape.
-    // Best-effort, like the Mailchimp draft below — shouldn't block event
-    // creation if it fails.
+    // Best-effort — shouldn't block event creation if it fails.
     const { error: rsvpError } = await upsertRsvp(admin.memberId, event.id, 'going');
     if (rsvpError) {
       console.error(`Failed to seed host RSVP for event "${slug}":`, rsvpError.message);
     }
 
-    triggerNetlifyBuild();
-
-    // #39: events are routed under /[chapterSlug]/events, and the chapter's slug
-    // also picks the Mailchimp segment the draft goes to (#64). A single-row
-    // lookup, not getAllChapters() — no need to fetch every chapter just to read
-    // one slug.
-    const { data: chapter, error: chapterError } = await supabaseAdmin
-      .from('chapters')
-      .select('slug')
-      .eq('id', event_chapter_id)
-      .single();
-    if (chapterError) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: chapterError.message });
-
-    await sendMailchimpEmail({
-      name,
-      date,
-      slug,
-      chapter_slug: chapter.slug,
-      meeting_url,
-      venue_name: venue?.name ?? null,
-      venue_url: venue?.url ?? null,
-    }).catch((e) => console.error('Mailchimp draft creation failed:', e));
+    // #205: the build this triggers is what announces the event: once it
+    // deploys, the deploy-succeeded Netlify function emails it to the
+    // chapter's opted-in members (src/lib/eventAnnouncements.ts). Awaited:
+    // an un-awaited hook can be cancelled when the response returns (#127),
+    // and then the event is neither published nor announced.
+    await triggerNetlifyBuild();
 
     return { success: true };
   }
