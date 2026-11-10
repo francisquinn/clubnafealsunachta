@@ -2,6 +2,7 @@
 export const prerender = false;
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import AccountForm from "../../components/AccountForm/AccountForm";
+import DeleteAccount from "../../components/DeleteAccount/DeleteAccount";
 import { getSessionToken, verifySession } from "../../lib/auth";
 import { supabaseAdmin } from "../../lib/supabase";
 import { loadMemberChapters } from "../../lib/memberChapters";
@@ -43,5 +44,6 @@ if (!member) {
       showChapters={chapters !== null}
       chapters={chapters ?? []}
     />
+    <DeleteAccount client:load />
   </section>
 </BaseLayout>

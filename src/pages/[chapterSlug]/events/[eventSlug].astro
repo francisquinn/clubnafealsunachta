@@ -8,7 +8,7 @@ import Banner from "../../../layouts/Banner.astro";
 import EventRsvp from "../../../components/EventRsvp/EventRsvp";
 import EventLiveActions from "../../../components/EventLiveActions/EventLiveActions";
 import EventLocation from "../../../components/EventLocation/EventLocation";
-import { getDisplayName } from "../../../lib/memberDisplay";
+import { getDisplayName, FORMER_MEMBER } from "../../../lib/memberDisplay";
 import Avatar from "../../../components/Avatar/Avatar.astro";
 import { getEventChapterStaticPaths } from "../../../lib/chapters";
 import { getTagLabel, normalizeTags } from "../../../lib/eventTags";
@@ -80,7 +80,11 @@ const tagLabels = normalizeTags(event.data.tags ?? []).flatMap((slug) => getTagL
     )}
     <div class="cnf-event-page__details">
       <span class="cnf-event-page__details-info"
-        ><Avatar avatarUrl={event.data.creator.avatar_url} alt={getDisplayName(event.data.creator)} id={event.data.creator.id} size="sm" /> Hosted by <a href={`/profile/${event.data.creator.username}`}>{getDisplayName(event.data.creator)}</a></span
+        >{event.data.creator ? (
+          <><Avatar avatarUrl={event.data.creator.avatar_url} alt={getDisplayName(event.data.creator)} id={event.data.creator.id} size="sm" /> Hosted by <a href={`/profile/${event.data.creator.username}`}>{getDisplayName(event.data.creator)}</a></>
+        ) : (
+          `Hosted by ${FORMER_MEMBER}`
+        )}</span
       >
     </div>
     <div class="cnf-event-page__details">
