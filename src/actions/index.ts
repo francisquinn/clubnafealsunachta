@@ -10,6 +10,7 @@ import { updateChapterMemberships, joinChapter, leaveChapter, getChapterMembersh
 import { getEventRsvps, setEventRsvp } from './rsvps';
 import { uploadAvatar } from './avatar';
 import { deleteAccount } from './deleteAccount';
+import { resendVerification } from './resendVerification';
 
 export const server = {
   createEvent,
@@ -36,4 +37,5 @@ export const server = {
   setEventRsvp,
   uploadAvatar,
   deleteAccount,
+  resendVerification,
 };
