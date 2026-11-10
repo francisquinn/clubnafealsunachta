@@ -9,6 +9,7 @@ import { updateUsername } from './updateUsername';
 import { updateChapterMemberships, joinChapter, leaveChapter, getChapterMembership, setChapterEmails } from './chapterMembers';
 import { getEventRsvps, setEventRsvp } from './rsvps';
 import { uploadAvatar } from './avatar';
+import { deleteAccount } from './deleteAccount';
 
 export const server = {
   createEvent,
@@ -34,4 +35,5 @@ export const server = {
   getEventRsvps,
   setEventRsvp,
   uploadAvatar,
+  deleteAccount,
 };

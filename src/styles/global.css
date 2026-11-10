@@ -6,7 +6,8 @@
   --color-green: 135.65, 19.01%, 23.73%;
   --color-white: 30, 100%, 98.82%;
   --color-grey: 0, 0%, 40%;
-  --color-red: 0, 84.96%, 44.31%;
+  /* Muted brick red, toned to sit with the green and gold (#210). */
+  --color-red: 6, 45%, 38%;
   --color-light-green: 120, 75%, 31.37%;
   --border-radius: 1rem;
   --box-shadow-inset: inset rgba(0, 0, 0, 0.15) 2px 2px 3px;

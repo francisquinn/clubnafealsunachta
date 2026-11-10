@@ -63,13 +63,15 @@ export function eventsLoader(): Loader {
         // (online events belong to the Online chapter, events.chapter_id is NOT
         // NULL).
         const location = chaptersMap.get(event.chapter_id);
-        const creator = unwrapRelation(event.members);
+        // A null created_by means the host deleted their account (#210); the
+        // event stays up under "Former member".
+        const creator = unwrapRelation(event.members) ?? null;
 
         if (!location) {
           console.error(`Skipping event "${event.slug}": no matching chapter for chapter_id ${event.chapter_id}`);
           continue;
         }
-        if (!creator) {
+        if (!creator && event.created_by !== null) {
           console.error(`Skipping event "${event.slug}": no matching member for created_by ${event.created_by}`);
           continue;
         }

@@ -35,6 +35,17 @@
   border: 2px solid hsl(var(--color-green));
 }
 
+/* Low-emphasis action next to a main one, e.g. Cancel in a modal. */
+.cnf-button__ghost {
+  color: hsl(var(--color-green));
+  background-color: transparent;
+}
+
+/* Destructive actions, e.g. deleting an account (#210). */
+.cnf-button__danger {
+  background-color: hsl(var(--color-red));
+}
+
 .cnf-button__gold {
   background: linear-gradient(
     to bottom,
@@ -64,7 +75,8 @@
 }
 
 .cnf-button__primary .cnf-button__text,
-.cnf-button__gold .cnf-button__text {
+.cnf-button__gold .cnf-button__text,
+.cnf-button__danger .cnf-button__text {
   color: hsl(var(--color-beige));
 }
 
@@ -92,7 +104,8 @@
 /* .cnf-button__secondary's background is light (beige) — the default white
    spinner is barely visible on it, unlike on the dark primary/gold buttons
    it was designed for. */
-.cnf-button__secondary.cnf-button--loading::after {
+.cnf-button__secondary.cnf-button--loading::after,
+.cnf-button__ghost.cnf-button--loading::after {
   border-top-color: hsl(var(--color-green));
 }
 
