@@ -56,6 +56,19 @@ export function verifyVerificationToken(token: string): { email: string } | null
   }
 }
 
+// For the "send a new link" form on an expired link: the signature still
+// proves which address the link was for, so the form can be prefilled.
+export function readExpiredVerificationEmail(token: string): string | null {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) return null;
+  try {
+    const payload = jwt.verify(token, secret, { ignoreExpiration: true }) as { email: string; purpose?: string };
+    return payload.purpose === "verify-email" ? payload.email : null;
+  } catch {
+    return null;
+  }
+}
+
 const PASSWORD_RESET_TOKEN_DURATION = "1h";
 
 // Ties a reset token to the password it was issued against: the token embeds

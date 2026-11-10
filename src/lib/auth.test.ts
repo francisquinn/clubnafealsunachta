@@ -8,6 +8,8 @@ import {
   isChapterInScope,
   verifySession,
   isSessionRevoked,
+  createVerificationToken,
+  readExpiredVerificationEmail,
 } from "./auth";
 
 // #37: getAdminScope/requireAdmin resolve super-admin vs per-chapter scope by
@@ -359,5 +361,33 @@ describe("transient lookup errors", () => {
       expect(spy).not.toHaveBeenCalled();
       spy.mockRestore();
     });
+  });
+});
+
+// #220: the expired-link page prefills the resend form from the token, so
+// expiry is ignored but the signature and purpose still have to check out.
+describe("readExpiredVerificationEmail", () => {
+  const secret = () => process.env.JWT_SECRET!;
+
+  it("reads the email from an expired verification link", () => {
+    const token = jwt.sign({ email: "new@example.com", purpose: "verify-email", exp: Math.floor(Date.now() / 1000) - 60 }, secret());
+    expect(readExpiredVerificationEmail(token)).toBe("new@example.com");
+  });
+
+  it("reads the email from a link that hasn't expired", () => {
+    expect(readExpiredVerificationEmail(createVerificationToken("new@example.com"))).toBe("new@example.com");
+  });
+
+  it("rejects a token signed with another secret", () => {
+    const token = jwt.sign({ email: "new@example.com", purpose: "verify-email" }, "not-the-secret");
+    expect(readExpiredVerificationEmail(token)).toBeNull();
+  });
+
+  it("rejects a token made for something else", () => {
+    expect(readExpiredVerificationEmail(createSessionToken("m1", false, "newbie"))).toBeNull();
+  });
+
+  it("rejects garbage", () => {
+    expect(readExpiredVerificationEmail("not-a-token")).toBeNull();
   });
 });

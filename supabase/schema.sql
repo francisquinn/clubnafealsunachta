@@ -61,14 +61,15 @@ CREATE TABLE events (
 -- there's no ongoing purpose to justify keeping the email + password hash
 -- (GDPR storage limitation, Art. 5(1)(e)). Admin-created members are
 -- auto-verified on insert (see createAccount(..., autoVerify)), so this
--- only ever touches abandoned public sign-ups.
+-- only ever touches abandoned public sign-ups. The 30 days run from the
+-- latest verification email, so a resent link can't outlive the account.
 CREATE OR REPLACE FUNCTION delete_stale_unverified_members()
 RETURNS void
 LANGUAGE sql
 AS $$
   DELETE FROM members
   WHERE email_verified_at IS NULL
-    AND created_at < NOW() - INTERVAL '30 days';
+    AND GREATEST(created_at, verification_sent_at) < NOW() - INTERVAL '30 days';
 $$;
 
 CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA extensions;
