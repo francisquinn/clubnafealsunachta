@@ -81,7 +81,8 @@ const memberSince = profileUser
   ? new Date(profileUser.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })
   : null;
 
-const isOwnProfile = Boolean(payload && profileUser && payload.username === profileUser.username);
+// By id: the session's username is a copy that can lag behind a rename.
+const isOwnProfile = Boolean(payload && profileUser && payload.memberId === profileUser.id);
 ---
 
 <BaseLayout pageTitle={profileUser ? displayName : "Profile not found"}>
