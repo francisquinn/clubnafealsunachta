@@ -21,6 +21,11 @@ fieldset {
   margin-top: 2.5rem;
 }
 
+/* Sized to its label, not stretched by the fieldset's grid. */
+.cnf-form__danger-zone > .cnf-button {
+  justify-self: start;
+}
+
 /* A row of buttons, e.g. a main action and Cancel; wraps on narrow screens. */
 .cnf-form__actions {
   display: flex;

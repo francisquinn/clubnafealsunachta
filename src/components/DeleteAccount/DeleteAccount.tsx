@@ -60,7 +60,6 @@ export default function DeleteAccount() {
         ref={openButtonRef}
         type="button"
         className="cnf-button cnf-button__danger"
-        style={{ justifySelf: "start" }}
         onClick={() => setOpen(true)}
       >
         <span className="cnf-button__text">Delete account</span>
