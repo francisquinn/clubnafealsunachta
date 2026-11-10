@@ -6,8 +6,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const state = vi.hoisted(() => ({
   member: null as { id: string; email: string; email_verified_at: string | null } | null,
   claimed: true,
+  claimError: null as { message: string } | null,
   lookups: [] as string[],
-  claims: [] as { values: unknown; or: unknown }[],
+  claims: [] as { values: unknown; eq: unknown[][]; or: unknown }[],
+  // Order of the cooldown claim and the email send.
+  events: [] as string[],
 }));
 
 vi.mock('astro:actions', async () => (await import('../test/astroActions')).mockActionModule());
@@ -21,7 +24,13 @@ vi.mock('../lib/supabase', async () => {
           stubQuery((calls) => {
             const update = calls.find((c) => c.method === 'update');
             if (update) {
-              state.claims.push({ values: update.args[0], or: calls.find((c) => c.method === 'or')?.args[0] });
+              state.events.push('claim');
+              state.claims.push({
+                values: update.args[0],
+                eq: calls.filter((c) => c.method === 'eq').map((c) => c.args),
+                or: calls.find((c) => c.method === 'or')?.args[0],
+              });
+              if (state.claimError) return { data: null, error: state.claimError };
               return { data: state.claimed ? [{ id: state.member!.id }] : [], error: null };
             }
             const lookup = calls.find((c) => c.method === 'eq' || c.method === 'ilike')!;
@@ -34,7 +43,10 @@ vi.mock('../lib/supabase', async () => {
 });
 
 vi.mock('../lib/verificationEmail', () => ({
-  sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
+  sendVerificationEmail: vi.fn(() => {
+    state.events.push('send');
+    return Promise.resolve();
+  }),
 }));
 
 import { resendVerification } from './resendVerification';
@@ -60,8 +72,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   state.member = { id: 'm1', email: 'new@example.com', email_verified_at: null };
   state.claimed = true;
+  state.claimError = null;
   state.lookups = [];
   state.claims = [];
+  state.events = [];
 });
 afterEach(() => vi.useRealTimers());
 
@@ -79,11 +93,14 @@ describe('resendVerification', () => {
     expect(sendVerificationEmail).toHaveBeenCalledWith('new@example.com', 'https://example.com');
   });
 
-  it('claims the cooldown slot before sending', async () => {
+  it('claims only this member\'s cooldown slot, 5 minutes back, before sending', async () => {
+    vi.setSystemTime(new Date('2026-11-10T12:00:00.000Z'));
     await run('new@example.com');
+    expect(state.events).toEqual(['claim', 'send']);
     expect(state.claims).toHaveLength(1);
-    expect(state.claims[0].values).toEqual({ verification_sent_at: expect.any(String) });
-    expect(state.claims[0].or).toMatch(/^verification_sent_at\.is\.null,verification_sent_at\.lt\./);
+    expect(state.claims[0]!.values).toEqual({ verification_sent_at: '2026-11-10T12:00:00.000Z' });
+    expect(state.claims[0]!.eq).toEqual([['id', 'm1']]);
+    expect(state.claims[0]!.or).toBe('verification_sent_at.is.null,verification_sent_at.lt.2026-11-10T11:55:00.000Z');
   });
 
   it('sends nothing while the cooldown is running', async () => {
@@ -114,6 +131,15 @@ describe('resendVerification', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const { result } = await run('new@example.com');
     expect(result).toEqual({ success: true });
+  });
+
+  it('logs and sends nothing when the cooldown claim fails', async () => {
+    state.claimError = { message: 'column "verification_sent_at" does not exist' };
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { result } = await run('new@example.com');
+    expect(result).toEqual({ success: true });
+    expect(sendVerificationEmail).not.toHaveBeenCalled();
+    expect(log).toHaveBeenCalledWith('Failed to claim verification resend slot:', 'column "verification_sent_at" does not exist');
   });
 
   it('rejects an empty identifier', async () => {

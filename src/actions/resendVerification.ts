@@ -43,14 +43,16 @@ export const resendVerification = defineAction({
       // the same window from both sending.
       const now = new Date();
       const cutoff = new Date(now.getTime() - RESEND_COOLDOWN_MS).toISOString();
-      const { data: claimed } = await supabaseAdmin
+      const { data: claimed, error: claimError } = await supabaseAdmin
         .from('members')
         .update({ verification_sent_at: now.toISOString() })
         .eq('id', member.id)
         .or(`verification_sent_at.is.null,verification_sent_at.lt.${cutoff}`)
         .select('id');
 
-      if (claimed && claimed.length > 0) {
+      if (claimError) {
+        console.error('Failed to claim verification resend slot:', claimError.message);
+      } else if (claimed && claimed.length > 0) {
         try {
           await sendVerificationEmail(member.email, origin);
         } catch (err) {

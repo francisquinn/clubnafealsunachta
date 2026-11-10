@@ -17,13 +17,13 @@ describe("LoginForm", () => {
     mockResend.mockReset();
   });
 
-  async function failLoginWith(body: object) {
+  async function failLoginWith(body: { error: string; unverified?: boolean }) {
     mockFetch.mockResolvedValue({ ok: false, json: () => Promise.resolve(body) });
     render(<LoginForm />);
     fireEvent.change(screen.getByLabelText(/email or username/i), { target: { value: "newbie" } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "Password1" } });
     fireEvent.submit(document.querySelector("form")!);
-    await waitFor(() => expect(screen.getByText(body.error as string)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(body.error)).toBeInTheDocument());
   }
 
   it("offers a new confirmation link when the account is unverified", async () => {
@@ -33,7 +33,7 @@ describe("LoginForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Send a new link" }));
 
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(/new confirmation link is on its way/));
-    expect((mockResend.mock.calls[0][0] as FormData).get("identifier")).toBe("newbie");
+    expect((mockResend.mock.calls[0]![0] as FormData).get("identifier")).toBe("newbie");
   });
 
   it("doesn't offer a new link for other login errors", async () => {

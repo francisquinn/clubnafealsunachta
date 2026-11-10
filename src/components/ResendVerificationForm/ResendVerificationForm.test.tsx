@@ -19,14 +19,14 @@ describe("ResendVerificationForm", () => {
     expect(screen.getByLabelText("Email")).toHaveValue("new@example.com");
   });
 
-  it("sends the email and shows the same answer either way", async () => {
+  it("sends the email and shows a neutral confirmation", async () => {
     mockResend.mockResolvedValue({ data: { success: true }, error: undefined });
     render(<ResendVerificationForm defaultEmail="new@example.com" />);
 
     fireEvent.submit(document.querySelector("form")!);
 
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(/If that email belongs/));
-    expect((mockResend.mock.calls[0][0] as FormData).get("identifier")).toBe("new@example.com");
+    expect((mockResend.mock.calls[0]![0] as FormData).get("identifier")).toBe("new@example.com");
   });
 
   it("rejects an invalid email without calling the server", () => {
