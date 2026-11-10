@@ -3,6 +3,7 @@ export const prerender = false;
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getSessionToken, verifySession } from "../../lib/auth";
 import { supabaseAdmin } from "../../lib/supabase";
+import { findMemberByUsername } from "../../lib/memberProfile";
 import { getDisplayName } from "../../lib/memberDisplay";
 import BlogEntry from "../../components/BlogEntry.astro";
 import Avatar from "../../components/Avatar/Avatar.astro";
@@ -13,10 +14,13 @@ const { username } = Astro.params;
 const token = getSessionToken(Astro.request);
 const payload = await verifySession(token);
 
-// Single query for the profile being viewed
-const { data: profileUser } = await (supabaseAdmin
-  ? supabaseAdmin.from("members").select("id, username, full_name, display_full_name, avatar_url, created_at").eq("username", username).single()
-  : Promise.resolve({ data: null }));
+const profileUser = username ? await findMemberByUsername(username) : null;
+
+// #223: usernames are unique ignoring case, so /profile/Alice finds alice.
+// Send it to the stored spelling, so each profile has one URL.
+if (profileUser && profileUser.username !== username) {
+  return Astro.redirect(`/profile/${profileUser.username}`);
+}
 
 if (!profileUser) {
   Astro.response.status = 404;
