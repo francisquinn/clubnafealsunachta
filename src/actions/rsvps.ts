@@ -38,6 +38,13 @@ async function resolveEvent(slug: string): Promise<{ id: number; date: string }>
   return data;
 }
 
+// The lists go to every logged-in member, so a full name the member chose
+// not to show never leaves the server (#222: the privacy page promises it).
+function hideUnsharedFullName(member: RsvpMember | null): RsvpMember | null {
+  if (!member || member.display_full_name) return member;
+  return { ...member, full_name: null };
+}
+
 async function fetchRsvpRows(eventId: number): Promise<RsvpRow[]> {
   const { data, error } = await supabaseAdmin!
     .from('rsvps')
@@ -56,7 +63,7 @@ async function fetchRsvpRows(eventId: number): Promise<RsvpRow[]> {
     .map((row) => ({
       member_id: row.member_id,
       status: row.status,
-      members: unwrapRelation<RsvpMember>(row.members),
+      members: hideUnsharedFullName(unwrapRelation<RsvpMember>(row.members)),
     }))
     .filter(
       (row): row is RsvpRow =>
