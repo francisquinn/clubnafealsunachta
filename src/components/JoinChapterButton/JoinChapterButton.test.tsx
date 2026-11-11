@@ -91,29 +91,62 @@ describe("JoinChapterButton", () => {
     expect(screen.queryByRole("button", { name: "Join chapter" })).toBeNull();
   });
 
-  it("leaves the chapter when the Member button is clicked, then offers the join again", async () => {
+  // #219: leaving asks first.
+  it("asks before leaving, and stays a member if the member cancels", async () => {
+    mockFetchSessionInfo.mockResolvedValue(loggedIn);
+    mockGetChapterMembership.mockResolvedValue({ data: { joined: true }, error: undefined });
+
+    render(<JoinChapterButton chapterId={7} {...chapter} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Member" }));
+
+    expect(screen.getByRole("heading", { name: `Leave ${chapter.chapterName}?` })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(mockLeaveChapter).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Member" })).toBeInTheDocument();
+  });
+
+  it("leaves the chapter once confirmed, then offers the join again", async () => {
     mockFetchSessionInfo.mockResolvedValue(loggedIn);
     mockGetChapterMembership.mockResolvedValue({ data: { joined: true }, error: undefined });
     mockLeaveChapter.mockResolvedValue({ data: { joined: false }, error: undefined });
 
     render(<JoinChapterButton chapterId={7} {...chapter} />);
     fireEvent.click(await screen.findByRole("button", { name: "Member" }));
+    fireEvent.click(screen.getByRole("button", { name: "Leave" }));
 
-    expect(await screen.findByRole("button", { name: "Join chapter" })).toBeEnabled();
+    const join = await screen.findByRole("button", { name: "Join chapter" });
+    expect(join).toBeEnabled();
+    // The Member button it replaced had focus, so focus moves here.
+    await waitFor(() => expect(join).toHaveFocus());
     expect(mockLeaveChapter).toHaveBeenCalledWith({ chapterId: 7 });
   });
 
-  it("stays a member and shows an error when leaving fails", async () => {
+  it("stays a member and shows an error in the confirmation when leaving fails", async () => {
     mockFetchSessionInfo.mockResolvedValue(loggedIn);
     mockGetChapterMembership.mockResolvedValue({ data: { joined: true }, error: undefined });
     mockLeaveChapter.mockResolvedValue({ data: undefined, error: { code: "INTERNAL_SERVER_ERROR" } });
 
     render(<JoinChapterButton chapterId={1} {...chapter} />);
     fireEvent.click(await screen.findByRole("button", { name: "Member" }));
+    fireEvent.click(screen.getByRole("button", { name: "Leave" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Something went wrong");
-    await waitFor(() => expect(screen.getByRole("button", { name: "Member" })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Leave" })).toBeEnabled());
     expect(screen.queryByRole("button", { name: "Join chapter" })).toBeNull();
+  });
+
+  it("recovers when the leave request itself fails", async () => {
+    mockFetchSessionInfo.mockResolvedValue(loggedIn);
+    mockGetChapterMembership.mockResolvedValue({ data: { joined: true }, error: undefined });
+    mockLeaveChapter.mockRejectedValue(new Error("offline"));
+
+    render(<JoinChapterButton chapterId={1} {...chapter} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Member" }));
+    fireEvent.click(screen.getByRole("button", { name: "Leave" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Something went wrong");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Leave" })).toBeEnabled());
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeEnabled();
   });
 
   it("keeps the button and shows an error when joining fails", async () => {
