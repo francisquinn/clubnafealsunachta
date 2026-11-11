@@ -175,6 +175,20 @@ describe('getEventRsvps', () => {
     expect(result.lists?.going.map((m) => m.username)).toEqual(['alice', 'bob']);
   });
 
+  it('drops the full name of a member who chose not to show it', async () => {
+    state.sessionCookie = 'session-member-1';
+    const hidden = { ...MEMBER_CAROL, full_name: 'Carol Jones' };
+    state.rsvpRows = [
+      { member_id: 'member-2', status: 'going', members: MEMBER_BOB },
+      { member_id: 'member-3', status: 'maybe', members: hidden },
+    ];
+
+    const result = await getHandler({ slug: 'philosophy-101' }, context());
+
+    expect(result.lists?.going).toEqual([MEMBER_BOB]);
+    expect(result.lists?.maybe).toEqual([{ ...hidden, full_name: null }]);
+  });
+
   it('skips rows whose member relation is missing, still counting the rest', async () => {
     state.sessionCookie = 'session-member-1';
     state.rsvpRows = [
