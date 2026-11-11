@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 const pageTitle = "Privacy Policy";
-const lastUpdated = "4 November 2026";
+const lastUpdated = "11 November 2026";
 ---
 
 <BaseLayout pageTitle={pageTitle}>
@@ -28,8 +28,27 @@ const lastUpdated = "4 November 2026";
       <ul>
         <li>
           <strong>Member account:</strong> if you join the club through the
-          site, we store your username, email address, and a hashed
-          (never plain-text) password.
+          site, we store your username, email address, a hashed (never
+          plain-text) password, when you joined, and when your email address
+          was confirmed.
+        </li>
+        <li>
+          <strong>Profile:</strong> you can add your full name and a profile
+          photo. Your profile page publicly shows your username, photo, the
+          month you joined and the chapters you're in; your full name is only
+          shown publicly if you choose to show it.
+        </li>
+        <li>
+          <strong>RSVPs:</strong> if you RSVP to an event (going, maybe or
+          not going), we store your answer. Other logged-in members can see
+          your name and photo in that event's lists, and your profile page
+          publicly shows how many past events you said you were going to.
+          Creating an event marks you as going to it.
+        </li>
+        <li>
+          <strong>Posts and events:</strong> anything you publish on the site,
+          such as a post or an event, is public and shows your name as the
+          author.
         </li>
         <li>
           <strong>Chapters:</strong> if you join a chapter, we store that
@@ -44,14 +63,19 @@ const lastUpdated = "4 November 2026";
           in a database.
         </li>
         <li>
+          <strong>Topic suggestions:</strong> if you suggest a topic, only the
+          topics you suggest are sent to our inbox by email, with nothing that
+          identifies you.
+        </li>
+        <li>
           <strong>Newsletter:</strong> if you subscribe, your email address
           is sent to our mailing list provider, Mailchimp, who handles
           delivery and unsubscribes.
         </li>
         <li>
-          <strong>Login session:</strong> when you log in, a strictly
-          necessary session cookie is set in your browser so you stay
-          signed in. It is not used for tracking or advertising.
+          <strong>Login session:</strong> when you log in, we set cookies in
+          your browser so you stay signed in (see Cookies below). They are not
+          used for tracking or advertising.
         </li>
       </ul>
 
@@ -59,8 +83,9 @@ const lastUpdated = "4 November 2026";
       <p>
         We use this data only to run the club: to create and secure your
         member account, to reply to messages sent through the contact
-        form, to send the newsletter to people who asked for it, and to
-        email chapter members who asked about upcoming events. We do
+        form, to read topic suggestions, to send the newsletter to people who asked for it, to email
+        chapter members who asked about upcoming events, and to show your
+        profile, RSVPs and posts to other members and visitors. We do
         not sell or share your data for advertising purposes.
       </p>
 
@@ -71,16 +96,19 @@ const lastUpdated = "4 November 2026";
       </p>
       <ul>
         <li>
-          <strong>Supabase</strong> — hosts our database, including member
-          accounts (data region: West EU (Ireland)).
+          <strong>Supabase</strong> — hosts our database and profile photos,
+          including member accounts (data region: West EU (Ireland)).
         </li>
         <li>
           <strong>Mailchimp</strong> (United States) — manages newsletter
           delivery and subscriptions.
         </li>
         <li>
-          <strong>Google / Gmail</strong> (United States) — relays contact
-          form messages to our inbox.
+          <strong>Zoho</strong> (EU) — ZeptoMail sends our emails: contact
+          and topic suggestion messages, account emails such as email
+          confirmation and password resets, and chapter event emails. Zoho
+          Mail hosts our inbox, where contact and topic suggestion messages
+          are kept.
         </li>
         <li>
           <strong>Netlify</strong> (United States) — hosts the site and
@@ -91,7 +119,7 @@ const lastUpdated = "4 November 2026";
 
       <h2>How long we keep it</h2>
       <p>
-        Member accounts are kept until you ask us to delete them. If you
+        Member accounts are kept until you delete your account. If you
         start creating an account but never confirm your email address, that
         unconfirmed signup is automatically deleted after about 30 days.
         Newsletter addresses are kept until you unsubscribe. Contact form
@@ -103,11 +131,22 @@ const lastUpdated = "4 November 2026";
       <p>
         Under GDPR, you have the right to access, correct, delete, or
         export your personal data, and to withdraw consent (e.g.
-        unsubscribe from the newsletter) at any time. To exercise any of
-        these rights, email
+        unsubscribe from the newsletter) at any time.
+      </p>
+      <p>
+        You can change your username, full name, photo, email address and
+        password, and delete your account, yourself in your profile settings.
+        Deleting your account removes your account, profile photo, chapter
+        memberships, any chapter admin rights, and RSVPs. Posts and events
+        you published stay on the site, credited to "Former member" instead
+        of your name. A newsletter subscription is separate: unsubscribe from
+        any newsletter email.
+      </p>
+      <p>
+        For anything else, such as a copy of your data or removing your
+        profile photo, email
         <a href="mailto:info@clubnafealsunachta.com">info@clubnafealsunachta.com</a>
-        and we'll handle your request directly — this isn't yet a
-        self-service feature on the site.
+        and we'll handle your request directly.
       </p>
       <p>
         You also have the right to lodge a complaint with your local data
@@ -116,8 +155,11 @@ const lastUpdated = "4 November 2026";
 
       <h2>Cookies</h2>
       <p>
-        We use one strictly necessary cookie to keep you logged in. We
-        don't use analytics or advertising cookies.
+        We only use strictly necessary cookies, all set when you log in: one
+        keeps you signed in, and two small ones let pages show your account
+        menu and profile photo straight away. Your browser also keeps a copy
+        of your username, name and photo for the same reason. We don't use
+        analytics or advertising cookies.
       </p>
 
       <h2>Changes to this policy</h2>
