@@ -3,7 +3,7 @@ export const prerender = false;
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getSessionToken, verifySession } from "../../lib/auth";
 import { supabaseAdmin } from "../../lib/supabase";
-import { findMemberByUsername } from "../../lib/memberProfile";
+import { findMemberByUsername, countPastGoingRsvps } from "../../lib/memberProfile";
 import { getDisplayName } from "../../lib/memberDisplay";
 import BlogEntry from "../../components/BlogEntry.astro";
 import Avatar from "../../components/Avatar/Avatar.astro";
@@ -74,6 +74,8 @@ if (profileUser && supabaseAdmin) {
   }
 }
 
+const pastEventCount = profileUser ? await countPastGoingRsvps(profileUser.id) : 0;
+
 const displayName = profileUser ? getDisplayName(profileUser) : null;
 const showHandle = profileUser ? displayName !== profileUser.username : false;
 
@@ -93,6 +95,11 @@ const isOwnProfile = Boolean(payload && profileUser && payload.memberId === prof
         <h1>{displayName}</h1>
         {showHandle && <p class="cnf-profile__handle">@{profileUser.username}</p>}
         <p>Joined {memberSince}</p>
+        {pastEventCount > 0 && (
+          <p>
+            <span class="cnf-count">{pastEventCount}</span> {pastEventCount === 1 ? "event" : "events"} attended
+          </p>
+        )}
         {isOwnProfile && (
           <p><a href="/profile/edit">Edit your info</a></p>
         )}
