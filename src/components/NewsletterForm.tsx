@@ -83,7 +83,7 @@ export default function NewsletterForm() {
         renderForm()
       ) : (
         <>
-          <p>{successMessage}</p>
+          <p className="cnf-form__message--success">{successMessage}</p>
         </>
       )}
     </>

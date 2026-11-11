@@ -125,6 +125,14 @@ blockquote {
   padding: 0.5rem 0.75rem;
 }
 
+/* Its counterpart for a confirmed save, e.g. "Your photo is updated." */
+.cnf-form__message--success {
+  color: hsl(var(--color-green));
+  background: hsla(var(--color-green), 0.1);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+}
+
 .tab-active {
   background: color-mix(in srgb, hsl(var(--color-green)) 15%, transparent);
   border-radius: var(--border-radius);

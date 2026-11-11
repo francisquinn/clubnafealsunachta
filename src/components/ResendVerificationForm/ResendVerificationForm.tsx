@@ -38,7 +38,7 @@ export default function ResendVerificationForm({ defaultEmail = "" }: ResendVeri
   }
 
   if (status === "success") {
-    return <p role="status">If that email belongs to an account waiting to be confirmed, we've sent a new link. It expires in 3 days.</p>;
+    return <p className="cnf-form__message--success" role="status">If that email belongs to an account waiting to be confirmed, we've sent a new link. It expires in 3 days.</p>;
   }
 
   return (
