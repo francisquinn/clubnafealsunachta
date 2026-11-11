@@ -50,7 +50,7 @@ export default function ContactForm() {
   }
 
   if (isFormSubmitted) {
-    return <p>{successMessage}</p>;
+    return <p className="cnf-form__message--success">{successMessage}</p>;
   }
 
   return (

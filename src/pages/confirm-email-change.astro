@@ -1,0 +1,22 @@
+---
+export const prerender = false;
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { confirmEmailChange } from "../lib/confirmEmailChange";
+
+const pageTitle = "Confirm your new email";
+
+const state = await confirmEmailChange(Astro.url.searchParams.get("token"));
+---
+
+<BaseLayout pageTitle={pageTitle}>
+  <meta slot="head" name="robots" content="noindex, nofollow" />
+  <meta slot="head" name="referrer" content="no-referrer" />
+  <section class="cnf-section">
+    <h1>{pageTitle}</h1>
+    {state === "success" && <p>Your email is changed. Use your new address to log in from now on.</p>}
+    {state === "invalid" && <p>This link is invalid, has expired or has already been used. You can ask for a new one from your account settings.</p>}
+    {state === "taken" && <p>That email is now used by another account, so we couldn't switch to it.</p>}
+    {state === "error" && <p>Something went wrong changing your email. Please try again later.</p>}
+    <p><a href="/profile/edit">Back to account settings</a></p>
+  </section>
+</BaseLayout>

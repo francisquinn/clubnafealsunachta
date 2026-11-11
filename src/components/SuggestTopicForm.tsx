@@ -139,7 +139,7 @@ export default function TopicSuggestForm() {
       ) : (
         <>
           {successMessage !== null && (
-            <p>{successMessage}</p>
+            <p className="cnf-form__message--success">{successMessage}</p>
           )}
           {errorMessage !== null && (
             <p className="cnf-form__message--error">{errorMessage}</p>

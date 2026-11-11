@@ -67,7 +67,7 @@ export default function BookForm({ mode, initialData }: BookFormProps) {
   };
 
   if (status === "success") {
-    return <p>{mode === "edit" ? "Book updated" : "Book created"} successfully!</p>;
+    return <p className="cnf-form__message--success">{mode === "edit" ? "Book updated" : "Book created"} successfully!</p>;
   }
 
   return (

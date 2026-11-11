@@ -183,6 +183,23 @@ export function renderPasswordResetEmail(resetUrl: string): string {
   });
 }
 
+export function renderEmailChangeEmail(confirmUrl: string): string {
+  return renderEmailHtml({
+    label: "One more step",
+    title: "Confirm your new email",
+    bodyHtml: `<p style="margin:0;">You asked to use this address for your Club na Fealsúnachta account. Confirm it and we'll switch your account over.</p><p style="margin:16px 0 0;font-size:13px;color:#999999;">This link expires in 24 hours. If you didn't ask for this, you can safely ignore this email.</p>`,
+    cta: { text: "Confirm new email", url: confirmUrl },
+  });
+}
+
+export function renderEmailChangedNotice(newEmail: string): string {
+  return renderEmailHtml({
+    label: "Account update",
+    title: "Your email was changed",
+    bodyHtml: `<p style="margin:0;">The email on your Club na Fealsúnachta account is now <strong>${escapeHtml(newEmail)}</strong>. We'll send everything there from now on.</p><p style="margin:16px 0 0;">If you didn't make this change, reply to this email and we'll help you get your account back.</p>`,
+  });
+}
+
 export function renderContactMessageEmail({ name, email, message }: {
   name: string;
   email: string;

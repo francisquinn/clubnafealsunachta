@@ -127,9 +127,9 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
 
   if (status === "success") {
     if (mode === "edit") {
-      return <p>Event updated successfully!</p>;
+      return <p className="cnf-form__message--success">Event updated successfully!</p>;
     }
-    return <p>Event created successfully!</p>;
+    return <p className="cnf-form__message--success">Event created successfully!</p>;
   }
 
   return (

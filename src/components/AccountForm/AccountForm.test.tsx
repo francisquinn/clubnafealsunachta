@@ -6,29 +6,32 @@ import { getCachedMember } from "../../utils/session";
 
 const mockUpdateUsername = vi.fn();
 const mockChangePassword = vi.fn();
-const mockUpdateChapterMemberships = vi.fn();
 const mockUploadAvatar = vi.fn();
+const mockJoinChapter = vi.fn();
+const mockLeaveChapter = vi.fn();
+const mockSetChapterEmails = vi.fn();
+const mockRequestEmailChange = vi.fn();
 
 vi.mock("astro:actions", async () =>
   (await import("../../test/astroActions")).mockActions(() => ({
     updateUsername: mockUpdateUsername,
     changePassword: mockChangePassword,
-    updateChapterMemberships: mockUpdateChapterMemberships,
     uploadAvatar: mockUploadAvatar,
+    joinChapter: mockJoinChapter,
+    leaveChapter: mockLeaveChapter,
+    setChapterEmails: mockSetChapterEmails,
+    requestEmailChange: mockRequestEmailChange,
   })),
 );
 
 const TRESTE = { id: 1, name: "Trieste", emailsEnabled: true };
 const DUBLIN = { id: 2, name: "Dublin", emailsEnabled: false };
 
-function submittedFormData() {
-  return mockUpdateChapterMemberships.mock.calls[0]?.[0] as FormData;
-}
-
 function renderForm(overrides: Partial<Parameters<typeof AccountForm>[0]> = {}) {
   render(
     <AccountForm
       initialMemberId="member-1"
+      initialEmail="alice@example.com"
       initialUsername="oldname"
       initialFullName={null}
       initialDisplayFullName={false}
@@ -44,15 +47,27 @@ describe("AccountForm", () => {
   beforeEach(() => {
     mockUpdateUsername.mockReset();
     mockChangePassword.mockReset();
-    mockUpdateChapterMemberships.mockReset();
     mockUploadAvatar.mockReset();
+    mockJoinChapter.mockReset();
+    mockLeaveChapter.mockReset();
+    mockSetChapterEmails.mockReset();
+    mockRequestEmailChange.mockReset();
     localStorage.clear();
   });
 
-  it("renders the username, full name and password fields, and a single save button", () => {
+  it("groups photo, username, full name, email and password under Account details, in that order", () => {
+    renderForm();
+    const details = screen.getByRole("group", { name: "Account details" });
+    const labels = [...details.querySelectorAll("label")].filter((label) => !label.closest("dialog")).map((label) => label.textContent);
+    expect(labels).toEqual(["Photo", "Username", "Full name", "Email", "Password"]);
+    expect(screen.getByLabelText("Email")).toHaveValue("alice@example.com");
+  });
+
+  it("shows the name read-only with Edit buttons, and no Save button", () => {
     render(
       <AccountForm
         initialMemberId="member-1"
+        initialEmail="alice@example.com"
         initialUsername="oldname"
         initialFullName="Old Name"
         initialDisplayFullName={true}
@@ -61,13 +76,34 @@ describe("AccountForm", () => {
         chapters={[]}
       />
     );
-    expect(screen.getByLabelText("Username")).toHaveValue("oldname");
-    expect(screen.getByLabelText("Full name")).toHaveValue("Old Name");
-    expect(screen.getByLabelText(/show my full name instead of my username/i)).toBeChecked();
-    expect(screen.getByLabelText(/current password/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^new password$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/confirm new password/i)).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /save/i })).toHaveLength(1);
+    // The read-only copies sit on the page; the editable fields live in the
+    // sections' modals.
+    const inModal = (el: HTMLElement) => el.closest("dialog") !== null;
+    const username = screen.getAllByLabelText("Username").find((el) => !inModal(el));
+    expect(username).toHaveValue("oldname");
+    expect(username).toHaveAttribute("readonly");
+    expect(username).not.toHaveAttribute("name");
+    expect(screen.getAllByLabelText("Full name").find((el) => !inModal(el))).toHaveValue("Old Name");
+    expect(inModal(screen.getByLabelText(/show my full name instead of my username/i))).toBe(true);
+    expect(inModal(screen.getByLabelText(/current password/i))).toBe(true);
+    expect(screen.getByRole("button", { name: "Edit username" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Change password" })).toBeInTheDocument();
+    // Only the modals' own Save buttons.
+    expect(screen.getAllByRole("button", { name: /^save$/i, hidden: true }).every(inModal)).toBe(true);
+  });
+
+  it("updates the avatar's letter as soon as the name is saved", async () => {
+    mockUpdateUsername.mockResolvedValue({ data: { success: true }, error: undefined });
+    renderForm();
+    const letter = () => document.querySelector(".cnf-form__avatar-row .cnf-avatar")!.textContent;
+    expect(letter()).toBe("O");
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit username" }));
+    const usernameField = document.querySelector<HTMLInputElement>("dialog [name=username]")!;
+    fireEvent.change(usernameField, { target: { value: "newname" } });
+    fireEvent.submit(usernameField.closest("form")!);
+
+    await waitFor(() => expect(letter()).toBe("N"));
   });
 
   it("doesn't render a chapter section when the memberships couldn't be loaded", () => {
@@ -91,251 +127,154 @@ describe("AccountForm", () => {
     expect(document.getElementById("chapter-2-emails")).not.toBeChecked();
     expect(screen.getByRole("group", { name: "Email notifications" })).toHaveAttribute("id", "email-notifications");
     expect(screen.getByRole("checkbox", { name: "Upcoming events in Trieste" })).toBeChecked();
-    // still exactly one save button for the whole form
-    expect(screen.getAllByRole("button", { name: /save/i })).toHaveLength(1);
   });
 
-  it("disables a chapter's email setting with a note while it's unticked to leave", () => {
+  // #219: no Save button; each box saves as it changes.
+  it("saves an email setting as soon as it's ticked", async () => {
+    mockSetChapterEmails.mockResolvedValue({ data: { emailsEnabled: true }, error: undefined });
+    renderForm({ chapters: [DUBLIN] });
+    const emails = screen.getByRole("checkbox", { name: "Upcoming events in Dublin" });
+
+    fireEvent.click(emails);
+
+    await waitFor(() => expect(emails).toBeChecked());
+    expect(mockSetChapterEmails).toHaveBeenCalledWith({ chapterId: 2, enabled: true });
+    expect(emails).toHaveAccessibleDescription("Saved: you'll get emails about Dublin's events.");
+  });
+
+  // Disabling it would drop keyboard focus, so it's marked busy instead.
+  it("keeps an email setting focusable while it saves, and ignores clicks until it's done", async () => {
+    let finish!: (value: unknown) => void;
+    mockSetChapterEmails.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    renderForm({ chapters: [DUBLIN] });
+    const emails = screen.getByRole("checkbox", { name: "Upcoming events in Dublin" });
+
+    fireEvent.click(emails);
+    expect(emails).toBeEnabled();
+    expect(emails).toHaveAttribute("aria-busy", "true");
+    fireEvent.click(emails);
+    expect(mockSetChapterEmails).toHaveBeenCalledTimes(1);
+
+    finish({ data: { emailsEnabled: true }, error: undefined });
+    await waitFor(() => expect(emails).toBeChecked());
+    expect(emails).not.toHaveAttribute("aria-busy");
+  });
+
+  it("takes a chapter left elsewhere off the page when saving its email setting finds it gone", async () => {
+    mockSetChapterEmails.mockResolvedValue({ data: undefined, error: { code: "NOT_FOUND", message: "Not a member of this chapter" } });
     renderForm({ chapters: [TRESTE, DUBLIN] });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Upcoming events in Trieste" }));
+
+    await waitFor(() => expect(screen.queryByRole("checkbox", { name: "Trieste" })).not.toBeInTheDocument());
+    expect(screen.queryByRole("checkbox", { name: "Upcoming events in Trieste" })).not.toBeInTheDocument();
+    expect(screen.getByText(/^You're no longer in Trieste\./)).toHaveFocus();
+    expect(screen.getByRole("checkbox", { name: "Dublin" })).toBeInTheDocument();
+  });
+
+  it("puts an email setting back and says so when saving it fails", async () => {
+    mockSetChapterEmails.mockResolvedValue({ data: undefined, error: { message: "boom" } });
+    renderForm({ chapters: [TRESTE] });
     const emails = screen.getByRole("checkbox", { name: "Upcoming events in Trieste" });
 
-    fireEvent.click(screen.getByRole("checkbox", { name: "Trieste" }));
-    expect(emails).toBeDisabled();
-    expect(screen.getByText("You'll leave Trieste when you save.")).toHaveAttribute("aria-live", "polite");
-    expect(emails).toHaveAccessibleDescription("You'll leave Trieste when you save.");
-    expect(screen.getByRole("checkbox", { name: "Upcoming events in Dublin" })).toBeEnabled();
+    fireEvent.click(emails);
 
-    fireEvent.click(screen.getByRole("checkbox", { name: "Trieste" }));
-    expect(emails).toBeEnabled();
-    expect(screen.queryByText("You'll leave Trieste when you save.")).toBeNull();
+    await waitFor(() => expect(screen.getByText("Couldn't save that. Please try again.")).toBeInTheDocument());
+    expect(emails).toBeChecked();
   });
 
-  it("blocks submission and shows a field error when the username is invalid", async () => {
-    renderForm();
+  it("asks before leaving a chapter, and keeps it if the member cancels", async () => {
+    renderForm({ chapters: [TRESTE] });
+    const membership = screen.getByRole("checkbox", { name: "Trieste" });
 
-    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "a" } });
-    fireEvent.submit(document.querySelector("form")!);
+    fireEvent.click(membership);
 
-    await waitFor(() => {
-      expect(screen.getByText(/please enter a valid username/i)).toBeInTheDocument();
-    });
-    expect(mockUpdateUsername).not.toHaveBeenCalled();
+    expect(screen.getByRole("heading", { name: "Leave Trieste?" })).toBeInTheDocument();
+    expect(membership).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(mockLeaveChapter).not.toHaveBeenCalled();
+    expect(membership).toBeChecked();
   });
 
-  it("saves the username without touching the password when the password fields are left blank, and skips chapter settings when there are no chapters", async () => {
-    mockUpdateUsername.mockResolvedValue({ data: { success: true } });
-    renderForm({ chapters: [] });
-
-    fireEvent.submit(document.querySelector("form")!);
-
-    await waitFor(() => {
-      expect(screen.getByText(/your info has been updated/i)).toBeInTheDocument();
-    });
-    expect(mockUpdateUsername).toHaveBeenCalledTimes(1);
-    expect(mockChangePassword).not.toHaveBeenCalled();
-    expect(mockUpdateChapterMemberships).not.toHaveBeenCalled();
-  });
-
-  // #70 follow-up: without this, AccountMenu's header avatar would show the
-  // just-replaced username/letter for one more page load, until its own
-  // background /api/me fetch catches up — see session.ts's cache helpers.
-  it("caches the new username/full name so the header avatar is right on the next page load", async () => {
-    mockUpdateUsername.mockResolvedValue({ data: { success: true } });
-    renderForm();
-
-    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "newname" } });
-    fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "New Name" } });
-    fireEvent.submit(document.querySelector("form")!);
-
-    await waitFor(() => {
-      expect(screen.getByText(/your info has been updated/i)).toBeInTheDocument();
-    });
-    expect(getCachedMember()).toEqual({
-      id: "member-1",
-      username: "newname",
-      full_name: "New Name",
-      display_full_name: false,
-      avatar_url: null,
-    });
-  });
-
-  it("does not treat an autofilled current-password field alone as a password-change request", async () => {
-    mockUpdateUsername.mockResolvedValue({ data: { success: true } });
-    renderForm({ chapters: [] });
-
-    fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "OldPassword1" } });
-    fireEvent.submit(document.querySelector("form")!);
-
-    await waitFor(() => {
-      expect(screen.getByText(/your info has been updated/i)).toBeInTheDocument();
-    });
-    expect(mockChangePassword).not.toHaveBeenCalled();
-  });
-
-  it("requires the current password and a matching confirmation once a new password is entered", async () => {
-    renderForm();
-
-    fireEvent.change(screen.getByLabelText(/^new password$/i), { target: { value: "NewPassword1" } });
-    fireEvent.change(screen.getByLabelText(/confirm new password/i), { target: { value: "Different1" } });
-    fireEvent.submit(document.querySelector("form")!);
-
-    await waitFor(() => {
-      expect(screen.getByText(/enter your current password/i)).toBeInTheDocument();
-      expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
-    });
-    expect(mockUpdateUsername).not.toHaveBeenCalled();
-    expect(mockChangePassword).not.toHaveBeenCalled();
-    expect(mockUpdateChapterMemberships).not.toHaveBeenCalled();
-  });
-
-  it("saves username, password, and chapter settings in one submit", async () => {
-    mockUpdateUsername.mockResolvedValue({ data: { success: true } });
-    mockChangePassword.mockResolvedValue({ data: { success: true } });
-    mockUpdateChapterMemberships.mockResolvedValue({ data: { success: true, chapter_ids: [1, 2] } });
+  it("leaves the chapter once confirmed, taking it out of both lists", async () => {
+    mockLeaveChapter.mockResolvedValue({ data: { joined: false }, error: undefined });
     renderForm({ chapters: [TRESTE, DUBLIN] });
 
-    fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "OldPassword1" } });
-    fireEvent.change(screen.getByLabelText(/^new password$/i), { target: { value: "NewPassword1" } });
-    fireEvent.change(screen.getByLabelText(/confirm new password/i), { target: { value: "NewPassword1" } });
     fireEvent.click(screen.getByRole("checkbox", { name: "Trieste" }));
-    fireEvent.click(document.getElementById("chapter-2-emails")!);
-    fireEvent.submit(document.querySelector("form")!);
+    fireEvent.click(screen.getByRole("button", { name: "Leave" }));
 
-    await waitFor(() => {
-      expect(screen.getByText(/your info, password, and chapter settings have been updated/i)).toBeInTheDocument();
-    });
-    expect(mockUpdateUsername).toHaveBeenCalledTimes(1);
-    expect(mockChangePassword).toHaveBeenCalledTimes(1);
-    expect(mockUpdateChapterMemberships).toHaveBeenCalledTimes(1);
-    // all three save together off one shared FormData
-    // Trieste unticked (left, so its disabled email box isn't sent), Dublin
-    // kept with its emails switched on.
-    expect(submittedFormData().getAll("chapter_shown")).toEqual(["1", "2"]);
-    expect(submittedFormData().getAll("chapter_id")).toEqual(["2"]);
-    expect(submittedFormData().getAll("chapter_emails")).toEqual(["2"]);
-    expect(submittedFormData().getAll("chapter_emails_was")).toEqual(["1"]);
+    await waitFor(() => expect(screen.queryByRole("checkbox", { name: "Trieste" })).not.toBeInTheDocument());
+    expect(mockLeaveChapter).toHaveBeenCalledWith({ chapterId: 1 });
+    expect(screen.queryByRole("checkbox", { name: "Upcoming events in Trieste" })).not.toBeInTheDocument();
+    const note = screen.getByText(/^You've left Trieste\./);
+    expect(screen.getByRole("checkbox", { name: "Dublin" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Upcoming events in Dublin" })).toBeInTheDocument();
+    // Its box is gone, so focus goes to the note.
+    await waitFor(() => expect(note).toHaveFocus());
   });
 
-  // changePassword revokes the old session and re-issues it, so the other
-  // actions must only start once it has finished (see AccountForm).
-  it("finishes the password change before saving the username and chapter settings", async () => {
-    let finishPassword!: (value: unknown) => void;
-    mockChangePassword.mockReturnValue(new Promise((resolve) => (finishPassword = resolve)));
-    mockUpdateUsername.mockResolvedValue({ data: { success: true } });
-    mockUpdateChapterMemberships.mockResolvedValue({ data: { success: true, chapter_ids: [1] } });
+  it("shows the empty states once the last chapter is left", async () => {
+    mockLeaveChapter.mockResolvedValue({ data: { joined: false }, error: undefined });
     renderForm({ chapters: [TRESTE] });
 
-    fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "OldPassword1" } });
-    fireEvent.change(screen.getByLabelText(/^new password$/i), { target: { value: "NewPassword1" } });
-    fireEvent.change(screen.getByLabelText(/confirm new password/i), { target: { value: "NewPassword1" } });
-    fireEvent.submit(document.querySelector("form")!);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Trieste" }));
+    fireEvent.click(screen.getByRole("button", { name: "Leave" }));
 
-    await waitFor(() => expect(mockChangePassword).toHaveBeenCalledTimes(1));
-    expect(mockUpdateUsername).not.toHaveBeenCalled();
-    expect(mockUpdateChapterMemberships).not.toHaveBeenCalled();
-
-    finishPassword({ data: { success: true } });
-    await waitFor(() => {
-      expect(screen.getByText(/your info, password, and chapter settings have been updated/i)).toBeInTheDocument();
-    });
-    expect(mockUpdateUsername).toHaveBeenCalledTimes(1);
-    expect(mockUpdateChapterMemberships).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.getByText(/you haven't joined a chapter yet/i)).toBeInTheDocument());
+    expect(screen.getByText("Join a chapter to get emails about its events.")).toBeInTheDocument();
   });
 
-  it("reports the username as saved and explains the password failure when only the password action errors", async () => {
-    mockUpdateUsername.mockResolvedValue({ data: { success: true } });
-    mockChangePassword.mockResolvedValue({ error: { message: "Current password is incorrect" } });
-    renderForm({ chapters: [] });
-
-    fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "WrongPassword1" } });
-    fireEvent.change(screen.getByLabelText(/^new password$/i), { target: { value: "NewPassword1" } });
-    fireEvent.change(screen.getByLabelText(/confirm new password/i), { target: { value: "NewPassword1" } });
-    fireEvent.submit(document.querySelector("form")!);
-
-    await waitFor(() => {
-      expect(screen.getByText(/your info has been updated\. password unchanged: current password is incorrect/i)).toBeInTheDocument();
-    });
-    expect(screen.getByRole("form")).toBeInTheDocument();
-  });
-
-  it("reports info and password as saved and explains the chapter-settings failure when only that action errors", async () => {
-    mockUpdateUsername.mockResolvedValue({ data: { success: true } });
-    mockChangePassword.mockResolvedValue({ data: { success: true } });
-    mockUpdateChapterMemberships.mockResolvedValue({ error: { message: "One or more selected chapters do not exist" } });
+  it("keeps the confirmation open with an error when leaving fails", async () => {
+    mockLeaveChapter.mockResolvedValue({ data: undefined, error: { message: "boom" } });
     renderForm({ chapters: [TRESTE] });
 
-    fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "OldPassword1" } });
-    fireEvent.change(screen.getByLabelText(/^new password$/i), { target: { value: "NewPassword1" } });
-    fireEvent.change(screen.getByLabelText(/confirm new password/i), { target: { value: "NewPassword1" } });
-    fireEvent.submit(document.querySelector("form")!);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Trieste" }));
+    fireEvent.click(screen.getByRole("button", { name: "Leave" }));
 
-    await waitFor(() => {
-      expect(
-        screen.getByText(/your info and password have been updated\. chapter settings unchanged: one or more selected chapters do not exist/i)
-      ).toBeInTheDocument();
-    });
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Something went wrong"));
+    expect(screen.getByRole("checkbox", { name: "Trieste" })).toBeChecked();
   });
 
-  it("disables submit button while submitting", async () => {
-    mockUpdateUsername.mockReturnValue(new Promise(() => {}));
+  it("shows Update once a photo is chosen, uploads it on click and caches it for the header", async () => {
+    mockUploadAvatar.mockResolvedValue({ data: { avatar_url: "https://x/avatars/member-1" }, error: undefined });
     renderForm();
+    expect(screen.queryByRole("button", { name: "Update photo" })).not.toBeInTheDocument();
 
-    fireEvent.submit(document.querySelector("form")!);
-
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /save/i })).toBeDisabled();
-    });
-  });
-
-  // The full choose-a-file-then-submit round trip (does handleSubmit's
-  // FormData actually carry the File through to actions.uploadAvatar) isn't
-  // testable here: happy-dom's FormData doesn't pick up a file input's
-  // `.files` when it's set the low-level fireEvent way, only a real browser
-  // does. Same gap as BookForm.tsx's cover-image upload, left untested there
-  // for the same reason. What IS testable at this level — the immediate
-  // client-side validation feedback on choosing a file, independent of any
-  // submit — is covered below.
-
-  // A request over Astro's action body-size cap fails before it reaches the
-  // server, so every part of the shared submission gets the same raw
-  // "Request body exceeds N bytes" — one plain message beats that repeated
-  // per field. (The avatar-specific wording branch needs a real File to
-  // reach handleSubmit's FormData, which happy-dom can't do — see the
-  // comment above; this covers the non-photo wording and the collapsing
-  // behavior itself.)
-  it("shows one friendly message instead of the raw size-limit error repeated per field", async () => {
-    const tooLarge = { code: "CONTENT_TOO_LARGE", message: "Request body exceeds 1048576 bytes" };
-    mockUpdateUsername.mockResolvedValue({ error: tooLarge });
-    mockUpdateChapterMemberships.mockResolvedValue({ error: tooLarge });
-    renderForm({ chapters: [TRESTE] });
-
-    fireEvent.submit(document.querySelector("form")!);
-
-    await waitFor(() => {
-      expect(screen.getByText(/too much to submit at once/i)).toBeInTheDocument();
-    });
-    expect(screen.queryByText(/request body exceeds/i)).not.toBeInTheDocument();
-  });
-
-  it("doesn't call uploadAvatar when no file was chosen", async () => {
-    mockUpdateUsername.mockResolvedValue({ data: { success: true } });
-    renderForm();
-
-    fireEvent.submit(document.querySelector("form")!);
-
-    await waitFor(() => {
-      expect(screen.getByText(/your info has been updated/i)).toBeInTheDocument();
-    });
+    const file = new File(["fake-image-bytes"], "me.png", { type: "image/png" });
+    fireEvent.change(screen.getByLabelText("Photo"), { target: { files: [file] } });
     expect(mockUploadAvatar).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Update photo" }));
+
+    // The Update button goes away, so focus moves to the message.
+    await waitFor(() => expect(screen.getByText("Your photo is updated.")).toHaveFocus());
+    expect((mockUploadAvatar.mock.calls[0]![0] as FormData).get("avatar")).toBe(file);
+    expect(getCachedMember()?.avatar_url).toBe("https://x/avatars/member-1");
+    expect(screen.queryByRole("button", { name: "Update photo" })).not.toBeInTheDocument();
   });
 
-  it("shows an immediate field error when a non-image avatar file is chosen", () => {
+  it("explains a failed upload, with a friendly message for one that's too large", async () => {
+    mockUploadAvatar.mockResolvedValue({ data: undefined, error: { code: "CONTENT_TOO_LARGE", message: "Request body exceeds 1048576 bytes" } });
+    renderForm();
+
+    const file = new File(["fake-image-bytes"], "me.png", { type: "image/png" });
+    fireEvent.change(screen.getByLabelText("Photo"), { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: "Update photo" }));
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Your photo is too large to upload. Try a smaller file."));
+    // Still there to try again.
+    expect(screen.getByRole("button", { name: "Update photo" })).toBeEnabled();
+    expect(screen.queryByText(/request body exceeds/i)).not.toBeInTheDocument();
+    expect(getCachedMember()).toBeNull();
+  });
+
+  it("shows an immediate field error, and no Update button, when a non-image avatar file is chosen", () => {
     renderForm();
 
     const file = new File(["not an image"], "notes.txt", { type: "text/plain" });
     fireEvent.change(screen.getByLabelText("Photo"), { target: { files: [file] } });
 
     expect(screen.getByText(/must be an image file/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Update photo" })).not.toBeInTheDocument();
   });
 
   it("shows an immediate field error when an oversized avatar file is chosen", () => {
