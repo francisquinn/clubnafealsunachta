@@ -3,6 +3,7 @@ import { supabaseAdmin } from '../lib/supabase';
 import { verifySession } from '../lib/auth';
 import { unwrapRelation } from '../lib/supabaseRelations';
 import { getDisplayName } from '../lib/memberDisplay';
+import { isPastDate } from '../utils/script';
 import {
   isRsvpStatus,
   type RsvpCounts,
@@ -21,20 +22,20 @@ type RsvpRow = {
   members: RsvpMember;
 };
 
-// Resolves an event's id from its slug, rejecting unknown slugs up front so a
+// Resolves an event from its slug, rejecting unknown slugs up front so a
 // stale/tampered page gets a clear 400 instead of an opaque FK/empty-result
 // failure further down.
-async function resolveEventId(slug: string): Promise<number> {
+async function resolveEvent(slug: string): Promise<{ id: number; date: string }> {
   const { data, error } = await supabaseAdmin!
     .from('events')
-    .select('id')
+    .select('id, date')
     .eq('slug', slug)
     .single();
 
   if (error || !data) {
     throw new ActionError({ code: 'BAD_REQUEST', message: 'Event not found' });
   }
-  return data.id;
+  return data;
 }
 
 async function fetchRsvpRows(eventId: number): Promise<RsvpRow[]> {
@@ -126,7 +127,7 @@ export const getEventRsvps = defineAction({
       throw new ActionError({ code: 'BAD_REQUEST', message: 'Missing event slug' });
     }
 
-    const eventId = await resolveEventId(slug);
+    const { id: eventId } = await resolveEvent(slug);
 
     const token = context.cookies.get('session')?.value;
     const payload = await verifySession(token);
@@ -156,7 +157,15 @@ export const setEventRsvp = defineAction({
       throw new ActionError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
     }
 
-    const eventId = await resolveEventId(slug);
+    const event = await resolveEvent(slug);
+    const eventId = event.id;
+
+    // #221: profiles count past "going" RSVPs publicly, so the server closes
+    // RSVPs at the same point the event page hides the buttons (its start),
+    // rather than trusting the client to stop a member back-filling old events.
+    if (isPastDate(event.date)) {
+      throw new ActionError({ code: 'BAD_REQUEST', message: 'This event has already started.' });
+    }
 
     if (status === null) {
       // Re-clicking your own active status clears your RSVP — there's no
