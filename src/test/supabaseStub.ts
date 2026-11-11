@@ -12,7 +12,7 @@
 // astroActions.ts), or build the stub lazily inside `from`.
 
 export type QueryCall = { method: string; args: unknown[] };
-export type QueryResult = { data?: unknown; error?: unknown };
+export type QueryResult = { data?: unknown; error?: unknown; count?: number | null };
 
 export function stubQuery(result: (calls: QueryCall[]) => QueryResult | Promise<QueryResult>) {
   const calls: QueryCall[] = [];

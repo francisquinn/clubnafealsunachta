@@ -27,3 +27,23 @@ export async function findMemberByUsername(username: string): Promise<ProfileMem
   }
   return data as ProfileMember | null;
 }
+
+// #221: how many events this member said they were going to and which have
+// since ended, shown publicly on their profile. An RSVP is intent, not a
+// check-in, so this is "said they'd go", not proven attendance. `!inner` makes
+// the end_date filter drop RSVPs to events that haven't ended, rather than
+// keeping them with a null embed. Returns 0 when the lookup fails.
+export async function countPastGoingRsvps(memberId: string): Promise<number> {
+  if (!supabaseAdmin) return 0;
+  const { count, error } = await supabaseAdmin
+    .from('rsvps')
+    .select('event_id, events!inner(end_date)', { count: 'exact', head: true })
+    .eq('member_id', memberId)
+    .eq('status', 'going')
+    .lt('events.end_date', new Date().toISOString());
+  if (error) {
+    console.error('Failed to load past events for profile page:', error.message);
+    return 0;
+  }
+  return count ?? 0;
+}
