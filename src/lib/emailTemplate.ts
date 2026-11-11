@@ -214,11 +214,24 @@ export function renderContactMessageEmail({ name, email, message }: {
   });
 }
 
-export function renderTopicSuggestionEmail(topics: string[]): string {
+// #140: suggestions come from logged-in members of the chapter they picked.
+// The name is only there when the member ticked the box; otherwise the email
+// says no more than which chapter it came from.
+export interface TopicSuggestion {
+  topics: string[];
+  chapterName: string;
+  name: string | null;
+}
+
+export function topicSuggestionFrom({ chapterName, name }: Pick<TopicSuggestion, "chapterName" | "name">): string {
+  return name ? `From ${name}, ${chapterName}` : `From a member of ${chapterName}`;
+}
+
+export function renderTopicSuggestionEmail(suggestion: TopicSuggestion): string {
   return renderEmailHtml({
     label: "Topic suggestions",
-    title: "New topic suggestion(s)",
-    bodyHtml: `<ul style="margin:0;padding-left:20px;">${topics.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul>`,
+    title: `New topic suggestion(s) for ${suggestion.chapterName}`,
+    bodyHtml: `<p style="margin:0 0 12px;">${escapeHtml(topicSuggestionFrom(suggestion))}</p><ul style="margin:0;padding-left:20px;">${suggestion.topics.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul>`,
   });
 }
 
