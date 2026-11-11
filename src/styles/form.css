@@ -26,11 +26,55 @@ fieldset {
   justify-self: start;
 }
 
+/* An input with a button, e.g. the current email and "Change" (#219): the
+   button sits below the input on mobile, beside it on desktop. The --inline
+   variant (username and full name, whose values are short) keeps it beside
+   the input at every width. */
+.cnf-form__input-row {
+  display: grid;
+  gap: 1rem;
+}
+
+.cnf-form__input-row > .cnf-button {
+  justify-self: start;
+}
+
+.cnf-form__input-row--inline {
+  display: flex;
+  align-items: center;
+}
+
+.cnf-form__input-row--inline > .cnf-form__input {
+  flex: 1;
+  min-width: 0;
+}
+
+.cnf-form__input-row--inline > .cnf-button {
+  flex: none;
+}
+
+@media (min-width: 768px) {
+  .cnf-form__input-row {
+    display: flex;
+    align-items: center;
+  }
+
+  .cnf-form__input-row > .cnf-form__input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .cnf-form__input-row > .cnf-button {
+    flex: none;
+  }
+}
+
 /* A row of buttons, e.g. a main action and Cancel; wraps on narrow screens. */
 .cnf-form__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  /* Small, since a ghost button like Cancel brings its own side padding. */
+  gap: 0.25rem;
 }
 
 legend {
@@ -81,6 +125,49 @@ legend {
   font-family: inherit;
 }
 
+/* The current photo with the upload field to its right. */
+.cnf-form__avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cnf-form__avatar-row > .cnf-form__input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The photo's Update button, under the hint: sized to its label rather
+   than stretched across the group. */
+.cnf-form__avatar-update {
+  align-self: flex-start;
+}
+
+/* Photo and cover uploads: no box, just the browser's "Choose File" button
+   (restyled as a small outlined button) and the chosen file's name. */
+.cnf-form__input[type="file"] {
+  padding: 0;
+  background-color: transparent;
+  box-shadow: none;
+  color: hsl(var(--color-grey));
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.cnf-form__input[type="file"]::file-selector-button {
+  margin-right: 1rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: var(--border-radius);
+  background-color: hsl(var(--color-beige));
+  box-shadow: inset 0 0 0 2px hsl(var(--color-green));
+  color: hsl(var(--color-green));
+  font-family: "Noto Sans", sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.5rem;
+  cursor: pointer;
+}
+
 textarea.cnf-form__input {
   resize: vertical;
   width: 100%;
@@ -98,9 +185,12 @@ select.cnf-form__input {
   color: inherit;
 }
 
+/* Shown, not editable: grey text at full opacity (about 5.7:1 on the white
+   field, where half opacity fell to ~3:1), with the normal cursor since the
+   value can still be selected and copied. */
 .cnf-form__input--readonly {
-  opacity: 0.5;
-  cursor: not-allowed;
+  color: hsl(var(--color-grey));
+  cursor: default;
 }
 
 .cnf-form__cover-preview {
@@ -159,6 +249,13 @@ legend + .cnf-form__hint {
   width: 1px;
   height: 1px;
   overflow: hidden;
+}
+
+/* A live region that's always on the page so screen readers announce what
+   appears in it. While empty it's taken out of the flow, so it doesn't add a
+   grid or flex gap; it stays in the accessibility tree. */
+.cnf-form__status:empty {
+  position: absolute;
 }
 
 .cnf-form__message--error:empty {

@@ -29,7 +29,7 @@ afterEach(() => {
 function confirmWith(password: string) {
   fireEvent.click(screen.getByRole("button", { name: "Delete account" }));
   fireEvent.change(screen.getByLabelText("Your password"), { target: { value: password } });
-  fireEvent.click(screen.getByRole("button", { name: "Delete my account" }));
+  fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 }
 
 describe("DeleteAccount", () => {
@@ -84,7 +84,7 @@ describe("DeleteAccount", () => {
     confirmWith("My-password1");
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Something went wrong. Reload the page and try again.");
-    expect(screen.getByRole("button", { name: "Delete my account" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
     expect(assign).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "Close" }));

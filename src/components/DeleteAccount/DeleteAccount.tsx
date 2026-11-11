@@ -104,7 +104,7 @@ export default function DeleteAccount() {
               disabled={deleting}
               aria-busy={deleting}
             >
-              <span className="cnf-button__text">Delete my account</span>
+              <span className="cnf-button__text">Delete</span>
             </button>
             <button type="button" className="cnf-button cnf-button__ghost" disabled={deleting} onClick={close}>
               <span className="cnf-button__text">Cancel</span>

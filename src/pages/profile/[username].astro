@@ -78,7 +78,7 @@ const displayName = profileUser ? getDisplayName(profileUser) : null;
 const showHandle = profileUser ? displayName !== profileUser.username : false;
 
 const memberSince = profileUser
-  ? new Date(profileUser.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })
+  ? new Date(profileUser.created_at).toLocaleDateString("en-IE", { month: "short", year: "numeric" })
   : null;
 
 // By id: the session's username is a copy that can lag behind a rename.
@@ -92,7 +92,7 @@ const isOwnProfile = Boolean(payload && profileUser && payload.memberId === prof
         <Avatar avatarUrl={profileUser.avatar_url} alt={displayName!} id={profileUser.id} size="lg" />
         <h1>{displayName}</h1>
         {showHandle && <p class="cnf-profile__handle">@{profileUser.username}</p>}
-        <p>Member since: {memberSince}</p>
+        <p>Joined {memberSince}</p>
         {isOwnProfile && (
           <p><a href="/profile/edit">Edit your info</a></p>
         )}
