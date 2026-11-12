@@ -56,6 +56,43 @@ export function verifyVerificationToken(token: string): { email: string } | null
   }
 }
 
+// For the "send a new link" form on an expired link: the signature still
+// proves which address the link was for, so the form can be prefilled.
+export function readExpiredVerificationEmail(token: string): string | null {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) return null;
+  try {
+    const payload = jwt.verify(token, secret, { ignoreExpiration: true }) as { email: string; purpose?: string };
+    return payload.purpose === "verify-email" ? payload.email : null;
+  } catch {
+    return null;
+  }
+}
+
+const EMAIL_CHANGE_TOKEN_DURATION = "24h";
+
+// #219: the link sent to a new address. It carries the address it replaces,
+// so the confirm page only switches if the email hasn't changed since (which
+// makes it single-use), and its issue time, so only the latest link a member
+// asked for works (see confirmEmailChange).
+export function createEmailChangeToken(memberId: string, oldEmail: string, newEmail: string): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error("JWT_SECRET is not set");
+  return jwt.sign({ memberId, oldEmail, newEmail, purpose: "change-email" }, secret, { expiresIn: EMAIL_CHANGE_TOKEN_DURATION });
+}
+
+export function verifyEmailChangeToken(token: string): { memberId: string; oldEmail: string; newEmail: string; issuedAt: number } | null {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) return null;
+  try {
+    const payload = jwt.verify(token, secret) as { memberId?: string; oldEmail?: string; newEmail?: string; purpose?: string; iat?: number };
+    if (payload.purpose !== "change-email" || !payload.memberId || !payload.oldEmail || !payload.newEmail || !payload.iat) return null;
+    return { memberId: payload.memberId, oldEmail: payload.oldEmail, newEmail: payload.newEmail, issuedAt: payload.iat };
+  } catch {
+    return null;
+  }
+}
+
 const PASSWORD_RESET_TOKEN_DURATION = "1h";
 
 // Ties a reset token to the password it was issued against: the token embeds

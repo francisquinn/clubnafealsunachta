@@ -3,6 +3,7 @@ export const prerender = false;
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getSessionToken, verifySession } from "../../lib/auth";
 import { supabaseAdmin } from "../../lib/supabase";
+import { findMemberByUsername, countPastGoingRsvps } from "../../lib/memberProfile";
 import { getDisplayName } from "../../lib/memberDisplay";
 import BlogEntry from "../../components/BlogEntry.astro";
 import Avatar from "../../components/Avatar/Avatar.astro";
@@ -13,10 +14,13 @@ const { username } = Astro.params;
 const token = getSessionToken(Astro.request);
 const payload = await verifySession(token);
 
-// Single query for the profile being viewed
-const { data: profileUser } = await (supabaseAdmin
-  ? supabaseAdmin.from("members").select("id, username, full_name, display_full_name, avatar_url, created_at").eq("username", username).single()
-  : Promise.resolve({ data: null }));
+const profileUser = username ? await findMemberByUsername(username) : null;
+
+// #223: usernames are unique ignoring case, so /profile/Alice finds alice.
+// Send it to the stored spelling, so each profile has one URL.
+if (profileUser && profileUser.username !== username) {
+  return Astro.redirect(`/profile/${profileUser.username}`);
+}
 
 if (!profileUser) {
   Astro.response.status = 404;
@@ -70,14 +74,17 @@ if (profileUser && supabaseAdmin) {
   }
 }
 
+const pastEventCount = profileUser ? await countPastGoingRsvps(profileUser.id) : 0;
+
 const displayName = profileUser ? getDisplayName(profileUser) : null;
 const showHandle = profileUser ? displayName !== profileUser.username : false;
 
 const memberSince = profileUser
-  ? new Date(profileUser.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })
+  ? new Date(profileUser.created_at).toLocaleDateString("en-IE", { month: "short", year: "numeric" })
   : null;
 
-const isOwnProfile = Boolean(payload && profileUser && payload.username === profileUser.username);
+// By id: the session's username is a copy that can lag behind a rename.
+const isOwnProfile = Boolean(payload && profileUser && payload.memberId === profileUser.id);
 ---
 
 <BaseLayout pageTitle={profileUser ? displayName : "Profile not found"}>
@@ -87,7 +94,12 @@ const isOwnProfile = Boolean(payload && profileUser && payload.username === prof
         <Avatar avatarUrl={profileUser.avatar_url} alt={displayName!} id={profileUser.id} size="lg" />
         <h1>{displayName}</h1>
         {showHandle && <p class="cnf-profile__handle">@{profileUser.username}</p>}
-        <p>Member since: {memberSince}</p>
+        <p>Joined {memberSince}</p>
+        {pastEventCount > 0 && (
+          <p>
+            <span class="cnf-count">{pastEventCount}</span> {pastEventCount === 1 ? "event" : "events"} attended
+          </p>
+        )}
         {isOwnProfile && (
           <p><a href="/profile/edit">Edit your info</a></p>
         )}

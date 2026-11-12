@@ -28,8 +28,10 @@ export function postsLoader(): Loader {
       }
 
       for (const post of data || []) {
-        const author = unwrapRelation(post.members);
-        if (!author) {
+        // A null author_id means the author deleted their account (#210); the
+        // post stays up under "Former member".
+        const author = unwrapRelation(post.members) ?? null;
+        if (!author && post.author_id !== null) {
           console.error(`Skipping post "${post.slug}": no matching member for author_id ${post.author_id}`);
           continue;
         }

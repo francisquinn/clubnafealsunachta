@@ -69,11 +69,11 @@ export default function SignupForm({ onSwitchToLogin, isAdmin = false }: SignupF
 
   if (status === "success") {
     if (isAdmin) {
-      return <p>Member added successfully.</p>;
+      return <p className="cnf-form__message--success">Member added successfully.</p>;
     }
     return (
       <div>
-        <p>Account created successfully. Check your email to confirm your address, then log in.</p>
+        <p className="cnf-form__message--success">Account created successfully. Check your email to confirm your address, then log in.</p>
         <button
           type="button"
           className="cnf-modal__link"

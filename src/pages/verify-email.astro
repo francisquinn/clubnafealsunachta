@@ -1,7 +1,8 @@
 ---
 export const prerender = false;
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { verifyVerificationToken } from "../lib/auth";
+import { verifyVerificationToken, readExpiredVerificationEmail } from "../lib/auth";
+import ResendVerificationForm from "../components/ResendVerificationForm/ResendVerificationForm";
 import { supabaseAdmin } from "../lib/supabase";
 
 const pageTitle = "Confirm your email";
@@ -20,13 +21,20 @@ if (payload && supabaseAdmin) {
 
   state = error ? "error" : data && data.length > 0 ? "success" : "invalid";
 }
+
+const expiredEmail = state === "invalid" && token ? readExpiredVerificationEmail(token) : null;
 ---
 
 <BaseLayout pageTitle={pageTitle}>
   <section class="cnf-section">
     <h1>{pageTitle}</h1>
     {state === "success" && <p>Your email is confirmed, you can now log in.</p>}
-    {state === "invalid" && <p>This confirmation link is invalid or has expired. Please contact an admin to get a new one.</p>}
+    {state === "invalid" && (
+      <>
+        <p>This confirmation link is invalid or has expired. Enter your email and we'll send you a new one.</p>
+        <ResendVerificationForm client:load defaultEmail={expiredEmail ?? ""} />
+      </>
+    )}
     {state === "error" && <p>Something went wrong confirming your email. Please try again later.</p>}
     <p><a href="/">Back to homepage</a></p>
   </section>

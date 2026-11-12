@@ -189,4 +189,86 @@ describe('eventsLoader', () => {
     expect(consoleError).toHaveBeenCalledWith('Skipping event "orphan-event": no matching chapter for chapter_id 99');
     consoleError.mockRestore();
   });
+
+  // #210: a host who deleted their account leaves created_by null; the event
+  // stays up with no creator ("Former member"), unlike a broken join.
+  it('keeps an event whose host deleted their account, with no creator', async () => {
+    mockGetAllChapters.mockResolvedValueOnce([{ id: 1, name: 'Trieste', slug: 'trieste' }] as never);
+    const mockEvent = {
+      id: 4,
+      name: 'Hostless Event',
+      date: '2025-06-01T19:00:00.000Z',
+      end_date: '2025-06-01T20:30:00.000Z',
+      is_online: false,
+      chapter_id: 1,
+      slug: 'hostless-event',
+      description: null,
+      summary: null,
+      instagram: null,
+      facebook: null,
+      meetup: null,
+      meeting_url: null,
+      meet_point: null,
+      tags: [],
+      created_by: null,
+      venues: null,
+      members: null,
+    };
+    mockSupabaseAdmin.from.mockImplementation((table: string): any => {
+      if (table === 'events') {
+        return { select: () => ({ order: () => Promise.resolve({ data: [mockEvent], error: null }) }) };
+      }
+      if (table === 'rsvps') {
+        return { select: () => Promise.resolve({ data: [], error: null }) };
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    const store = { clear: vi.fn(), set: vi.fn() };
+    await eventsLoader().load({ store } as any);
+
+    expect(store.set).toHaveBeenCalledTimes(1);
+    expect(store.set.mock.calls[0]?.[0]?.data.creator).toBeNull();
+  });
+
+  it('still skips an event whose host row is missing', async () => {
+    mockGetAllChapters.mockResolvedValueOnce([{ id: 1, name: 'Trieste', slug: 'trieste' }] as never);
+    const mockEvent = {
+      id: 5,
+      name: 'Broken Event',
+      date: '2025-06-01T19:00:00.000Z',
+      end_date: '2025-06-01T20:30:00.000Z',
+      is_online: false,
+      chapter_id: 1,
+      slug: 'broken-event',
+      description: null,
+      summary: null,
+      instagram: null,
+      facebook: null,
+      meetup: null,
+      meeting_url: null,
+      meet_point: null,
+      tags: [],
+      created_by: 'user-9',
+      venues: null,
+      members: null,
+    };
+    mockSupabaseAdmin.from.mockImplementation((table: string): any => {
+      if (table === 'events') {
+        return { select: () => ({ order: () => Promise.resolve({ data: [mockEvent], error: null }) }) };
+      }
+      if (table === 'rsvps') {
+        return { select: () => Promise.resolve({ data: [], error: null }) };
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const store = { clear: vi.fn(), set: vi.fn() };
+    await eventsLoader().load({ store } as any);
+
+    expect(store.set).not.toHaveBeenCalled();
+    expect(consoleError).toHaveBeenCalledWith('Skipping event "broken-event": no matching member for created_by user-9');
+    consoleError.mockRestore();
+  });
 });

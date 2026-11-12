@@ -13,7 +13,7 @@ const state = vi.hoisted(() => {
     // getEventRsvps/setEventRsvp both read the session cookie from context.
     sessionCookie: null as string | null,
     // events: slug lookup (.eq('slug').single()).
-    eventId: null as unknown as { id: number } | null,
+    eventId: null as unknown as { id: number; date: string } | null,
     eventLookupError: null as Error | null,
     // rsvps: select rows for an event (.eq('event_id')).
     rsvpRows: [] as {
@@ -110,7 +110,7 @@ const MEMBER_CAROL = { id: 'member-carol', username: 'carol', full_name: null, d
 beforeEach(() => {
   state.supabaseConfigured = true;
   state.sessionCookie = null;
-  state.eventId = { id: 10 };
+  state.eventId = { id: 10, date: '2099-01-01T18:00:00.000Z' };
   state.eventLookupError = null;
   state.rsvpRows = [];
   state.rsvpFetchError = null;
@@ -173,6 +173,20 @@ describe('getEventRsvps', () => {
     // ordering matters more than the exact collation here.
     expect(result.lists).not.toBeNull();
     expect(result.lists?.going.map((m) => m.username)).toEqual(['alice', 'bob']);
+  });
+
+  it('drops the full name of a member who chose not to show it', async () => {
+    state.sessionCookie = 'session-member-1';
+    const hidden = { ...MEMBER_CAROL, full_name: 'Carol Jones' };
+    state.rsvpRows = [
+      { member_id: 'member-2', status: 'going', members: MEMBER_BOB },
+      { member_id: 'member-3', status: 'maybe', members: hidden },
+    ];
+
+    const result = await getHandler({ slug: 'philosophy-101' }, context());
+
+    expect(result.lists?.going).toEqual([MEMBER_BOB]);
+    expect(result.lists?.maybe).toEqual([{ ...hidden, full_name: null }]);
   });
 
   it('skips rows whose member relation is missing, still counting the rest', async () => {
@@ -292,6 +306,27 @@ describe('setEventRsvp', () => {
       code: 'BAD_REQUEST',
       message: 'Event not found',
     });
+  });
+
+  it('throws BAD_REQUEST without writing, once the event has started', async () => {
+    state.sessionCookie = 'session-member-1';
+    state.eventId = { id: 10, date: '2020-01-01T18:00:00.000Z' };
+
+    await expect(setHandler({ slug: 'philosophy-101', status: 'going' }, context())).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'This event has already started.',
+    });
+    expect(state.upsertedRow).toBeNull();
+  });
+
+  it('refuses to clear an RSVP once the event has started', async () => {
+    state.sessionCookie = 'session-member-1';
+    state.eventId = { id: 10, date: '2020-01-01T18:00:00.000Z' };
+
+    await expect(setHandler({ slug: 'philosophy-101', status: null }, context())).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
+    expect(state.deletedFilter).toBeNull();
   });
 
   it('throws INTERNAL_SERVER_ERROR for a failed upsert', async () => {

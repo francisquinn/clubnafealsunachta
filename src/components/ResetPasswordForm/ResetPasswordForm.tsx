@@ -43,7 +43,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   if (status === "success") {
     return (
       <div>
-        <p>Your password has been reset. You can now log in with it.</p>
+        <p className="cnf-form__message--success">Your password has been reset. You can now log in with it.</p>
         <p><a href="/">Back to homepage</a></p>
       </div>
     );

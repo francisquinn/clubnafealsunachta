@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { actions } from "astro:actions";
-import { validateUsername, validateFullName, validatePassword } from "../../utils/validation";
+import ChangeName from "../ChangeName/ChangeName";
+import ChangeEmail from "../ChangeEmail/ChangeEmail";
+import ChangePassword from "../ChangePassword/ChangePassword";
 import Checkbox from "../Checkbox/Checkbox";
+import LeaveChapterModal from "../LeaveChapterModal/LeaveChapterModal";
 import Avatar from "../Avatar/Avatar";
 import { getDisplayName } from "../../lib/memberDisplay";
 import { getCachedMember, setCachedMember } from "../../utils/session";
 import "../../styles/form.css";
 
-type FieldName = "username" | "full_name" | "current_password" | "new_password" | "confirm_password" | "avatar";
+type FieldName = "avatar";
 type FieldErrors = Partial<Record<FieldName, string>>;
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5MB — mirrors the server-side cap in actions/avatar.ts
@@ -24,6 +27,7 @@ function validateAvatarFile(file: File): string | null {
 interface Props {
   initialMemberId: string;
   initialUsername: string;
+  initialEmail: string;
   initialFullName: string | null;
   initialDisplayFullName: boolean;
   initialAvatarUrl: string | null;
@@ -31,51 +35,83 @@ interface Props {
   chapters: { id: number; name: string; emailsEnabled: boolean }[];
 }
 
-function capitalize(label: string): string {
-  return label.charAt(0).toUpperCase() + label.slice(1);
-}
-
-// "a" -> "a", "a and b" -> "a and b", "a, b, and c" -> "a, b, and c" — scales
-// to however many parts of the form actually saved this time.
-function joinWithAnd(items: string[]): string {
-  if (items.length <= 1) return items[0] ?? "";
-  if (items.length === 2) return `${items[0]} and ${items[1]}`;
-  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
-}
+type ChapterState = { emails: boolean };
 
 export default function AccountForm({
   initialMemberId,
   initialUsername,
+  initialEmail,
   initialFullName,
   initialDisplayFullName,
   initialAvatarUrl,
   showChapters,
   chapters,
 }: Props) {
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [message, setMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  // Chapters unticked under memberships (left on save): their email line is
-  // disabled with a note, since saving drops their email setting anyway.
-  const [leavingChapterIds, setLeavingChapterIds] = useState<number[]>([]);
+  const [avatarStatus, setAvatarStatus] = useState<"idle" | "uploading" | "saved">("idle");
+  // A valid file waiting on the Update button.
+  const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const avatarSavedRef = useRef<HTMLParagraphElement>(null);
+  // The Update button unmounts on success, so focus moves to the message.
+  useEffect(() => {
+    if (avatarStatus === "saved") avatarSavedRef.current?.focus();
+  }, [avatarStatus]);
+  // #219: everything here saves as it changes, so there's no Save button.
+  // A box only flips once its save succeeds; until then it shows what's saved.
+  const [chapterState, setChapterState] = useState<Record<number, ChapterState>>(() =>
+    Object.fromEntries(chapters.map((chapter) => [chapter.id, { emails: chapter.emailsEnabled }]))
+  );
+  // Chapters left from here drop out of both lists.
+  const [leftChapterIds, setLeftChapterIds] = useState<number[]>([]);
+  const [leftNote, setLeftNote] = useState<string | null>(null);
+  const leftNoteRef = useRef<HTMLParagraphElement>(null);
+  const [savingChapterIds, setSavingChapterIds] = useState<number[]>([]);
+  // One status line per chapter, under its email setting.
+  const [chapterNotes, setChapterNotes] = useState<Record<number, { text: string; error: boolean }>>({});
+  // The chapter whose untick is waiting on the leave confirmation.
+  const [confirmLeave, setConfirmLeave] = useState<{ id: number; name: string } | null>(null);
+  // The confirmation fades out after confirmLeave clears, so its title keeps
+  // the last name rather than reading "Leave ?".
+  const [leaveTitleName, setLeaveTitleName] = useState("");
+  const [leaving, setLeaving] = useState(false);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
+  const leaveReturnFocusRef = useRef<HTMLElement | null>(null);
 
-  const hasChapters = chapters.length > 0;
+  const memberChapters = chapters.filter((chapter) => !leftChapterIds.includes(chapter.id));
+  const hasChapters = memberChapters.length > 0;
+  // The saved name, kept current by the Name section so a rename shows in
+  // the avatar's letter straight away.
+  const [name, setName] = useState({
+    username: initialUsername,
+    fullName: initialFullName,
+    displayFullName: initialDisplayFullName,
+  });
   // Real display name (not a generic "your photo" label) so the letter-avatar
   // fallback shows the same initial as everywhere else on the site.
   const displayName = getDisplayName({
-    username: initialUsername,
-    full_name: initialFullName,
-    display_full_name: initialDisplayFullName,
+    username: name.username,
+    full_name: name.fullName,
+    display_full_name: name.displayFullName,
   });
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const name = e.target.name as FieldName;
-    setFieldErrors((prev) => (prev[name] ? { ...prev, [name]: undefined } : prev));
+  function setChapter(id: number, change: Partial<ChapterState>) {
+    setChapterState((prev) => ({ ...prev, [id]: { ...prev[id]!, ...change } }));
+  }
+
+  function setSaving(id: number, saving: boolean) {
+    setSavingChapterIds((ids) => (saving ? [...ids, id] : ids.filter((other) => other !== id)));
+  }
+
+  function note(id: number, text: string, error = false) {
+    setChapterNotes((prev) => ({ ...prev, [id]: { text, error } }));
   }
 
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const file = e.currentTarget.files?.[0];
+    setAvatarStatus("idle");
+    setPendingAvatar(null);
     if (!file) {
       setAvatarPreview(null);
       setFieldErrors((prev) => (prev.avatar ? { ...prev, avatar: undefined } : prev));
@@ -88,290 +124,215 @@ export default function AccountForm({
     // (even though it won't upload) is clearer than the input just going
     // quiet on you.
     setAvatarPreview(URL.createObjectURL(file));
+    if (!error) setPendingAvatar(file);
   }
 
-  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setMessage(null);
-
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-    const username = formData.get("username")?.toString().trim() ?? "";
-    const fullName = formData.get("full_name")?.toString().trim() ?? "";
-    const currentPassword = formData.get("current_password")?.toString() ?? "";
-    const newPassword = formData.get("new_password")?.toString() ?? "";
-    const confirmPassword = formData.get("confirm_password")?.toString() ?? "";
-    const avatarFile = formData.get("avatar");
-    // An empty file input still shows up in FormData, just as a zero-size File.
-    const wantsAvatarUpload = avatarFile instanceof File && avatarFile.size > 0;
-    // Mirrors updateUsername.ts's own parsing — needed locally too, to cache
-    // the right value alongside username/full_name below.
-    const displayFullName = formData.get("display_full_name") === "true";
-
-    // A filled-in "new password" is what signals intent to change the password, not
-    // "current password" — password managers autofill current-password fields on page
-    // load, which would otherwise make an untouched form look like a password-change
-    // attempt.
-    const wantsPasswordChange = newPassword !== "";
-
-    const errors: FieldErrors = {
-      username: validateUsername(username) ?? undefined,
-      full_name: validateFullName(fullName) ?? undefined,
-      current_password: wantsPasswordChange && !currentPassword ? "Enter your current password" : undefined,
-      new_password: wantsPasswordChange ? validatePassword(newPassword) ?? undefined : undefined,
-      confirm_password: wantsPasswordChange && newPassword !== confirmPassword ? "Passwords do not match" : undefined,
-      avatar: wantsAvatarUpload ? validateAvatarFile(avatarFile) ?? undefined : undefined,
-    };
-    setFieldErrors(errors);
-
-    if (Object.values(errors).some(Boolean)) {
+  async function uploadAvatar() {
+    if (!pendingAvatar) return;
+    setAvatarStatus("uploading");
+    const formData = new FormData();
+    formData.set("avatar", pendingAvatar);
+    let result: Awaited<ReturnType<typeof actions.uploadAvatar>> | null = null;
+    try {
+      result = await actions.uploadAvatar(formData);
+    } catch {
+      result = null;
+    }
+    if (!result || result.error || !result.data) {
+      // Keeps the chosen file and its preview, so Update can be tried again.
+      setAvatarStatus("idle");
+      setFieldErrors((prev) => ({
+        ...prev,
+        avatar:
+          result?.error?.code === "CONTENT_TOO_LARGE"
+            ? "Your photo is too large to upload. Try a smaller file."
+            : result?.error?.message ?? "Something went wrong. Please try again.",
+      }));
       return;
     }
 
-    setStatus("loading");
-
-    try {
-      // updateUsername and uploadAvatar each independently rebuild the full
-      // cnf_avatar_hint cookie (name + photo together) from a fresh DB read,
-      // so running them in parallel races whichever Set-Cookie the browser
-      // applies last — the cookie could end up pairing a new username with
-      // the old photo, or vice versa. Sequencing them (avatar first) means
-      // updateUsername's read/cookie-write always reflects both changes.
-      const avatarResult = wantsAvatarUpload ? await actions.uploadAvatar(formData) : null;
-      // changePassword revokes every session issued before it and re-issues
-      // this one, so it runs first: the others then verify against the fresh
-      // cookie, and updateUsername's re-signed cookie (new username) lands last.
-      const passwordResult = wantsPasswordChange ? await actions.changePassword(formData) : null;
-      const [usernameResult, chaptersResult] = await Promise.all([
-        actions.updateUsername(formData),
-        hasChapters ? actions.updateChapterMemberships(formData) : Promise.resolve(null),
-      ]);
-
-      const parts: { label: string; code?: string; error: string | null }[] = [
-        { label: "info", code: usernameResult.error?.code, error: usernameResult.error?.message ?? null },
-      ];
-      if (wantsPasswordChange) {
-        parts.push({ label: "password", code: passwordResult?.error?.code, error: passwordResult?.error?.message ?? null });
-      }
-      if (hasChapters) {
-        parts.push({ label: "chapter settings", code: chaptersResult?.error?.code, error: chaptersResult?.error?.message ?? null });
-      }
-      if (wantsAvatarUpload) {
-        parts.push({ label: "photo", code: avatarResult?.error?.code, error: avatarResult?.error?.message ?? null });
-      }
-
-      const failedParts = parts.filter((p) => p.error);
-      const succeededLabels = parts.filter((p) => !p.error).map((p) => p.label);
-
-      // AccountMenu's header avatar is seeded from this same cache on the
-      // next page load (see session.ts) — updating it here, right when a
-      // save actually succeeds, means that next load is already correct
-      // instead of showing the just-replaced photo/letter for one more
-      // load until the background /api/me fetch catches up.
-      if (!usernameResult.error || (wantsAvatarUpload && !avatarResult?.error)) {
-        const base = getCachedMember() ?? {
-          id: initialMemberId,
-          username: initialUsername,
-          full_name: initialFullName,
-          display_full_name: initialDisplayFullName,
-          avatar_url: initialAvatarUrl,
-        };
-        setCachedMember({
-          ...base,
-          id: initialMemberId,
-          ...(!usernameResult.error ? { username, full_name: fullName || null, display_full_name: displayFullName } : {}),
-          ...(wantsAvatarUpload && !avatarResult?.error && avatarResult?.data
-            ? { avatar_url: avatarResult.data.avatar_url }
-            : {}),
-        });
-      }
-
-      if (failedParts.length === 0) {
-        setStatus("success");
-        setMessage(`Your ${joinWithAnd(succeededLabels)} ${succeededLabels.length > 1 ? "have" : "has"} been updated.`);
-        return;
-      }
-
-      setStatus("error");
-
-      // A too-large request fails before it even reaches the server, so it
-      // always takes every part of this shared submission down together
-      // (all parts post the same FormData, avatar file included) — the raw
-      // "Request body exceeds N bytes" repeated per field reads like three
-      // separate problems when it's really just one oversized photo.
-      if (failedParts.every((p) => p.code === "CONTENT_TOO_LARGE")) {
-        setMessage(
-          wantsAvatarUpload
-            ? "Your photo is too large to submit. Try a smaller file."
-            : "That's too much to submit at once. Try again with less at a time."
-        );
-        return;
-      }
-
-      const failedText = failedParts.map((p) => `${capitalize(p.label)} unchanged: ${p.error}`).join(" ");
-      setMessage(
-        succeededLabels.length > 0
-          ? `Your ${joinWithAnd(succeededLabels)} ${succeededLabels.length > 1 ? "have" : "has"} been updated. ${failedText}`
-          : failedText
-      );
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Something went wrong");
-      setStatus("error");
-    }
+    // AccountMenu's header avatar is seeded from this cache on the next page
+    // load (see session.ts), so update it now rather than leave the old photo
+    // up until the background /api/me fetch catches up.
+    const base = getCachedMember() ?? {
+      id: initialMemberId,
+      username: initialUsername,
+      full_name: initialFullName,
+      display_full_name: initialDisplayFullName,
+      avatar_url: initialAvatarUrl,
+    };
+    setCachedMember({ ...base, id: initialMemberId, avatar_url: result.data.avatar_url });
+    setPendingAvatar(null);
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+    setAvatarStatus("saved");
   }
 
-  if (status === "success") {
-    return <p>{message}</p>;
+  async function leave() {
+    if (!confirmLeave) return;
+    const { id, name } = confirmLeave;
+    setLeaving(true);
+    setLeaveError(null);
+    let failed = true;
+    try {
+      failed = Boolean((await actions.leaveChapter({ chapterId: id })).error);
+    } catch {
+      failed = true;
+    }
+    setLeaving(false);
+    if (failed) {
+      setLeaveError("Something went wrong. Please try again.");
+      return;
+    }
+    setLeftChapterIds((ids) => [...ids, id]);
+    setLeftNote(`You've left ${name}.`);
+    // Its box is gone, so focus lands on the note saying so.
+    leaveReturnFocusRef.current = leftNoteRef.current;
+    setConfirmLeave(null);
+  }
+
+  async function setEmails(id: number, name: string, enabled: boolean) {
+    setSaving(id, true);
+    let failed = true;
+    let notMember = false;
+    try {
+      const { error } = await actions.setChapterEmails({ chapterId: id, enabled });
+      failed = Boolean(error);
+      notMember = error?.code === "NOT_FOUND";
+    } catch {
+      failed = true;
+    }
+    setSaving(id, false);
+    if (notMember) {
+      // Left in another tab or on the chapter page since this page loaded.
+      setLeftChapterIds((ids) => [...ids, id]);
+      setLeftNote(`You're no longer in ${name}.`);
+      leftNoteRef.current?.focus();
+      return;
+    }
+    if (failed) {
+      note(id, "Couldn't save that. Please try again.", true);
+      return;
+    }
+    setChapter(id, { emails: enabled });
+    note(id, enabled ? `Saved: you'll get emails about ${name}'s events.` : `Saved: no more emails about ${name}'s events.`);
   }
 
   return (
-    <form className="cnf-form" onSubmit={handleSubmit} aria-label="Account settings form" noValidate>
-      {message && <div className="cnf-form__message--error">{message}</div>}
+    // Each part saves on its own, so the form is never submitted.
+    <form className="cnf-form" onSubmit={(e) => e.preventDefault()} aria-label="Account settings form" noValidate>
 
       <fieldset className="cnf-form__fieldset">
-        <legend className="cnf-visually-hidden">Profile details</legend>
+        <legend>Account details</legend>
         <div className="cnf-form__group">
           <label className="cnf-form__label" htmlFor="avatar">Photo</label>
-          <Avatar avatarUrl={avatarPreview ?? initialAvatarUrl} alt={displayName} id={initialMemberId} size="lg" />
-          <input
-            id="avatar"
-            type="file"
-            name="avatar"
-            accept="image/*"
-            className="cnf-form__input"
-            onChange={handleAvatarChange}
-            aria-invalid={!!fieldErrors.avatar}
-          />
-          <p className="cnf-form__hint">Optional. JPG, PNG, or similar, up to 5MB.</p>
-          {fieldErrors.avatar && <div className="cnf-form__message--error">{fieldErrors.avatar}</div>}
+          <div className="cnf-form__avatar-row">
+            <Avatar avatarUrl={avatarPreview ?? initialAvatarUrl} alt={displayName} id={initialMemberId} size="lg" />
+            <input
+              ref={avatarInputRef}
+              id="avatar"
+              type="file"
+              name="avatar"
+              accept="image/*"
+              className="cnf-form__input"
+              onChange={handleAvatarChange}
+              disabled={avatarStatus === "uploading"}
+              aria-invalid={!!fieldErrors.avatar}
+            />
+          </div>
+          <p className="cnf-form__hint">JPG, PNG, or similar, up to 5MB.</p>
+          {pendingAvatar && (
+            <button
+              type="button"
+              className={`cnf-button cnf-button__gold cnf-form__avatar-update${avatarStatus === "uploading" ? " cnf-button--loading" : ""}`}
+              // aria-disabled, not disabled: a disabled button drops focus.
+              aria-disabled={avatarStatus === "uploading"}
+              aria-busy={avatarStatus === "uploading"}
+              onClick={() => {
+                if (avatarStatus !== "uploading") uploadAvatar();
+              }}
+            >
+              <span className="cnf-button__text">Update photo</span>
+            </button>
+          )}
+          {/* The live region stays put; the tinted message only appears
+              once there's something to say. */}
+          <div className="cnf-form__status" aria-live="polite">
+            {avatarStatus === "saved" && (
+              <p ref={avatarSavedRef} tabIndex={-1} className="cnf-form__message--success">
+                Your photo is updated.
+              </p>
+            )}
+          </div>
+          {fieldErrors.avatar && (
+            <div className="cnf-form__message--error" role="alert">
+              {fieldErrors.avatar}
+            </div>
+          )}
         </div>
 
-        <div className="cnf-form__group">
-          <label className="cnf-form__label" htmlFor="username">Username</label>
-          <input
-            id="username"
-            type="text"
-            name="username"
-            className="cnf-form__input"
-            defaultValue={initialUsername}
-            required
-            onChange={handleChange}
-            aria-invalid={!!fieldErrors.username}
-          />
-          <p className="cnf-form__hint">3-20 characters: letters, numbers, and underscores only.</p>
-          {fieldErrors.username && <div className="cnf-form__message--error">{fieldErrors.username}</div>}
-        </div>
+        <ChangeName
+          memberId={initialMemberId}
+          username={initialUsername}
+          fullName={initialFullName}
+          displayFullName={initialDisplayFullName}
+          avatarUrl={initialAvatarUrl}
+          onSaved={setName}
+        />
 
-        <div className="cnf-form__group">
-          <label className="cnf-form__label" htmlFor="full_name">Full name</label>
-          <input
-            id="full_name"
-            type="text"
-            name="full_name"
-            className="cnf-form__input"
-            defaultValue={initialFullName ?? ""}
-            onChange={handleChange}
-            aria-invalid={!!fieldErrors.full_name}
-          />
-          {fieldErrors.full_name && <div className="cnf-form__message--error">{fieldErrors.full_name}</div>}
-        </div>
+        <ChangeEmail email={initialEmail} />
 
-        <div className="cnf-form__group">
-          <Checkbox
-            id="display_full_name"
-            name="display_full_name"
-            value="true"
-            defaultChecked={initialDisplayFullName}
-            label="Show my full name instead of my username"
-          />
-        </div>
-      </fieldset>
-
-      <fieldset className="cnf-form__fieldset">
-        <legend>Change password</legend>
-
-        <div className="cnf-form__group">
-          <label className="cnf-form__label" htmlFor="current-password">Current password</label>
-          <input
-            id="current-password"
-            type="password"
-            name="current_password"
-            className="cnf-form__input"
-            autoComplete="current-password"
-            onChange={handleChange}
-            aria-invalid={!!fieldErrors.current_password}
-          />
-          <p className="cnf-form__hint">Leave these blank to keep your current password.</p>
-          {fieldErrors.current_password && <div className="cnf-form__message--error">{fieldErrors.current_password}</div>}
-        </div>
-
-        <div className="cnf-form__group">
-          <label className="cnf-form__label" htmlFor="new-password">New password</label>
-          <input
-            id="new-password"
-            type="password"
-            name="new_password"
-            className="cnf-form__input"
-            autoComplete="new-password"
-            onChange={handleChange}
-            aria-invalid={!!fieldErrors.new_password}
-          />
-          <p className="cnf-form__hint">At least 8 characters, with a number and an uppercase letter.</p>
-          {fieldErrors.new_password && <div className="cnf-form__message--error">{fieldErrors.new_password}</div>}
-        </div>
-
-        <div className="cnf-form__group">
-          <label className="cnf-form__label" htmlFor="confirm-new-password">Confirm new password</label>
-          <input
-            id="confirm-new-password"
-            type="password"
-            name="confirm_password"
-            className="cnf-form__input"
-            autoComplete="new-password"
-            onChange={handleChange}
-            aria-invalid={!!fieldErrors.confirm_password}
-          />
-          {fieldErrors.confirm_password && <div className="cnf-form__message--error">{fieldErrors.confirm_password}</div>}
-        </div>
+        <ChangePassword />
       </fieldset>
 
       {showChapters && (
         <fieldset className="cnf-form__fieldset">
           <legend>Chapter memberships</legend>
 
-          {hasChapters ? (
-            <>
-              <p className="cnf-form__hint">Untick a chapter to leave it. To join one, use the button on its page.</p>
+          {/* One line for both states. After leaving, focus moves here, which
+              reads out "You've left …" (a live region too would read it twice). */}
+          <p ref={leftNoteRef} tabIndex={-1} className="cnf-form__hint">
+            {leftNote && <>{leftNote} </>}
+            {hasChapters ? (
+              "Untick a chapter to leave it. To join one, use the button on its page."
+            ) : (
+              <>
+                You haven't joined a chapter yet. Find one on the <a href="/chapters">chapters page</a>.
+              </>
+            )}
+          </p>
 
-              <div className="cnf-form__group">
-                {/* Tells the server which chapters this form showed, so a
-                    chapter joined in another tab since isn't read as left. */}
-                {chapters.map((chapter) => (
-                  <input key={`shown-${chapter.id}`} type="hidden" name="chapter_shown" value={String(chapter.id)} />
-                ))}
-                {chapters.map((chapter) => (
-                  <Checkbox
-                    key={chapter.id}
-                    id={`chapter-${chapter.id}`}
-                    name="chapter_id"
-                    value={String(chapter.id)}
-                    defaultChecked
-                    label={chapter.name}
-                    onChange={(e) => {
-                      const leaving = !e.target.checked;
-                      setLeavingChapterIds((ids) =>
-                        leaving ? [...ids, chapter.id] : ids.filter((id) => id !== chapter.id)
-                      );
-                    }}
-                  />
-                ))}
-              </div>
-            </>
-          ) : (
-            <p className="cnf-form__hint">
-              You haven't joined a chapter yet. Find one on the <a href="/chapters">chapters page</a>.
-            </p>
+          {hasChapters && (
+            <div className="cnf-form__group">
+              {memberChapters.map((chapter) => (
+                <Checkbox
+                  key={chapter.id}
+                  id={`chapter-${chapter.id}`}
+                  name="chapter_id"
+                  value={String(chapter.id)}
+                  // Stays ticked until leaving is confirmed and saved.
+                  checked
+                  label={chapter.name}
+                  onChange={(e) => {
+                    leaveReturnFocusRef.current = e.target;
+                    setLeaveError(null);
+                    setLeaveTitleName(chapter.name);
+                    setConfirmLeave({ id: chapter.id, name: chapter.name });
+                  }}
+                />
+              ))}
+            </div>
           )}
+          {/* Outside the list, so leaving the last chapter doesn't unmount it
+              mid-close. */}
+          <LeaveChapterModal
+            isOpen={confirmLeave !== null}
+            chapterName={leaveTitleName}
+            leaving={leaving}
+            error={leaveError}
+            onConfirm={leave}
+            onCancel={() => setConfirmLeave(null)}
+            returnFocusRef={leaveReturnFocusRef}
+          />
         </fieldset>
       )}
 
@@ -384,30 +345,39 @@ export default function AccountForm({
               <p className="cnf-form__hint">Get an email when a chapter you're in posts a new event.</p>
 
               <div className="cnf-form__group">
-                {/* Which boxes started ticked, so the server only writes the
-                    ones the member changed and a stale tab can't undo a
-                    change made elsewhere. */}
-                {chapters.filter((chapter) => chapter.emailsEnabled).map((chapter) => (
-                  <input key={`emails-was-${chapter.id}`} type="hidden" name="chapter_emails_was" value={String(chapter.id)} />
-                ))}
-                {chapters.map((chapter) => {
-                  const leaving = leavingChapterIds.includes(chapter.id);
-                  const noteId = `chapter-${chapter.id}-leaving`;
+                {memberChapters.map((chapter) => {
+                  const state = chapterState[chapter.id]!;
+                  const noteId = `chapter-${chapter.id}-note`;
+                  const chapterNote = chapterNotes[chapter.id];
                   return (
                     <div key={chapter.id}>
                       <Checkbox
                         id={`chapter-${chapter.id}-emails`}
                         name="chapter_emails"
                         value={String(chapter.id)}
-                        defaultChecked={chapter.emailsEnabled}
-                        disabled={leaving}
-                        describedBy={leaving ? noteId : undefined}
+                        checked={state.emails}
+                        // Not disabled while saving, which would drop
+                        // keyboard focus; extra clicks are ignored instead.
+                        busy={savingChapterIds.includes(chapter.id)}
+                        describedBy={noteId}
                         label={`Upcoming events in ${chapter.name}`}
+                        onChange={(e) => {
+                          if (!savingChapterIds.includes(chapter.id)) setEmails(chapter.id, chapter.name, e.target.checked);
+                        }}
                       />
-                      {/* Always rendered so screen readers announce the note
-                          when unticking the chapter fills it in. */}
-                      <p id={noteId} className="cnf-form__hint" aria-live="polite">
-                        {leaving && `You'll leave ${chapter.name} when you save.`}
+                      {/* Always rendered so screen readers announce each save. */}
+                      <p
+                        id={noteId}
+                        className={
+                          !chapterNote
+                            ? "cnf-form__hint"
+                            : chapterNote.error
+                              ? "cnf-form__message--error"
+                              : "cnf-form__message--success"
+                        }
+                        aria-live="polite"
+                      >
+                        {chapterNote?.text}
                       </p>
                     </div>
                   );
@@ -420,9 +390,6 @@ export default function AccountForm({
         </fieldset>
       )}
 
-      <button type="submit" disabled={status === "loading"} aria-busy={status === "loading"} className={`cnf-form__submit cnf-button cnf-button__gold${status === "loading" ? " cnf-button--loading" : ""}`}>
-        <span className="cnf-button__text">Save</span>
-      </button>
     </form>
   );
 }
