@@ -67,7 +67,7 @@ export default function PostForm({ mode, initialData }: PostFormProps) {
   };
 
   if (status === "success") {
-    return <p>{mode === "edit" ? "Post updated" : "Post created"} successfully!</p>;
+    return <p className="cnf-form__message--success">{mode === "edit" ? "Post updated" : "Post created"} successfully!</p>;
   }
 
   return (

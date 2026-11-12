@@ -6,9 +6,12 @@ import { signup } from './signup';
 import { changePassword } from './changePassword';
 import { requestPasswordReset, resetPassword } from './passwordReset';
 import { updateUsername } from './updateUsername';
-import { updateChapterMemberships, joinChapter, leaveChapter, getChapterMembership, setChapterEmails } from './chapterMembers';
+import { joinChapter, leaveChapter, getChapterMembership, setChapterEmails } from './chapterMembers';
 import { getEventRsvps, setEventRsvp } from './rsvps';
 import { uploadAvatar } from './avatar';
+import { deleteAccount } from './deleteAccount';
+import { resendVerification } from './resendVerification';
+import { requestEmailChange } from './changeEmail';
 
 export const server = {
   createEvent,
@@ -26,7 +29,6 @@ export const server = {
   requestPasswordReset,
   resetPassword,
   updateUsername,
-  updateChapterMemberships,
   joinChapter,
   leaveChapter,
   getChapterMembership,
@@ -34,4 +36,7 @@ export const server = {
   getEventRsvps,
   setEventRsvp,
   uploadAvatar,
+  deleteAccount,
+  resendVerification,
+  requestEmailChange,
 };

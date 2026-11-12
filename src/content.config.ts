@@ -17,7 +17,8 @@ const blog = defineCollection({
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
-    author: memberRefSchema,
+    // null once the author has deleted their account (#210).
+    author: memberRefSchema.nullable(),
     coverImageUrl: z.string().nullable(),
   }),
 });
@@ -49,7 +50,8 @@ const event = defineCollection({
     meetingUrl: z.string().nullable(),
     meetPoint: z.string().nullable(),
     tags: z.array(z.string()).default([]),
-    creator: memberRefSchema,
+    // null once the host has deleted their account (#210).
+    creator: memberRefSchema.nullable(),
     rsvpCounts: z.object({
       going: z.number(),
       maybe: z.number(),

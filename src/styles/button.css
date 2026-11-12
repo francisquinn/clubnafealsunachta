@@ -7,6 +7,8 @@
   font-family: "Noto Sans", sans-serif;
   font-size: 1.125rem;
   font-weight: 400;
+  /* Same as .cnf-form__input, so a button beside an input is its height. */
+  line-height: 1.5rem;
   transition: transition 0.1s ease;
   text-decoration: none;
 }
@@ -32,7 +34,17 @@
 .cnf-button__secondary {
   color: hsl(var(--color-green));
   background-color: hsl(var(--color-beige));
-  border: 2px solid hsl(var(--color-green));
+}
+
+/* Low-emphasis action next to a main one, e.g. Cancel in a modal. */
+.cnf-button__ghost {
+  color: hsl(var(--color-green));
+  background-color: transparent;
+}
+
+/* Destructive actions, e.g. deleting an account (#210). */
+.cnf-button__danger {
+  background-color: hsl(var(--color-red));
 }
 
 .cnf-button__gold {
@@ -50,7 +62,6 @@
 .cnf-button__gold-outline {
   color: hsl(var(--color-gold));
   background-color: transparent;
-  border: 2px solid hsl(var(--color-gold));
 }
 
 .cnf-button__link {
@@ -64,7 +75,8 @@
 }
 
 .cnf-button__primary .cnf-button__text,
-.cnf-button__gold .cnf-button__text {
+.cnf-button__gold .cnf-button__text,
+.cnf-button__danger .cnf-button__text {
   color: hsl(var(--color-beige));
 }
 
@@ -92,7 +104,8 @@
 /* .cnf-button__secondary's background is light (beige) — the default white
    spinner is barely visible on it, unlike on the dark primary/gold buttons
    it was designed for. */
-.cnf-button__secondary.cnf-button--loading::after {
+.cnf-button__secondary.cnf-button--loading::after,
+.cnf-button__ghost.cnf-button--loading::after {
   border-top-color: hsl(var(--color-green));
 }
 
@@ -103,6 +116,19 @@
 .cnf-button:active {
   transform: scale(0.95);
   box-shadow: none;
+}
+
+/* Outlined buttons draw their outline as an inset shadow rather than a
+   border, so they're the same height as the filled ones. Listed after
+   :active above so pressing them keeps the outline. */
+.cnf-button__secondary,
+.cnf-button__secondary:active {
+  box-shadow: inset 0 0 0 2px hsl(var(--color-green));
+}
+
+.cnf-button__gold-outline,
+.cnf-button__gold-outline:active {
+  box-shadow: inset 0 0 0 2px hsl(var(--color-gold));
 }
 
 .cnf-button:disabled {

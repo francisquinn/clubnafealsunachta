@@ -1,13 +1,67 @@
 ---
+export const prerender = false;
 import SuggestTopicForm from "../components/SuggestTopicForm";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { getSessionToken, verifySession } from "../lib/auth";
+import { supabaseAdmin } from "../lib/supabase";
+import { loadMemberChapters } from "../lib/memberChapters";
+import { suggestTopicGate } from "../lib/suggestTopicGate";
 const pageTitle = "Suggest a topic";
+
+// #140: members only, for a chapter they're in (see suggestTopicGate).
+// Signed-out visitors get the login modal and a placeholder; members in no
+// chapter get a nudge to join one.
+const session = await verifySession(getSessionToken(Astro.request));
+
+const [memberResult, chapters] = session
+  ? await Promise.all([
+      supabaseAdmin
+        ? supabaseAdmin.from("members").select("username, full_name, display_full_name").eq("id", session.memberId).single()
+        : Promise.resolve({ data: null }),
+      loadMemberChapters(session.memberId),
+    ])
+  : [{ data: null }, null];
+
+const gate = suggestTopicGate(session !== null, memberResult.data, chapters);
 ---
 
 <BaseLayout pageTitle={pageTitle}>
   <section class="cnf-section">
     <h1>Suggest a topic</h1>
-    <p>Add a topic or two to my never-ending list.</p>
-    <SuggestTopicForm client:load />
+    {/* Signed out or in no chapter, the gate's own sentence stands in for the intro. */}
+    {gate.kind !== "signedOut" && gate.kind !== "noChapters" && <p>Add a topic or two to my never-ending list.</p>}
+    {
+      gate.kind === "signedOut" ? (
+        <div>
+          <p>
+            Suggesting a topic is for members.
+            <button type="button" class="cnf-button cnf-button--link" id="cnf-suggest-login">Log in</button>
+            to suggest one.
+          </p>
+          {/* LoginButton opens the header's login modal for ?login=1 once it
+              hydrates, then drops the param. Adding it here, before hydration,
+              pops the modal on landing without a redirect. */}
+          <script is:inline>
+            (() => {
+              const url = new URL(window.location.href);
+              url.searchParams.set("login", "1");
+              window.history.replaceState(null, "", url);
+              document.getElementById("cnf-suggest-login").addEventListener("click", () => {
+                document.getElementById("cnf-login-trigger")?.click();
+              });
+            })();
+          </script>
+        </div>
+      ) : gate.kind === "loadFailed" ? (
+        <p class="cnf-form__message--error">We couldn't load your account just now. Please refresh the page to try again.</p>
+      ) : gate.kind === "noChapters" ? (
+        <p>
+          Topics are suggested for a chapter, so you'll need to be in one first.{" "}
+          <a href="/chapters">Join a chapter</a> to suggest topics for it.
+        </p>
+      ) : (
+        <SuggestTopicForm client:load chapters={gate.chapters} displayName={gate.displayName} />
+      )
+    }
   </section>
 </BaseLayout>

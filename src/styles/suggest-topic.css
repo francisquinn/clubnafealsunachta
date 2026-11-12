@@ -5,33 +5,85 @@
 
 .cnf-suggest__input {
   display: grid;
-  grid-template-columns: 1fr auto;
+  /* minmax(0, …): a text input won't shrink below its default width on its
+     own, which pushed Cancel off a phone screen. */
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 10px;
+}
+
+/* Cancel sits right against Add; its own padding is enough of a gap. */
+.cnf-suggest__input > .cnf-button__ghost {
+  margin-left: -10px;
+}
+
+.cnf-suggest__heading {
+  margin-bottom: 1rem;
 }
 
 .cnf-suggest__list {
   list-style-type: lower-greek;
   padding-left: 40px;
+  margin: 0;
 }
 
+/* The add row closes the list, so it takes no Greek letter. It ignores the
+   list's indent and starts at the page edge, which leaves the input room
+   beside Add and Cancel on a phone. */
+.cnf-suggest__add {
+  list-style: none;
+  padding: 5px 0;
+  margin-left: -40px;
+}
+
+/* The × sits next to its topic, not across the row from it. */
 .cnf-suggest__topic {
   display: flex;
-  justify-content: space-between;
+  gap: 0.5rem;
   align-items: center;
-  padding: 5px 0;
+  padding: 8px 0;
 }
 
-.cnf-suggest__icon {
-  width: 1rem;
-  height: 1rem;
+/* A small filled circle rather than a bare ×, so removing reads as a quiet
+   per-topic control. 24px keeps it a comfortable tap target. */
+.cnf-suggest__remove {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: hsl(var(--color-green));
+  color: hsl(var(--color-beige));
+  cursor: pointer;
 }
 
+.cnf-suggest__remove svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* Wide enough for the add row's input with Add and Cancel beside it. */
 @media (min-width: 576px) {
-  .cnf-suggest__input {
-    max-width: 400px;
-  }
-
   .cnf-suggest__list {
-    max-width: 380px;
+    max-width: 480px;
   }
+}
+
+/* Same width as the list and its add row above. */
+@media (min-width: 576px) {
+  .cnf-suggest__chapter {
+    max-width: 480px;
+  }
+}
+
+/* The anonymity note explains the box right above it. */
+.cnf-suggest__name {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.cnf-suggest__note {
+  margin: 0;
 }

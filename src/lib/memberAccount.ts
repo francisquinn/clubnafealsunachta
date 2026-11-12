@@ -69,6 +69,7 @@ export async function createAccount(formData: FormData, isAdmin: boolean, origin
       password_hash,
       is_admin: isAdmin,
       email_verified_at: autoVerify ? new Date().toISOString() : null,
+      verification_sent_at: autoVerify ? null : new Date().toISOString(),
     });
 
   if (error) {

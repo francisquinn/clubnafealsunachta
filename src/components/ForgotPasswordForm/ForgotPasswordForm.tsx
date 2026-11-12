@@ -39,7 +39,7 @@ export default function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordForm
   if (status === "success") {
     return (
       <div>
-        <p>If there's a confirmed account for that email, we've sent a link to reset your password. It expires in 1 hour.</p>
+        <p className="cnf-form__message--success">If there's a confirmed account for that email, we've sent a link to reset your password. It expires in 1 hour.</p>
         <p>
           <button type="button" className="cnf-modal__link" onClick={onBackToLogin}>Back to login</button>
         </p>

@@ -3,7 +3,7 @@ export const prerender = true;
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { formatBlogDate } from "../../utils/script";
-import { getDisplayName } from "../../lib/memberDisplay";
+import { getDisplayName, FORMER_MEMBER } from "../../lib/memberDisplay";
 import Avatar from "../../components/Avatar/Avatar.astro";
 import Banner from "../../layouts/Banner.astro";
 import { DONATE_URL } from "../../lib/links";
@@ -55,8 +55,14 @@ const { Content } = await render(post);
   <section class="cnf-section">
     <h1>{post.data.title}</h1>
     <div class="cnf-post__details">
-      <Avatar avatarUrl={post.data.author.avatar_url} alt={getDisplayName(post.data.author)} id={post.data.author.id} size="sm" />
-      <a href={`/profile/${post.data.author.username}`}>{getDisplayName(post.data.author)}</a> &#8226; {formatBlogDate(post.data.date)}
+      {post.data.author ? (
+        <>
+          <Avatar avatarUrl={post.data.author.avatar_url} alt={getDisplayName(post.data.author)} id={post.data.author.id} size="sm" />
+          <a href={`/profile/${post.data.author.username}`}>{getDisplayName(post.data.author)}</a>
+        </>
+      ) : (
+        FORMER_MEMBER
+      )} &#8226; {formatBlogDate(post.data.date)}
     </div>
     {post.data.coverImageUrl && (
       <img class="cnf-post__cover" src={post.data.coverImageUrl} alt="" />

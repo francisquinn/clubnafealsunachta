@@ -52,7 +52,9 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   if (!user.email_verified_at) {
-    return json({ error: "Please confirm your email before logging in — check your inbox for the confirmation link." }, 403);
+    // The password was right, so saying the account is unverified reveals
+    // nothing; the flag lets the form offer to resend the link.
+    return json({ error: "Please confirm your email before logging in.", unverified: true }, 403);
   }
 
   const token = createSessionToken(user.id, user.is_admin, user.username);

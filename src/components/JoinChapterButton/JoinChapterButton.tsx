@@ -3,12 +3,14 @@ import { actions } from "astro:actions";
 import { fetchSessionInfo } from "../../utils/session";
 import Modal from "../Modal/Modal";
 import Checkbox from "../Checkbox/Checkbox";
+import LeaveChapterModal from "../LeaveChapterModal/LeaveChapterModal";
 
 type Status = "loading" | "unavailable" | "logged-out" | "can-join" | "joining" | "joined" | "leaving" | "error";
 
 // The chapter page's "Join chapter" button. Logged-out visitors get the
 // site's login modal (the header's trigger), logged-in members join in place
-// and then see a "Member" button that takes them back out of the chapter.
+// and then see a "Member" button that takes them back out of the chapter,
+// once they confirm (#219).
 // Shows an empty placeholder until the session and membership are known, so
 // the button never flashes the wrong state.
 // #211: a successful join opens a welcome modal whose unticked checkbox is the
@@ -24,11 +26,22 @@ interface Props {
 export default function JoinChapterButton({ chapterId, chapterName, meetingWhen, chatUrl }: Props) {
   const [status, setStatus] = useState<Status>("loading");
   const [leaveFailed, setLeaveFailed] = useState(false);
+  const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [wantsEmails, setWantsEmails] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const memberButtonRef = useRef<HTMLButtonElement>(null);
+  const joinButtonRef = useRef<HTMLButtonElement>(null);
+  // Leaving swaps the Member button (and its confirmation) for Join, so focus
+  // moves to Join rather than being lost with the removed button.
+  const justLeftRef = useRef(false);
+  useEffect(() => {
+    if (status === "can-join" && justLeftRef.current) {
+      justLeftRef.current = false;
+      joinButtonRef.current?.focus();
+    }
+  }, [status]);
   const welcomeTitleId = `join-chapter-${chapterId}-title`;
 
   useEffect(() => {
@@ -152,9 +165,23 @@ export default function JoinChapterButton({ chapterId, chapterName, meetingWhen,
   async function leave() {
     setLeaveFailed(false);
     setStatus("leaving");
-    const { error } = await actions.leaveChapter({ chapterId });
-    if (error) setLeaveFailed(true);
-    setStatus(error ? "joined" : "can-join");
+    // A dropped connection throws rather than returning an error; without
+    // this the confirmation would stay locked in "leaving".
+    let error: unknown;
+    try {
+      ({ error } = await actions.leaveChapter({ chapterId }));
+    } catch (err) {
+      error = err;
+    }
+    if (error) {
+      // Shown in the still-open confirmation.
+      setLeaveFailed(true);
+      setStatus("joined");
+      return;
+    }
+    setConfirmLeaveOpen(false);
+    justLeftRef.current = true;
+    setStatus("can-join");
   }
 
   // Holds the button's space while the session and membership load, so the
@@ -166,21 +193,27 @@ export default function JoinChapterButton({ chapterId, chapterName, meetingWhen,
     return (
       <div>
         {welcome}
+        <LeaveChapterModal
+          isOpen={confirmLeaveOpen}
+          chapterName={chapterName}
+          leaving={status === "leaving"}
+          error={leaveFailed ? "Something went wrong. Please try again." : null}
+          onConfirm={leave}
+          onCancel={() => setConfirmLeaveOpen(false)}
+          returnFocusRef={memberButtonRef}
+        />
         <button
           ref={memberButtonRef}
           type="button"
-          className={`cnf-button cnf-button__gold-outline${status === "leaving" ? " cnf-button--loading" : ""}`}
-          onClick={leave}
-          disabled={status === "leaving"}
+          className="cnf-button cnf-button__gold-outline"
+          onClick={() => {
+            setLeaveFailed(false);
+            setConfirmLeaveOpen(true);
+          }}
           title="Click to leave this chapter"
         >
           <span className="cnf-button__text">Member</span>
         </button>
-        {leaveFailed && (
-          <p className="cnf-rsvp__error" role="alert">
-            Something went wrong. Please try again.
-          </p>
-        )}
       </div>
     );
   }
@@ -188,6 +221,7 @@ export default function JoinChapterButton({ chapterId, chapterName, meetingWhen,
   return (
     <div>
       <button
+        ref={joinButtonRef}
         type="button"
         className={`cnf-button cnf-button__gold${status === "joining" ? " cnf-button--loading" : ""}`}
         onClick={join}

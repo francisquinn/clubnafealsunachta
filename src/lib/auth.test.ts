@@ -8,6 +8,10 @@ import {
   isChapterInScope,
   verifySession,
   isSessionRevoked,
+  createVerificationToken,
+  readExpiredVerificationEmail,
+  createEmailChangeToken,
+  verifyEmailChangeToken,
 } from "./auth";
 
 // #37: getAdminScope/requireAdmin resolve super-admin vs per-chapter scope by
@@ -359,5 +363,58 @@ describe("transient lookup errors", () => {
       expect(spy).not.toHaveBeenCalled();
       spy.mockRestore();
     });
+  });
+});
+
+// #220: the expired-link page prefills the resend form from the token, so
+// expiry is ignored but the signature and purpose still have to check out.
+describe("readExpiredVerificationEmail", () => {
+  const secret = () => process.env.JWT_SECRET!;
+
+  it("reads the email from an expired verification link", () => {
+    const token = jwt.sign({ email: "new@example.com", purpose: "verify-email", exp: Math.floor(Date.now() / 1000) - 60 }, secret());
+    expect(readExpiredVerificationEmail(token)).toBe("new@example.com");
+  });
+
+  it("reads the email from a link that hasn't expired", () => {
+    expect(readExpiredVerificationEmail(createVerificationToken("new@example.com"))).toBe("new@example.com");
+  });
+
+  it("rejects a token signed with another secret", () => {
+    const token = jwt.sign({ email: "new@example.com", purpose: "verify-email" }, "not-the-secret");
+    expect(readExpiredVerificationEmail(token)).toBeNull();
+  });
+
+  it("rejects a token made for something else", () => {
+    expect(readExpiredVerificationEmail(createSessionToken("m1", false, "newbie"))).toBeNull();
+  });
+
+  it("rejects garbage", () => {
+    expect(readExpiredVerificationEmail("not-a-token")).toBeNull();
+  });
+});
+
+// #219: the link sent to a new address.
+describe("email change tokens", () => {
+  it("round-trips the member and both addresses", () => {
+    const token = createEmailChangeToken("m1", "old@example.com", "new@example.com");
+    expect(verifyEmailChangeToken(token)).toEqual({
+      memberId: "m1",
+      oldEmail: "old@example.com",
+      newEmail: "new@example.com",
+      issuedAt: expect.any(Number),
+    });
+  });
+
+  it("rejects an expired link", () => {
+    const token = jwt.sign(
+      { memberId: "m1", oldEmail: "old@example.com", newEmail: "new@example.com", purpose: "change-email", exp: Math.floor(Date.now() / 1000) - 60 },
+      process.env.JWT_SECRET!,
+    );
+    expect(verifyEmailChangeToken(token)).toBeNull();
+  });
+
+  it("rejects a token made for something else", () => {
+    expect(verifyEmailChangeToken(createVerificationToken("new@example.com"))).toBeNull();
   });
 });

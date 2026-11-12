@@ -46,8 +46,18 @@ describe("renderContactMessageEmail", () => {
 
 describe("renderTopicSuggestionEmail", () => {
   it("renders one escaped list item per topic", () => {
-    const html = renderTopicSuggestionEmail(["Stoicism", "<script>x</script>"]);
+    const html = renderTopicSuggestionEmail({ topics: ["Stoicism", "<script>x</script>"], chapterName: "Dublin", name: null });
     expect(html).toContain("<li>Stoicism</li>");
     expect(html).toContain("<li>&lt;script&gt;x&lt;/script&gt;</li>");
+  });
+
+  it("says only the chapter when the member stays anonymous", () => {
+    const html = renderTopicSuggestionEmail({ topics: ["Stoicism"], chapterName: "Dublin", name: null });
+    expect(html).toContain("From a member of Dublin");
+  });
+
+  it("names the member, escaped, when they include their name", () => {
+    const html = renderTopicSuggestionEmail({ topics: ["Stoicism"], chapterName: "Dublin", name: "<b>Ann</b>" });
+    expect(html).toContain("From &lt;b&gt;Ann&lt;/b&gt;, Dublin");
   });
 });
