@@ -44,12 +44,12 @@ describe("SubscribeCalendarLinks", () => {
     expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
   });
 
-  it("keeps Google, Outlook and Apple in that order", () => {
+  it("keeps Google, Apple and Outlook in that order", () => {
     render(<SubscribeCalendarLinks feedUrl={FEED_URL} chapterName="Trieste" />);
     expect(screen.getAllByRole("link").map((a) => a.textContent)).toEqual([
       "Google Calendar",
-      "Outlook",
       "Apple Calendar",
+      "Outlook",
     ]);
   });
 

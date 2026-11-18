@@ -36,9 +36,9 @@ export default function SubscribeCalendarLinks({ feedUrl, chapterName }: Subscri
       <br />
       <a href={googleUrl} target="_blank" rel="noopener">Google Calendar</a>
       {" · "}
-      <a href={outlookUrl} target="_blank" rel="noopener">Outlook</a>
-      {" · "}
       <a href={webcalUrl}>Apple Calendar</a>
+      {" · "}
+      <a href={outlookUrl} target="_blank" rel="noopener">Outlook</a>
     </p>
   );
 }
