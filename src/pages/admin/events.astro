@@ -18,9 +18,10 @@ const query = scopeToAdminChapters(
   "chapter_id"
 );
 const { data, error } = await query;
-// Fails to an empty list rather than crashing the whole admin dashboard on a
-// transient Supabase error - this is a read-only listing, not a single
-// record the page can't render without.
+// Falls back to an empty list (shown as "couldn't load", not "no events")
+// rather than crashing the whole admin dashboard on a transient Supabase
+// error - this is a read-only listing, not a single record the page can't
+// render without.
 if (error) console.error("Failed to load admin events list:", error.message);
 
 const sorted = (data ?? []).map((event) => ({
@@ -38,6 +39,11 @@ const sorted = (data ?? []).map((event) => ({
         <span class="cnf-button__text">Create event</span>
       </a>
     </div>
+    {error ? (
+      <p class="cnf-admin-empty">Couldn't load the events. Please try again.</p>
+    ) : sorted.length === 0 ? (
+      <p class="cnf-admin-empty">No events yet. Use "Create event" to add the first one.</p>
+    ) : (
     <table class="cnf-admin-table">
       <thead>
         <tr>
@@ -58,6 +64,7 @@ const sorted = (data ?? []).map((event) => ({
         ))}
       </tbody>
     </table>
+    )}
 
   </section>
 </AdminLayout>

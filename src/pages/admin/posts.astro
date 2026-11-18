@@ -19,6 +19,9 @@ const posts = (await getCollection("blog")).sort(
         <span class="cnf-button__text">Create post</span>
       </a>
     </div>
+    {posts.length === 0 ? (
+      <p class="cnf-admin-empty">No posts yet. Use "Create post" to add the first one.</p>
+    ) : (
     <table class="cnf-admin-table">
       <thead>
         <tr>
@@ -39,6 +42,7 @@ const posts = (await getCollection("blog")).sort(
         ))}
       </tbody>
     </table>
+    )}
   </section>
 </AdminLayout>
 

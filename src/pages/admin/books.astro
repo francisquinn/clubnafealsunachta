@@ -15,6 +15,9 @@ const books = await getCollection("books");
         <span class="cnf-button__text">Create book</span>
       </a>
     </div>
+    {books.length === 0 ? (
+      <p class="cnf-admin-empty">No books yet. Use "Create book" to add the first one.</p>
+    ) : (
     <table class="cnf-admin-table">
       <thead>
         <tr>
@@ -33,5 +36,6 @@ const books = await getCollection("books");
         ))}
       </tbody>
     </table>
+    )}
   </section>
 </AdminLayout>

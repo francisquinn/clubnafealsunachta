@@ -3,9 +3,10 @@ export const prerender = false;
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { supabaseAdmin } from "../../lib/supabase";
 
-const { data: members } = supabaseAdmin
+const { data: members, error } = supabaseAdmin
   ? await supabaseAdmin.from("members").select("id, username, full_name, email, is_admin, created_at").order("created_at", { ascending: false })
-  : { data: [] };
+  : { data: [], error: { message: "Supabase admin client is not configured" } };
+if (error) console.error("Failed to load admin members list:", error.message);
 ---
 
 <AdminLayout pageTitle="Members">
@@ -16,6 +17,11 @@ const { data: members } = supabaseAdmin
         <span class="cnf-button__text">Add member</span>
       </a>
     </div>
+    {error ? (
+      <p class="cnf-admin-empty">Couldn't load the members. Please try again.</p>
+    ) : (members ?? []).length === 0 ? (
+      <p class="cnf-admin-empty">No members yet. Use "Add member" to add the first one.</p>
+    ) : (
     <table class="cnf-admin-table">
       <thead>
         <tr>
@@ -38,5 +44,6 @@ const { data: members } = supabaseAdmin
         ))}
       </tbody>
     </table>
+    )}
   </section>
 </AdminLayout>
