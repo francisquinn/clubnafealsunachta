@@ -6,9 +6,10 @@ interface AddToCalendarButtonProps {
   icsHref: string;
   icsFilename: string;
   googleUrl: string;
+  outlookUrl: string;
 }
 
-// Both hrefs are computed build-time from the same event data the page
+// All the hrefs are computed build-time from the same event data the page
 // already renders (see [eventSlug].astro) — this component only owns the
 // open/close interaction, via the same Dropdown used by the nav/account
 // menus, not the calendar logic itself.
@@ -16,6 +17,7 @@ export default function AddToCalendarButton({
   icsHref,
   icsFilename,
   googleUrl,
+  outlookUrl,
 }: AddToCalendarButtonProps) {
   const toggleRef = useRef<HTMLButtonElement>(null);
   // Server-rendered (and no-JS) markup keeps `download` — the safe default,
@@ -50,6 +52,9 @@ export default function AddToCalendarButton({
           {...(isSafari ? {} : { download: icsFilename })}
         >
           Apple Calendar
+        </a>
+        <a className="cnf-nav__link" href={outlookUrl} target="_blank" rel="noopener">
+          Outlook
         </a>
       </Dropdown>
     </div>

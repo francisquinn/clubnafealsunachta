@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLiveEvent } from "../../lib/useLiveEvent";
-import { buildGoogleCalendarUrl } from "../../lib/ics";
+import { buildGoogleCalendarUrl, buildOutlookCalendarUrl } from "../../lib/ics";
 import { liveEventToIcsData } from "../../lib/liveEventIcs";
 import { isPastDate } from "../../utils/script";
 import JoinEventButton from "../JoinEventButton/JoinEventButton";
@@ -27,6 +27,7 @@ export default function EventLiveActions({
   icsHref,
   icsFilename,
   googleUrl,
+  outlookUrl,
 }: EventLiveActionsProps) {
   const { live, gone } = useLiveEvent(slug);
   const [mounted, setMounted] = useState(false);
@@ -37,13 +38,16 @@ export default function EventLiveActions({
   let url = meetingUrl;
   let ics = icsHref;
   let google = googleUrl;
+  let outlook = outlookUrl;
   if (live) {
     visible = !isPastDate(live.endDate);
     online = live.isOnline;
     url = live.meetingUrl;
     // The static .ics is frozen at build; the live route serves current data.
     ics = `/api/event-ics/${encodeURIComponent(slug)}`;
-    google = buildGoogleCalendarUrl(liveEventToIcsData(slug, live));
+    const liveIcsData = liveEventToIcsData(slug, live);
+    google = buildGoogleCalendarUrl(liveIcsData);
+    outlook = buildOutlookCalendarUrl(liveIcsData);
   } else {
     visible = visibleAtBuild && !(mounted && isPastDate(endDate));
   }
@@ -53,7 +57,7 @@ export default function EventLiveActions({
   return (
     <>
       {online && url ? <JoinEventButton meetingUrl={url} /> : null}
-      <AddToCalendarButton icsHref={ics} icsFilename={icsFilename} googleUrl={google} />
+      <AddToCalendarButton icsHref={ics} icsFilename={icsFilename} googleUrl={google} outlookUrl={outlook} />
     </>
   );
 }
@@ -67,4 +71,5 @@ type EventLiveActionsProps = {
   icsHref: string;
   icsFilename: string;
   googleUrl: string;
+  outlookUrl: string;
 };

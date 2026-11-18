@@ -2,7 +2,7 @@
 export const prerender = true;
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { formatEventDate, formatEventEndTime, isEventExpired } from "../../../utils/script";
-import { buildGoogleCalendarUrl, toEventIcsData } from "../../../lib/ics";
+import { buildGoogleCalendarUrl, buildOutlookCalendarUrl, toEventIcsData } from "../../../lib/ics";
 import "../../../styles/event.css";
 import Banner from "../../../layouts/Banner.astro";
 import EventRsvp from "../../../components/EventRsvp/EventRsvp";
@@ -21,11 +21,12 @@ const { event } = Astro.props;
 const { chapterSlug } = Astro.params;
 
 // #28/#76: an "Add to calendar" dropdown for upcoming events (Google Calendar
-// / Apple Calendar), built at build time from the same normalized event data
-// the page renders. Google gets a real deep link — no file, no MIME
-// sniffing. Apple/Outlook-desktop/everything-else gets a real same-origin
-// .ics file at [eventSlug].ics.ts (kept as a separate static route in
-// lockstep with this page's own getStaticPaths) rather than a `data:` URI —
+// / Outlook / Apple Calendar), built at build time from the same normalized
+// event data the page renders. Google and Outlook (#207, Outlook on the web)
+// get real deep links — no file, no MIME sniffing. Apple/Outlook-desktop/
+// everything-else gets a real same-origin .ics file at [eventSlug].ics.ts
+// (kept as a separate static route in lockstep with this page's own
+// getStaticPaths) rather than a `data:` URI —
 // WebKit blocks top-level navigation to `data:` URLs, which silently broke
 // "Apple Calendar" in real iOS Safari (#76). AddToCalendarButton still keeps
 // a `download` filename for every browser except real Safari (confirmed live
@@ -38,6 +39,7 @@ const icsEventData = toEventIcsData(event);
 const icsHref = `/${chapterSlug}/events/${event.data.slug}.ics`;
 const icsFilename = `${event.data.slug}.ics`;
 const googleCalendarUrl = buildGoogleCalendarUrl(icsEventData);
+const outlookCalendarUrl = buildOutlookCalendarUrl(icsEventData);
 // Normalized so tags always show alphabetically, and ones off the fixed list
 // (e.g. old free-text tags) are skipped.
 const tagLabels = normalizeTags(event.data.tags ?? []).flatMap((slug) => getTagLabel(slug) ?? []);
@@ -97,6 +99,7 @@ const tagLabels = normalizeTags(event.data.tags ?? []).flatMap((slug) => getTagL
         icsHref={icsHref}
         icsFilename={icsFilename}
         googleUrl={googleCalendarUrl}
+        outlookUrl={outlookCalendarUrl}
         client:load
       />
     </div>

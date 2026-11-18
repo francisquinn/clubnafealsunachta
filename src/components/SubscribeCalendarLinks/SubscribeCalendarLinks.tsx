@@ -5,12 +5,22 @@ interface SubscribeCalendarLinksProps {
 }
 
 // #80: a quiet line under the events list for subscribing to a chapter's whole
-// feed (Meetup puts theirs at the bottom of the calendar too). Both links
-// hand the calendar app a URL to keep re-fetching, not a one-off file. No
+// feed (Meetup puts theirs at the bottom of the calendar too). Each link
+// hands the calendar app a URL to keep re-fetching, not a one-off file. No
 // state, so it renders from Astro with no client directive.
+//
+// Outlook (#207) gets Outlook on the web's add-from-web link (outlook.live.com,
+// personal accounts, like the per-event Outlook option) with the https feed
+// and a name prefilled. Microsoft doesn't document it, so it's untested
+// against a real account; Outlook subscribes to https, not webcal.
 export default function SubscribeCalendarLinks({ feedUrl, chapterName }: SubscribeCalendarLinksProps) {
   const webcalUrl = feedUrl.replace(/^https?:/, "webcal:");
   const googleUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcalUrl)}`;
+  const outlookParams = new URLSearchParams({
+    url: feedUrl.replace(/^webcal:/, "https:"),
+    name: `Club na Fealsúnachta ${chapterName}`,
+  });
+  const outlookUrl = `https://outlook.live.com/calendar/0/addfromweb?${outlookParams.toString().replace(/\+/g, "%20")}`;
 
   return (
     <p className="cnf-events__subscribe">
@@ -25,6 +35,8 @@ export default function SubscribeCalendarLinks({ feedUrl, chapterName }: Subscri
       Subscribe to the {chapterName} events calendar:
       <br />
       <a href={googleUrl} target="_blank" rel="noopener">Google Calendar</a>
+      {" · "}
+      <a href={outlookUrl} target="_blank" rel="noopener">Outlook</a>
       {" · "}
       <a href={webcalUrl}>Apple Calendar</a>
     </p>
