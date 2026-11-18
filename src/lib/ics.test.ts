@@ -3,6 +3,7 @@ import {
   buildCalendarFeedIcs,
   buildEventIcs,
   buildGoogleCalendarUrl,
+  buildOutlookCalendarUrl,
   escapeIcsText,
   foldIcsLine,
   formatIcsDateTime,
@@ -370,5 +371,65 @@ describe("buildGoogleCalendarUrl", () => {
     );
     // URLSearchParams round-trips the raw value — no backslash-escaping.
     expect(new URL(url).searchParams.get("text")).toBe("Free Will & Friends, Semicolon; Talk");
+  });
+});
+
+describe("buildOutlookCalendarUrl", () => {
+  it("builds an outlook.live.com add-event deep link", () => {
+    const url = buildOutlookCalendarUrl(makeEvent());
+    expect(url.startsWith("https://outlook.live.com/calendar/0/deeplink/compose?")).toBe(true);
+    const params = new URL(url).searchParams;
+    expect(params.get("path")).toBe("/calendar/action/compose");
+    expect(params.get("rru")).toBe("addevent");
+  });
+
+  it("encodes the name as subject and the UTC start/end as ISO times", () => {
+    const params = new URL(buildOutlookCalendarUrl(makeEvent())).searchParams;
+    expect(params.get("subject")).toBe("Philosophy Talk: Free Will");
+    expect(params.get("startdt")).toBe("2026-09-05T17:00:00Z");
+    expect(params.get("enddt")).toBe("2026-09-05T18:30:00Z");
+  });
+
+  it("includes venue name and url as location for in-person events", () => {
+    const params = new URL(buildOutlookCalendarUrl(makeEvent())).searchParams;
+    expect(params.get("location")).toBe("Caffe San Marco (https://maps.google.com/caffe)");
+  });
+
+  it("uses 'Online (url)' as location for online events with a meeting url", () => {
+    const url = buildOutlookCalendarUrl(
+      makeEvent({ isOnline: true, venue: null, meetingUrl: "https://meet.jit.si/feel-philosophy" })
+    );
+    expect(new URL(url).searchParams.get("location")).toBe("Online (https://meet.jit.si/feel-philosophy)");
+  });
+
+  it("omits the location param entirely when there is none", () => {
+    const url = buildOutlookCalendarUrl(makeEvent({ isOnline: false, venue: null, meetingUrl: null }));
+    expect(new URL(url).searchParams.has("location")).toBe(false);
+  });
+
+  it("combines description and summary into body, same as the .ics", () => {
+    const url = buildOutlookCalendarUrl(makeEvent({ description: "Discussion.", summary: "Free will." }));
+    expect(new URL(url).searchParams.get("body")).toBe("Discussion.\n\nFree will.");
+  });
+
+  it("omits the body param entirely when both are absent", () => {
+    expect(new URL(buildOutlookCalendarUrl(ALL_WITHOUT_DESCRIPTION)).searchParams.has("body")).toBe(false);
+  });
+
+  it("writes spaces as %20 and round-trips special characters", () => {
+    const url = buildOutlookCalendarUrl(makeEvent({ name: "Free Will & Friends, Semicolon; Talk" }));
+    expect(url).not.toContain("+");
+    expect(url).toContain("subject=Free%20Will%20%26%20Friends%2C%20Semicolon%3B%20Talk");
+    expect(new URL(url).searchParams.get("subject")).toBe("Free Will & Friends, Semicolon; Talk");
+  });
+
+  it("keeps a literal + as %2B, so only real spaces become %20", () => {
+    const url = buildOutlookCalendarUrl(makeEvent({ name: "C++ and a+b" }));
+    expect(url).toContain("subject=C%2B%2B%20and%20a%2Bb");
+    expect(new URL(url).searchParams.get("subject")).toBe("C++ and a+b");
+  });
+
+  it("does not throw on an invalid date", () => {
+    expect(() => buildOutlookCalendarUrl(makeEvent({ date: new Date("nope") }))).not.toThrow();
   });
 });

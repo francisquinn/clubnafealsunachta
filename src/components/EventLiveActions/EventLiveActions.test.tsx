@@ -41,6 +41,7 @@ function renderActions(props: Partial<React.ComponentProps<typeof EventLiveActio
       icsHref="/chapter/events/talk.ics"
       icsFilename="talk.ics"
       googleUrl="https://calendar.google.com/build"
+      outlookUrl="https://outlook.live.com/build"
       {...props}
     />,
   );
@@ -63,6 +64,7 @@ describe("EventLiveActions (#197)", () => {
     renderActions();
     expect(screen.getByRole("link", { name: /join online/i })).toHaveAttribute("href", BUILD_URL);
     expect(screen.getByRole("link", { name: /apple calendar/i })).toHaveAttribute("href", "/chapter/events/talk.ics");
+    expect(screen.getByRole("link", { name: /^outlook$/i })).toHaveAttribute("href", "https://outlook.live.com/build");
   });
 
   it("swaps in a changed meeting link and live calendar links", async () => {
@@ -73,6 +75,7 @@ describe("EventLiveActions (#197)", () => {
     );
     expect(screen.getByRole("link", { name: /apple calendar/i })).toHaveAttribute("href", "/api/event-ics/talk");
     expect(screen.getByRole("link", { name: /google calendar/i }).getAttribute("href")).toContain("20300601T110000Z");
+    expect(screen.getByRole("link", { name: /^outlook$/i }).getAttribute("href")).toContain("startdt=2030-06-01T11%3A00%3A00Z");
   });
 
   it("hides the buttons when the live data says the event has ended", async () => {
@@ -134,6 +137,7 @@ describe("EventLiveActions (#197)", () => {
           icsHref="/chapter/events/talk.ics"
           icsFilename="talk.ics"
           googleUrl="https://calendar.google.com/build"
+          outlookUrl="https://outlook.live.com/build"
         />
       </>,
     );
