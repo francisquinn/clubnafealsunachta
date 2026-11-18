@@ -4,7 +4,6 @@
 // one shape, so the two can't disagree.
 import { supabaseAdmin } from "./supabase";
 import { unwrapRelation } from "./supabaseRelations";
-import type { EventIcsData } from "./ics";
 
 // Dates are ISO strings (JSON-safe for the action); toEventIcsData-compatible
 // once parsed — see liveEventToIcsData.
@@ -45,6 +44,6 @@ export async function fetchLiveEvent(slug: string): Promise<LiveEvent | null> {
   };
 }
 
-export function liveEventToIcsData(slug: string, live: LiveEvent): EventIcsData {
-  return { ...live, slug, date: new Date(live.date), endDate: new Date(live.endDate) };
-}
+// Lives in its own file so the browser can import it without pulling in the
+// Supabase client above; re-exported so server callers keep one import.
+export { liveEventToIcsData } from "./liveEventIcs";

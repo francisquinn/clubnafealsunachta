@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLiveEvent } from "../../lib/useLiveEvent";
 import { buildGoogleCalendarUrl } from "../../lib/ics";
-import { liveEventToIcsData } from "../../lib/liveEvent";
+import { liveEventToIcsData } from "../../lib/liveEventIcs";
 import { isPastDate } from "../../utils/script";
 import JoinEventButton from "../JoinEventButton/JoinEventButton";
 import AddToCalendarButton from "../AddToCalendarButton/AddToCalendarButton";
