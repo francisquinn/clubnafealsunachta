@@ -19,9 +19,12 @@ const state = vi.hoisted(() => {
     rsvpRows: [] as {
       member_id: string;
       status: string;
+      updated_at?: string | null;
       members: { id: string; username: string; full_name: string | null; display_full_name: boolean; avatar_url: string | null } | null;
     }[],
     rsvpFetchError: null as Error | null,
+    // rsvps: the column list the last select asked for (#206 needs updated_at).
+    rsvpSelectColumns: null as string | null,
     // rsvps: the row setEventRsvp tried to upsert (captured for assertions).
     upsertedRow: null as Record<string, unknown> | null,
     upsertError: null as Error | null,
@@ -50,12 +53,15 @@ vi.mock('../lib/supabase', () => {
       }
       if (table === 'rsvps') {
         return {
-          select: () => ({
-            eq: () =>
-              state.rsvpFetchError
-                ? Promise.resolve({ data: null, error: state.rsvpFetchError })
-                : Promise.resolve({ data: state.rsvpRows, error: null }),
-          }),
+          select: (columns: string) => {
+            state.rsvpSelectColumns = columns;
+            return {
+              eq: () =>
+                state.rsvpFetchError
+                  ? Promise.resolve({ data: null, error: state.rsvpFetchError })
+                  : Promise.resolve({ data: state.rsvpRows, error: null }),
+            };
+          },
           upsert: (rows: Record<string, unknown> | Record<string, unknown>[]) => {
             state.upsertedRow = Array.isArray(rows) ? (rows[0] ?? null) : rows;
             return { error: state.upsertError };
@@ -114,6 +120,7 @@ beforeEach(() => {
   state.eventLookupError = null;
   state.rsvpRows = [];
   state.rsvpFetchError = null;
+  state.rsvpSelectColumns = null;
   state.upsertedRow = null;
   state.upsertError = null;
   state.deletedFilter = null;
@@ -159,20 +166,37 @@ describe('getEventRsvps', () => {
     });
   });
 
-  it('sorts named lists by display name', async () => {
+  it('sorts named lists newest RSVP first (#206)', async () => {
     state.sessionCookie = 'session-member-1';
     state.rsvpRows = [
-      { member_id: 'member-1', status: 'going', members: MEMBER_ALICE },
-      { member_id: 'member-2', status: 'going', members: MEMBER_BOB },
+      { member_id: 'member-1', status: 'going', updated_at: '2026-11-01T10:00:00Z', members: MEMBER_ALICE },
+      { member_id: 'member-2', status: 'going', updated_at: '2026-11-03T10:00:00Z', members: MEMBER_BOB },
     ];
 
     const result = await getHandler({ slug: 'philosophy-101' }, context());
 
-    // "alice" sorts before "Bob Smith" case-sensitively, but getDisplayName
-    // resolves display_full_name members to their full name — deterministic
-    // ordering matters more than the exact collation here.
     expect(result.lists).not.toBeNull();
-    expect(result.lists?.going.map((m) => m.username)).toEqual(['alice', 'bob']);
+    expect(result.lists?.going.map((m) => m.username)).toEqual(['bob', 'alice']);
+    // Without updated_at every row would sort as undated, silently falling
+    // back to alphabetical order.
+    expect(state.rsvpSelectColumns?.split(',').map((c) => c.trim())).toContain('updated_at');
+  });
+
+  it('puts RSVPs without a timestamp last and breaks ties by display name', async () => {
+    state.sessionCookie = 'session-member-1';
+    const dave = { ...MEMBER_ALICE, id: 'member-4', username: 'dave' };
+    state.rsvpRows = [
+      { member_id: 'member-4', status: 'going', updated_at: null, members: dave },
+      { member_id: 'member-2', status: 'going', updated_at: '2026-11-01T10:00:00Z', members: MEMBER_BOB },
+      { member_id: 'member-1', status: 'going', updated_at: '2026-11-01T10:00:00Z', members: MEMBER_ALICE },
+      { member_id: 'member-3', status: 'going', updated_at: 'not a date', members: MEMBER_CAROL },
+    ];
+
+    const result = await getHandler({ slug: 'philosophy-101' }, context());
+
+    // Same timestamp: alice before bob by display name. No or invalid
+    // timestamp: after every dated row, again by display name.
+    expect(result.lists?.going.map((m) => m.username)).toEqual(['alice', 'bob', 'carol', 'dave']);
   });
 
   it('drops the full name of a member who chose not to show it', async () => {
