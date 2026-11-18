@@ -1,0 +1,29 @@
+---
+// #208: the site's own page for any URL that doesn't match a page or a
+// _redirects rule, instead of the host's generic error page.
+//
+// Rendered on request on purpose, not prerendered. The Netlify adapter serves
+// a prerendered 404.html straight away for unmatched URLs, before
+// src/middleware.ts runs, which would break #195's redirect from a moved
+// event's old URL (the middleware only checks for a moved event on a 404).
+export const prerender = false;
+
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const pageTitle = "Page does not exist";
+---
+
+<BaseLayout pageTitle={pageTitle} description="This page doesn't exist on the Club na Fealsúnachta website.">
+  <meta slot="head" name="robots" content="noindex" />
+  <section class="cnf-section cnf-not-found">
+    <h1>{pageTitle}</h1>
+    <p>We couldn't find the page you were looking for. It may have moved, or the link may be wrong.</p>
+    <p><a href="/">Go to the homepage</a></p>
+  </section>
+</BaseLayout>
+
+<style>
+  .cnf-not-found {
+    max-width: 720px;
+  }
+</style>
