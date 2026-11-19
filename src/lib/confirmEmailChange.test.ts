@@ -59,8 +59,12 @@ describe('confirmEmailChange', () => {
   });
 
   it('only accepts a link at least as new as the latest request', async () => {
+    // Relative to now, not a fixed date: tokens expire after 24 hours and are
+    // verified against the real clock, so a hardcoded date stops working the
+    // day after it's written.
+    const wholeSecond = Math.floor(Date.now() / 1000) * 1000;
     vi.useFakeTimers({ toFake: ['Date'] });
-    vi.setSystemTime(new Date('2026-11-11T12:00:00.400Z'));
+    vi.setSystemTime(new Date(wholeSecond + 400));
     let token: string;
     try {
       token = createEmailChangeToken('m1', 'old@example.com', 'new@example.com');
@@ -68,9 +72,9 @@ describe('confirmEmailChange', () => {
       vi.useRealTimers();
     }
     await confirmEmailChange(token);
-    // Issued at 12:00:00 (whole seconds), so a request stamped any time up
-    // to the end of that second still matches; a later one doesn't.
-    expect(state.updates[0]!.lt).toEqual([['email_change_sent_at', '2026-11-11T12:00:01.000Z']]);
+    // Issued at the whole second (iat is in seconds), so a request stamped any
+    // time up to the end of that second still matches; a later one doesn't.
+    expect(state.updates[0]!.lt).toEqual([['email_change_sent_at', new Date(wholeSecond + 1000).toISOString()]]);
   });
 
   it('treats a used or outdated link as invalid', async () => {
