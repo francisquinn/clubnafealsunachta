@@ -23,11 +23,13 @@ export default function NavMenu({ pathname, activeNav }: NavMenuProps) {
   // About, How it works, Values and Library share one dropdown on desktop, so
   // the trigger is the current page when any of them is.
   const clubActive = ["/about", "/how-it-works", "/values", "/library"].some((path) => pathname.startsWith(path));
-  // Only the events pages are chapter-prefixed (About/Blog stay global), so
-  // "current chapter" only means anything while already on one; elsewhere
-  // (home, blog, about, profile) there's no chapter in the URL to read, so the
-  // Events link falls back to the one chapter that exists today.
-  const currentChapterSlug = pathname.match(CHAPTER_EVENTS_PATH)?.[1] ?? DEFAULT_CHAPTER_SLUG;
+  // The current chapter comes from its events pages (/<chapter>/events...) or,
+  // on the chapter's own page, from the page declaring itself via activeNav
+  // (a bare /<chapter>/ path can't be told apart from /blog/ or /profile/).
+  // Everywhere else there's no chapter to read, so Events falls back to the
+  // default chapter.
+  const chapterPageSlug = activeNav === "chapters" ? pathname.split("/")[1] : undefined;
+  const currentChapterSlug = pathname.match(CHAPTER_EVENTS_PATH)?.[1] ?? (chapterPageSlug || DEFAULT_CHAPTER_SLUG);
   const [isOpen, setIsOpen] = useState(false);
   const handleOpenChange = useCallback((open: boolean) => setIsOpen(open), []);
 
