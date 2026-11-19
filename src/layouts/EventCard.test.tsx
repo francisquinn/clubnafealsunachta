@@ -33,6 +33,13 @@ describe("EventCard", () => {
     expect(container.querySelector(".cnf-event__date")).toHaveTextContent(new RegExp(`^${formatEventDate(event.date)}$`));
   });
 
+  it("shows the start time in the event's chapter's timezone (#233)", () => {
+    // 18:00 UTC is 19:00 in Rome in January, 03:00 the next day in Tokyo.
+    const event = makeEvent({ location: { id: 3, name: "Tokyo", slug: "tokyo", timezone: "Asia/Tokyo" } });
+    const { container } = render(<EventCard event={event} />);
+    expect(container.querySelector(".cnf-event__date")).toHaveTextContent("Fri Jan 2 @ 03:00");
+  });
+
   it("shows the chapter under the date, with no RSVP count", () => {
     render(<EventCard event={makeEvent({ rsvpCounts: { going: 12, maybe: 3, not_going: 1 } })} />);
     expect(screen.getByText("Trieste")).toBeInTheDocument();

@@ -53,7 +53,7 @@ const tagLabels = normalizeTags(event.data.tags ?? []).flatMap((slug) => getTagL
     <h1>{event.data.name}</h1>
     <div class="cnf-event-page__details">
       <span class="cnf-event-page__details-info"
-        >{formatEventDate(new Date(event.data.date))}–{formatEventEndTime(new Date(event.data.endDate))}</span
+        >{formatEventDate(new Date(event.data.date), event.data.location.timezone)}–{formatEventEndTime(new Date(event.data.endDate), event.data.location.timezone)}</span
       >
       <EventLocation
         slug={event.data.slug}

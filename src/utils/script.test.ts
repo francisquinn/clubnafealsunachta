@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isValidEmail, isEventExpired, formatBlogDate, formatEventDate, getEventLiveState } from "./script.ts";
+import { isValidEmail, isEventExpired, formatBlogDate, formatEventDate, formatEventEndTime, getEventLiveState } from "./script.ts";
 import type { Event } from "../types/types.ts";
 
 describe("isValidEmail", () => {
@@ -130,5 +130,35 @@ describe("formatEventDate", () => {
     // 17:00 UTC on Feb 5 2026 is 18:00 in Rome (CET, UTC+1).
     const result = formatEventDate(new Date("2026-02-05T17:00:00.000Z"));
     expect(result).toBe("Thu Feb 5 @ 18:00");
+  });
+
+  it("renders in the given chapter timezone instead of Rome's (#233)", () => {
+    // 16:30 UTC on Sep 4 2026 is 12:30 in New York (EDT, UTC-4), but 18:30
+    // in Rome.
+    const result = formatEventDate(new Date("2026-09-04T16:30:00.000Z"), "America/New_York");
+    expect(result).toBe("Fri Sep 4 @ 12:30");
+  });
+
+  it("can land on a different calendar day than Rome's", () => {
+    // 22:30 UTC on Sep 4 is 07:30 on Sep 5 in Tokyo (UTC+9), 00:30 on Sep 5 in Rome.
+    expect(formatEventDate(new Date("2026-09-04T22:30:00.000Z"), "Asia/Tokyo")).toBe("Sat Sep 5 @ 07:30");
+  });
+
+  it("falls back to Rome's zone for an invalid zone instead of throwing", () => {
+    expect(formatEventDate(new Date("2026-09-04T16:30:00.000Z"), "Europe/Rom")).toBe("Fri Sep 4 @ 18:30");
+  });
+
+  it("falls back to Rome's zone when the chapter has none", () => {
+    const date = new Date("2026-09-04T16:30:00.000Z");
+    expect(formatEventDate(date, null)).toBe("Fri Sep 4 @ 18:30");
+    expect(formatEventDate(date, undefined)).toBe("Fri Sep 4 @ 18:30");
+  });
+});
+
+describe("formatEventEndTime", () => {
+  it("renders the end time in the given chapter timezone, falling back to Rome's", () => {
+    const date = new Date("2026-09-04T18:00:00.000Z");
+    expect(formatEventEndTime(date)).toBe("20:00");
+    expect(formatEventEndTime(date, "America/New_York")).toBe("14:00");
   });
 });

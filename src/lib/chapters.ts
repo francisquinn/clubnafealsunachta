@@ -16,8 +16,8 @@ export type Chapter = {
   chat_url?: string | null;
   what_to_expect?: string[] | null;
   social?: { name: string; href: string; icon: string }[] | null;
-  // IANA zone the chapter's event times are in. Not read yet — see
-  // DEFAULT_CHAPTER_TIMEZONE.
+  // IANA zone the chapter's event times are in (#233); chapterTimezone()
+  // falls back to DEFAULT_CHAPTER_TIMEZONE when it's missing.
   timezone?: string;
 };
 

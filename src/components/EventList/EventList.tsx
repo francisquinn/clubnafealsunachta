@@ -5,7 +5,7 @@ import EventCard from "../../layouts/EventCard";
 import { formatBlogDate } from "../../utils/script";
 import Selector from "../Selector/Selector";
 import type { EventCollection } from "../../types/types";
-import { DEFAULT_CHAPTER_TIMEZONE } from "../../lib/chapterDefaults";
+import { chapterTimezone } from "../../lib/chapterDefaults";
 
 // #185: the chosen tab lives in the URL, so going back from an event's page
 // returns to the same tab instead of resetting to Upcoming.
@@ -95,7 +95,7 @@ export default function EventList(props: EventListProps) {
         <EventCard
           event={event.data}
           key={event.data.slug}
-          dateFormatter={(date) => formatBlogDate(date, DEFAULT_CHAPTER_TIMEZONE)}
+          dateFormatter={(date) => formatBlogDate(date, chapterTimezone(event.data.location.timezone))}
         />
     );
   }
