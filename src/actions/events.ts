@@ -4,7 +4,7 @@ import { supabase, supabaseAdmin } from '../lib/supabase';
 import { requireAdmin, isChapterInScope, scopeToAdminChapters, type AdminScope } from '../lib/auth';
 import { triggerNetlifyBuild } from '../lib/netlifyBuildHook';
 import { fetchLiveEvent } from '../lib/liveEvent';
-import { DEFAULT_CHAPTER_TIMEZONE, ONLINE_CHAPTER_SLUG } from '../lib/chapterDefaults';
+import { chapterTimezone, ONLINE_CHAPTER_SLUG } from '../lib/chapterDefaults';
 import { localWallTimeToUtc } from '../lib/timezone';
 import { resolveUniqueSlug } from '../lib/slugDedup';
 import { upsertRsvp } from './rsvps';
@@ -91,6 +91,26 @@ async function getOnlineChapterId(): Promise<number> {
   return onlineChapter.id;
 }
 
+// #233: the zone an event's wall-clock times are in is its chapter's own.
+async function getChapterTimezone(chapter_id: number): Promise<string> {
+  const { data: chapter, error } = await supabaseAdmin!
+    .from('chapters')
+    .select('timezone')
+    .eq('id', chapter_id)
+    .single();
+  if (error) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
+  return chapterTimezone(chapter.timezone);
+}
+
+// The two form values are naive "YYYY-MM-DDTHH:mm" strings in the same zone,
+// so they compare correctly as text. Checked before any venue/chapter lookup
+// (which can upsert a venue) so a bad submission has no side effects.
+function assertEndAfterStart(rawDate: string, rawEndDate: string) {
+  if (rawEndDate <= rawDate) {
+    throw new ActionError({ code: 'BAD_REQUEST', message: 'End time must be after the start time' });
+  }
+}
+
 function assertNotOnlineVenue(chapter_id: number, onlineChapterId: number) {
   if (chapter_id !== onlineChapterId) return;
   throw new ActionError({ code: 'BAD_REQUEST', message: 'The Online chapter has no venues' });
@@ -146,23 +166,22 @@ export const createEvent = defineAction({
 
     const slug = await resolveUniqueSlug(supabaseAdmin, 'events', rawSlug);
 
-    // rawDate/rawEndDate are naive "YYYY-MM-DDTHH:mm" from timezone-less
-    // datetime-local inputs — always the chapter's own local wall-clock time
-    // (see DEFAULT_CHAPTER_TIMEZONE), never UTC. Converted to real UTC instants
-    // here, once, before either reaches storage.
-    const date = localWallTimeToUtc(rawDate, DEFAULT_CHAPTER_TIMEZONE).toISOString();
-    const end_date = localWallTimeToUtc(rawEndDate, DEFAULT_CHAPTER_TIMEZONE).toISOString();
-
     // #100: an end time before (or equal to) the start isn't a real event
     // window — checked here rather than left to the DB's own
     // events_end_date_after_date constraint so a bad submission comes back
     // as a normal form error instead of a raw Postgres failure.
-    if (end_date <= date) {
-      throw new ActionError({ code: 'BAD_REQUEST', message: 'End time must be after the start time' });
-    }
+    assertEndAfterStart(rawDate, rawEndDate);
 
     const venue = await resolveVenue(formData, is_online, admin);
     const event_chapter_id = await resolveEventChapterId(is_online, venue, admin);
+
+    // rawDate/rawEndDate are naive "YYYY-MM-DDTHH:mm" from timezone-less
+    // datetime-local inputs — always the event's chapter's own local
+    // wall-clock time (#233), never UTC. Converted to real UTC instants
+    // here, once, before either reaches storage.
+    const timeZone = await getChapterTimezone(event_chapter_id);
+    const date = localWallTimeToUtc(rawDate, timeZone).toISOString();
+    const end_date = localWallTimeToUtc(rawEndDate, timeZone).toISOString();
 
     const { data: event, error } = await supabaseAdmin
       .from('events')
@@ -239,13 +258,7 @@ export const updateEvent = defineAction({
 
     const tags = parseTags(formData);
 
-    // See createEvent — same naive-local-to-UTC conversion, same reasoning.
-    const date = localWallTimeToUtc(rawDate, DEFAULT_CHAPTER_TIMEZONE).toISOString();
-    const end_date = localWallTimeToUtc(rawEndDate, DEFAULT_CHAPTER_TIMEZONE).toISOString();
-
-    if (end_date <= date) {
-      throw new ActionError({ code: 'BAD_REQUEST', message: 'End time must be after the start time' });
-    }
+    assertEndAfterStart(rawDate, rawEndDate);
 
     // A chapter-scoped admin also can't be allowed to edit an event they don't
     // currently administer, even if their submitted new venue/chapter would
@@ -257,6 +270,15 @@ export const updateEvent = defineAction({
       .single();
     if (existingError) throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: existingError.message });
     assertChapterInScope(admin, existing.chapter_id);
+
+    // The edit form showed these times in the zone of the event's *current*
+    // chapter, so that's the zone they're read in — not the chapter the event
+    // is moving to. Otherwise moving an event between chapters in different
+    // zones would silently shift its instant. After the save it's shown in its
+    // new chapter's zone. See createEvent for the naive-local-to-UTC rule.
+    const timeZone = await getChapterTimezone(existing.chapter_id);
+    const date = localWallTimeToUtc(rawDate, timeZone).toISOString();
+    const end_date = localWallTimeToUtc(rawEndDate, timeZone).toISOString();
 
     const venue = await resolveVenue(formData, is_online, admin);
     const event_chapter_id = await resolveEventChapterId(is_online, venue, admin);

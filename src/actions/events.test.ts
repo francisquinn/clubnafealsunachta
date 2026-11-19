@@ -49,6 +49,10 @@ const state = vi.hoisted(() => {
     onlineChapterRow: { id: 8 } as { id: number } | null,
     onlineChapterError: null as Error | null,
     chapterLookupError: null as Error | null,
+    // #233: the `timezone` column the by-id chapter lookup returns; undefined
+    // exercises the Europe/Rome fallback.
+    chapterTimezone: undefined as string | undefined,
+    chapterTimezoneById: {} as Record<number, string>,
 
     // rsvps (admin client): the host's seeded "going" row on createEvent.
     rsvpInsertPayload: null as Record<string, unknown> | null,
@@ -174,13 +178,13 @@ vi.mock('../lib/supabase', () => {
       if (table === 'chapters') {
         return {
           select: () => ({
-            eq: (col: string) => ({
+            eq: (col: string, val?: unknown) => ({
               single: () =>
                 col === 'slug'
                   ? Promise.resolve({ data: state.onlineChapterError ? null : state.onlineChapterRow, error: state.onlineChapterError })
                   : state.chapterLookupError
                   ? Promise.resolve({ data: null, error: state.chapterLookupError })
-                  : Promise.resolve({ data: state.chapterBySlugLookup, error: null }),
+                  : Promise.resolve({ data: { ...state.chapterBySlugLookup, timezone: state.chapterTimezoneById[Number(val)] ?? state.chapterTimezone }, error: null }),
             }),
           }),
         };
@@ -314,6 +318,8 @@ beforeEach(() => {
   state.onlineChapterRow = { id: 8 };
   state.onlineChapterError = null;
   state.chapterLookupError = null;
+  state.chapterTimezone = undefined;
+  state.chapterTimezoneById = {};
   state.rsvpInsertPayload = null;
   state.rsvpInsertError = null;
   state.chaptersList = [];
@@ -429,6 +435,44 @@ describe('createEvent', () => {
     // #205: left unannounced (announced_at null) for the deploy this build
     // triggers to email; no Mailchimp draft any more.
     expect(state.insertedEvent).not.toHaveProperty('announced_at');
+  });
+
+  it("converts the form's wall time in the event's chapter's timezone, not Europe/Rome (#233)", async () => {
+    state.admin = SUPER_ADMIN;
+    state.chapterTimezone = 'Asia/Tokyo'; // UTC+9, no DST
+
+    await createHandler(form(ONLINE_FORM), context());
+
+    // '18:00'/'20:00' Tokyo time on Jan 1 — Rome would give 17:00Z/19:00Z.
+    expect(state.insertedEvent).toMatchObject({
+      date: '2099-01-01T09:00:00.000Z',
+      end_date: '2099-01-01T11:00:00.000Z',
+    });
+  });
+
+  it('throws INTERNAL_SERVER_ERROR when the chapter timezone lookup fails', async () => {
+    state.admin = SUPER_ADMIN;
+    state.chapterLookupError = new Error('boom');
+
+    await expect(createHandler(form(ONLINE_FORM), context())).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
+    expect(state.insertedEvent).toBeNull();
+  });
+
+  it("converts an in-person event's times in its venue's chapter's zone, not the Online chapter's (#233)", async () => {
+    state.admin = SUPER_ADMIN;
+    state.venueById = { id: 5, name: 'The Reading Room', url: null, chapter_id: 3 };
+    state.chapterTimezoneById = { 3: 'Asia/Tokyo' }; // Online (8) stays Europe/Rome
+
+    await createHandler(
+      form({ name: 'In-Person Talk', date: '2099-02-01T18:00', end_date: '2099-02-01T20:00', slug: 'in-person-talk', is_online: 'false', venue_id: '5', tags: 'ethics' }),
+      context()
+    );
+
+    expect(state.insertedEvent).toMatchObject({
+      chapter_id: 3,
+      date: '2099-02-01T09:00:00.000Z',
+      end_date: '2099-02-01T11:00:00.000Z',
+    });
   });
 
   it("creates an in-person event via an existing venue, using the venue's chapter", async () => {
@@ -685,6 +729,38 @@ describe('updateEvent', () => {
     expect(state.netlifyBuildCalled).toBe(true);
     // Only createEvent seeds a host RSVP — updating an event never should.
     expect(state.rsvpInsertPayload).toBeNull();
+  });
+
+  it("converts the form's wall time in the event's chapter's timezone on update too (#233)", async () => {
+    state.admin = SUPER_ADMIN;
+    state.existingEvent = { chapter_id: 8 };
+    state.chapterTimezone = 'America/New_York'; // EST, UTC-5, on Mar 1
+
+    await updateHandler(form(UPDATE_FORM), context());
+
+    // '18:00'/'20:00' New York time — Rome would give 17:00Z/19:00Z.
+    expect(state.updatedEvent).toMatchObject({
+      date: '2099-03-01T23:00:00.000Z',
+      end_date: '2099-03-02T01:00:00.000Z',
+    });
+  });
+
+  it("reads the form's times in the event's current chapter's zone when it moves to another chapter (#233)", async () => {
+    state.admin = SUPER_ADMIN;
+    // In Tokyo now (the edit form showed Tokyo wall time), moving to Online
+    // (chapter 8, Europe/Rome by default).
+    state.existingEvent = { chapter_id: 3 };
+    state.chapterTimezoneById = { 3: 'Asia/Tokyo' };
+
+    await updateHandler(form(UPDATE_FORM), context());
+
+    // 18:00/20:00 Tokyo (UTC+9) — the instant is kept, not re-read as Rome time
+    // (which would give 17:00Z/19:00Z).
+    expect(state.updatedEvent).toMatchObject({
+      date: '2099-03-01T09:00:00.000Z',
+      end_date: '2099-03-01T11:00:00.000Z',
+      chapter_id: 8,
+    });
   });
 
   it('throws BAD_REQUEST when an update removes every tag', async () => {

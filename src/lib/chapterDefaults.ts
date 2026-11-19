@@ -12,13 +12,32 @@
 // module (and its secret-key-reading env access) into the client bundle.
 export const DEFAULT_CHAPTER_SLUG = 'trieste';
 
-// Same "one chapter exists today" reasoning as DEFAULT_CHAPTER_SLUG, for the one
-// piece of chapter data that isn't a display fallback: the IANA zone every
-// event's wall-clock time (entered via a timezone-less datetime-local input)
-// is actually in. See src/lib/timezone.ts for where this crosses the
-// UTC/local boundary. Revisit alongside DEFAULT_CHAPTER_SLUG once a second real
-// chapter (in a different timezone) exists.
+// Fallback IANA zone for a chapter that has none (see chapterTimezone below):
+// the zone every event's wall-clock time (entered via a timezone-less
+// datetime-local input) is in is its chapter's `timezone`. See
+// src/lib/timezone.ts for where this crosses the UTC/local boundary.
 export const DEFAULT_CHAPTER_TIMEZONE = 'Europe/Rome';
+
+// #233: every chapter has its own `timezone` (chapters.timezone), and an
+// event's times are in its chapter's zone. DEFAULT_CHAPTER_TIMEZONE is only
+// the fallback for a chapter whose zone isn't usable (missing, or not a real
+// zone), so a bad value never shows times in the visitor's own zone. Lives here, not in chapters.ts, for the same
+// client-bundle reason as the constants above.
+// An unknown zone (a typo in the column, which has no check constraint) is
+// treated as missing: Intl throws a RangeError on it, which would otherwise
+// fail the whole static build and every admin events page.
+const validZones = new Set<string>();
+export function chapterTimezone(timezone?: string | null): string {
+  if (!timezone) return DEFAULT_CHAPTER_TIMEZONE;
+  if (validZones.has(timezone)) return timezone;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone });
+  } catch {
+    return DEFAULT_CHAPTER_TIMEZONE;
+  }
+  validZones.add(timezone);
+  return timezone;
+}
 
 // #177: Online is a chapter of its own (every online event belongs to it),
 // open to every admin rather than administered on its own — see

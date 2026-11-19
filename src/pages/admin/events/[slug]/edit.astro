@@ -7,7 +7,7 @@ import { supabase } from "../../../../lib/supabase";
 import { requireAdmin, isChapterInScope } from "../../../../lib/auth";
 import { unwrapRelation } from "../../../../lib/supabaseRelations";
 import { utcToLocalWallTime } from "../../../../lib/timezone";
-import { DEFAULT_CHAPTER_TIMEZONE } from "../../../../lib/chapterDefaults";
+import { chapterTimezone } from "../../../../lib/chapterDefaults";
 import "../../../../styles/form.css";
 
 // #37: a chapter-scoped admin may only edit events in their own chapters (Online
@@ -18,7 +18,7 @@ const { slug } = Astro.params;
 
 const { data: event, error } = await supabase!
   .from("events")
-  .select("id, name, date, end_date, slug, is_online, venue_id, chapter_id, meeting_url, instagram, facebook, meetup, description, summary, tags, venues(id, name, url)")
+  .select("id, name, date, end_date, slug, is_online, venue_id, chapter_id, meeting_url, instagram, facebook, meetup, description, summary, tags, venues(id, name, url), chapters(timezone)")
   .eq("slug", slug!)
   .single();
 
@@ -33,8 +33,9 @@ if (error || !event || !isChapterInScope(admin, event.chapter_id)) {
 // The datetime-local input needs the chapter's own local wall-clock time, not
 // raw UTC (see src/lib/timezone.ts) — event.date is now a true UTC instant,
 // so this has to convert back rather than just slicing the ISO string.
-const dateStr = utcToLocalWallTime(new Date(event.date), DEFAULT_CHAPTER_TIMEZONE);
-const endDateStr = utcToLocalWallTime(new Date(event.end_date), DEFAULT_CHAPTER_TIMEZONE);
+const timeZone = chapterTimezone(unwrapRelation(event.chapters)?.timezone);
+const dateStr = utcToLocalWallTime(new Date(event.date), timeZone);
+const endDateStr = utcToLocalWallTime(new Date(event.end_date), timeZone);
 
 const venue = unwrapRelation(event.venues);
 
@@ -42,6 +43,7 @@ const initialData: EventFormInitialData = {
   name: event.name,
   date: dateStr,
   endDate: endDateStr,
+  timeZone,
   slug: event.slug,
   isOnline: event.is_online,
   venueId: venue?.id,

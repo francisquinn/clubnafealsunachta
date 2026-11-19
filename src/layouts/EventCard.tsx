@@ -4,7 +4,7 @@ import LiveBadge from "../components/LiveBadge/LiveBadge";
 
 export default function EventCard({
   event,
-  dateFormatter = formatEventDate,
+  dateFormatter = (date) => formatEventDate(date, event.location.timezone),
   responsive = false,
 }: EventCardProps) {
   const href = `/${event.location.slug}/events/${event.slug}`;

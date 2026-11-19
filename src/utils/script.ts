@@ -1,11 +1,11 @@
 import type { Event } from "../types/types";
-import { DEFAULT_CHAPTER_TIMEZONE } from "../lib/chapterDefaults";
+import { chapterTimezone } from "../lib/chapterDefaults";
 
 // `timeZone` is optional so blog posts (the one remaining caller that
 // doesn't pass one) are unaffected — pass it explicitly for a date that must
 // read as a specific timezone's calendar day regardless of where the code
 // runs. Both event callers (the admin events list, and the public
-// past-events list in EventList.tsx) now pass DEFAULT_CHAPTER_TIMEZONE (#75:
+// past-events list in EventList.tsx) now pass the event's chapter zone (#75, #233:
 // rendering with no timeZone defaults to wherever the code executes — the
 // server's UTC runtime for the admin page, the visitor's own browser for the
 // client-hydrated public list — either of which can disagree with the
@@ -24,7 +24,8 @@ export function formatBlogDate(date: Date, timeZone?: string): string {
   return `${parts.month} ${parts.day}, ${parts.year}`;
 }
 
-// Always shown in the chapter's own local time (see DEFAULT_CHAPTER_TIMEZONE), not
+// Always shown in the chapter's own local time (`timeZone`, the event's chapter's
+// `timezone`; falls back to DEFAULT_CHAPTER_TIMEZONE), not
 // UTC and not the visitor's own timezone — a remote/online-event attendee in
 // another timezone still needs "Fri Sep 4 @ 18:30" to mean the same instant
 // as it does for a Trieste-based one. Previously read getUTCHours()/
@@ -32,10 +33,10 @@ export function formatBlogDate(date: Date, timeZone?: string): string {
 // separate storage bug (see timezone.ts) that stored the local wall-clock
 // digits mislabeled as UTC — now that storage holds the true UTC instant,
 // this has to do the real timezone conversion instead.
-export function formatEventDate(date: Date): string {
+export function formatEventDate(date: Date, timeZone?: string | null): string {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {
-      timeZone: DEFAULT_CHAPTER_TIMEZONE,
+      timeZone: chapterTimezone(timeZone),
       weekday: "short",
       month: "short",
       day: "numeric",
@@ -55,10 +56,10 @@ export function formatEventDate(date: Date): string {
 // formatEventDate's start — e.g. "Fri Sep 4 @ 18:30–20:00". A bare end time
 // reads fine here since it's always the same calendar day as the start (see
 // the 20260914120000 migration's backfill and EventForm's default).
-export function formatEventEndTime(date: Date): string {
+export function formatEventEndTime(date: Date, timeZone?: string | null): string {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {
-      timeZone: DEFAULT_CHAPTER_TIMEZONE,
+      timeZone: chapterTimezone(timeZone),
       hour: "numeric",
       minute: "2-digit",
       hour12: false,

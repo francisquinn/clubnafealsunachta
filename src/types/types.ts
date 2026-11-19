@@ -10,6 +10,7 @@ export type Event = {
     id: number;
     name: string;
     slug: string;
+    timezone?: string;
   };
   isOnline: boolean;
   venue: {

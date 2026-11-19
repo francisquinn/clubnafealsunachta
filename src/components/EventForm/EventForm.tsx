@@ -16,6 +16,8 @@ export type EventFormInitialData = {
   name: string;
   date: string;
   endDate: string;
+  // The zone `date`/`endDate` are shown in: the event's current chapter's.
+  timeZone?: string;
   slug: string;
   isOnline?: boolean;
   venueId?: number;
@@ -166,6 +168,11 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
           onChange={handleDateChange}
           required
         />
+        <small className="cnf-form__hint">
+          {initialData?.timeZone
+            ? `Times are in ${initialData.timeZone}, this event's current chapter's local time, even if you change the venue.`
+            : "Times are in the local time of the event's chapter."}
+        </small>
       </div>
 
       <div className="cnf-form__group">

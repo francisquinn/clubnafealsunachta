@@ -19,7 +19,9 @@ vi.mock("../UpcomingEvent", () => ({
 }));
 
 vi.mock("../../layouts/EventCard", () => ({
-  default: ({ event }: { event: { name: string } }) => <div data-testid="past-event">{event.name}</div>,
+  default: ({ event, dateFormatter }: { event: { name: string; date: Date }; dateFormatter?: (date: Date) => string }) => (
+    <div data-testid="past-event" data-date={dateFormatter?.(new Date(event.date))}>{event.name}</div>
+  ),
 }));
 
 vi.mock("../../styles/event.css", () => ({}));
@@ -110,6 +112,18 @@ describe("EventList", () => {
       renderList(events);
       fireEvent.click(screen.getByText("Past"));
       expect(screen.getByTestId("past-event")).toBeInTheDocument();
+    });
+
+    it("formats a past event's date in its chapter's timezone (#233)", () => {
+      // 20:00 UTC on Jan 1 is still Jan 1 in Rome (21:00) but Jan 2 in Tokyo.
+      const date = new Date("2020-01-01T20:00:00Z");
+      const rome = makeEvent("Rome event", date);
+      const tokyo = makeEvent("Tokyo event", date);
+      tokyo.data.location.timezone = "Asia/Tokyo";
+      renderList([rome, tokyo]);
+      fireEvent.click(screen.getByText("Past"));
+      const dates = Object.fromEntries(screen.getAllByTestId("past-event").map((el) => [el.textContent, el.getAttribute("data-date")]));
+      expect(dates).toEqual({ "Rome event": "Jan 1, 2020", "Tokyo event": "Jan 2, 2020" });
     });
 
     it("sorts past events newest first", () => {

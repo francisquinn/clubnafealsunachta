@@ -1,7 +1,7 @@
 // Every event time is entered via a `type="datetime-local"` input, which
 // produces a naive "YYYY-MM-DDTHH:mm" string with no timezone info at all —
 // the organizer's intent is always that chapter's own local wall-clock time
-// (see DEFAULT_CHAPTER_TIMEZONE), never UTC and never the visitor's own zone.
+// (its `timezone`, see chapterTimezone), never UTC and never the visitor's own zone.
 // These two functions are the only place that boundary is crossed: one
 // direction when a form value is written to the (true-UTC) `date` column,
 // the other when a stored UTC instant needs to be shown as, or re-edited as,
@@ -62,7 +62,7 @@ function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
 // boundaries. Looped to a fixed point (capped, so a `timeZone` with back-to-
 // back transitions can't spin forever) rather than a single correction pass,
 // since this is a general-purpose function taking an arbitrary IANA zone, not
-// just DEFAULT_CHAPTER_TIMEZONE's simple 1-hour Europe/Rome rule. Like any
+// just the default chapter zone's simple 1-hour Europe/Rome rule. Like any
 // conversion using this trick, the one genuinely ambiguous hour during a
 // "fall back" transition (which wall-clock time maps to two different UTC
 // instants) still isn't uniquely resolvable — fine here, nobody's scheduling

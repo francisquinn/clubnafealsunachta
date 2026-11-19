@@ -33,6 +33,7 @@ const event = defineCollection({
       id: z.number(),
       name: z.string(),
       slug: z.string(),
+      timezone: z.string().optional(),
     }),
     isOnline: z.boolean(),
     venue: z.object({
