@@ -1,0 +1,33 @@
+name: Report a website issue
+description: Something on the Club na Fealsúnachta website isn't working or looks wrong.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **This report will be public on GitHub.** Please don't include personal details such as your email address or password. For anything private, use the [contact form](https://clubnafealsunachta.com/contact) instead.
+  - type: input
+    id: page
+    attributes:
+      label: Which page?
+      description: The page where you noticed the problem.
+      placeholder: /trieste/events/
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      description: Optional, e.g. iPhone Safari, Windows Chrome.

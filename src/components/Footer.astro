@@ -1,6 +1,7 @@
 ---
-import { DONATE_URL } from "../lib/links";
+import { DONATE_URL, REPORT_ISSUE_URL } from "../lib/links";
 const year = new Date().getFullYear();
+const reportIssueUrl = `${REPORT_ISSUE_URL}&page=${encodeURIComponent(Astro.url.pathname)}`;
 ---
 
 <style>
@@ -74,6 +75,13 @@ const year = new Date().getFullYear();
     <a href="https://www.threads.net/@clubnafealsunachta" target="_blank">
       <img class="cnf-footer__social-svg" src="/threads.svg" /></a
     >
+  </div>
+
+  <div class="cnf-footer__sign">
+    <a href={reportIssueUrl} target="_blank" rel="noopener">
+      Report a bug
+      <img class="cnf-footer__icon" src="/link.svg" />
+    </a>
   </div>
 
   <div class="cnf-footer__sign">
