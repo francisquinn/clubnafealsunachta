@@ -25,6 +25,10 @@
   margin-bottom: 1.5rem;
 }
 
+.cnf-admin-empty {
+  color: hsl(var(--color-grey));
+}
+
 .cnf-admin-table {
   width: 100%;
   border-collapse: collapse;

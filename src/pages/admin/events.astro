@@ -5,7 +5,7 @@ import { supabaseAdmin } from "../../lib/supabase";
 import { requireAdmin, scopeToAdminChapters } from "../../lib/auth";
 import { unwrapRelation } from "../../lib/supabaseRelations";
 import { formatBlogDate } from "../../utils/script";
-import { DEFAULT_CHAPTER_TIMEZONE } from "../../lib/chapterDefaults";
+import { chapterTimezone } from "../../lib/chapterDefaults";
 
 // #37: scoped to the caller's chapters, so this can no longer read from the
 // events content collection (its loader drops chapter_id) - queries Supabase
@@ -13,20 +13,22 @@ import { DEFAULT_CHAPTER_TIMEZONE } from "../../lib/chapterDefaults";
 const admin = (await requireAdmin(Astro.request))!;
 
 const query = scopeToAdminChapters(
-  supabaseAdmin!.from("events").select("name, date, slug, is_online, chapter_id, venues(name)").order("date", { ascending: false }),
+  supabaseAdmin!.from("events").select("name, date, slug, is_online, chapter_id, venues(name), chapters(timezone)").order("date", { ascending: false }),
   admin,
   "chapter_id"
 );
 const { data, error } = await query;
-// Fails to an empty list rather than crashing the whole admin dashboard on a
-// transient Supabase error - this is a read-only listing, not a single
-// record the page can't render without.
+// Falls back to an empty list (shown as "couldn't load", not "no events")
+// rather than crashing the whole admin dashboard on a transient Supabase
+// error - this is a read-only listing, not a single record the page can't
+// render without.
 if (error) console.error("Failed to load admin events list:", error.message);
 
 const sorted = (data ?? []).map((event) => ({
   ...event,
   date: new Date(event.date),
   venue: unwrapRelation(event.venues),
+  timezone: chapterTimezone(unwrapRelation(event.chapters)?.timezone),
 }));
 ---
 
@@ -38,6 +40,11 @@ const sorted = (data ?? []).map((event) => ({
         <span class="cnf-button__text">Create event</span>
       </a>
     </div>
+    {error ? (
+      <p class="cnf-admin-empty">Couldn't load the events. Please try again.</p>
+    ) : sorted.length === 0 ? (
+      <p class="cnf-admin-empty">No events yet. Use "Create event" to add the first one.</p>
+    ) : (
     <table class="cnf-admin-table">
       <thead>
         <tr>
@@ -51,13 +58,14 @@ const sorted = (data ?? []).map((event) => ({
         {sorted.map((event) => (
           <tr>
             <td data-label="Name">{event.name}</td>
-            <td data-label="Date">{formatBlogDate(event.date, DEFAULT_CHAPTER_TIMEZONE)}</td>
+            <td data-label="Date">{formatBlogDate(event.date, event.timezone)}</td>
             <td data-label="Location">{event.is_online ? "Online" : event.venue?.name ?? "—"}</td>
             <td><a href={`/admin/events/${event.slug}/edit`}>Edit</a></td>
           </tr>
         ))}
       </tbody>
     </table>
+    )}
 
   </section>
 </AdminLayout>

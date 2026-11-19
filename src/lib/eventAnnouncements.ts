@@ -8,6 +8,7 @@ import {
 } from "./emailTemplate";
 import { supabaseAdmin } from "./supabase";
 import { unwrapRelation } from "./supabaseRelations";
+import { chapterTimezone } from "./chapterDefaults";
 
 // #205: emails each newly live event to its chapter's opted-in members.
 // Runs after every successful deploy (netlify/functions/deploy-succeeded), so
@@ -94,7 +95,7 @@ function toAnnouncement(event: ClaimedEvent, origin: string): Omit<EventAnnounce
   return {
     chapterName: chapter.name,
     eventName: event.name,
-    when: formatAnnouncementWhen(new Date(event.date), chapter.timezone),
+    when: formatAnnouncementWhen(new Date(event.date), chapterTimezone(chapter.timezone)),
     place: event.is_online
       ? { kind: "online", meetingUrl: event.meeting_url }
       : venue

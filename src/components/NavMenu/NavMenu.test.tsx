@@ -226,6 +226,26 @@ describe("NavMenu", () => {
     expect(screen.getByRole("link", { name: "Events" })).toHaveAttribute("href", "/some-chapter/events/");
   });
 
+  it("points Events at the current chapter on the chapter's own page", () => {
+    render(<NavMenu pathname="/online/" activeNav="chapters" />);
+
+    expect(screen.getByRole("link", { name: "Events" })).toHaveAttribute("href", "/online/events/");
+  });
+
+  it("ignores a chapter-looking URL on the 404 page, which is whatever was typed", () => {
+    render(<NavMenu pathname="/foo/events/bar" activeNav="not-found" />);
+
+    const events = screen.getByRole("link", { name: "Events" });
+    expect(events).toHaveAttribute("href", `/${DEFAULT_CHAPTER_SLUG}/events/`);
+    expect(events).not.toHaveClass("tab-active");
+  });
+
+  it("doesn't mistake other top-level pages for chapters", () => {
+    render(<NavMenu pathname="/blog/" />);
+
+    expect(screen.getByRole("link", { name: "Events" })).toHaveAttribute("href", `/${DEFAULT_CHAPTER_SLUG}/events/`);
+  });
+
   it("falls back to the default chapter's events elsewhere", () => {
     render(<NavMenu pathname="/profile/eventsguy" />);
 

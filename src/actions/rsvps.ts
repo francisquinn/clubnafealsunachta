@@ -20,6 +20,9 @@ type RsvpRow = {
   // built state never holds a row whose member came back null (a deleted
   // member would leave a dangling FK unless the FK's ON DELETE CASCADE ran).
   members: RsvpMember;
+  // When the member last set this status (#206: lists show newest first).
+  // Nullable in the schema, though the column defaults to now().
+  updated_at: string | null;
 };
 
 // Resolves an event from its slug, rejecting unknown slugs up front so a
@@ -48,7 +51,7 @@ function hideUnsharedFullName(member: RsvpMember | null): RsvpMember | null {
 async function fetchRsvpRows(eventId: number): Promise<RsvpRow[]> {
   const { data, error } = await supabaseAdmin!
     .from('rsvps')
-    .select('member_id, status, members(id, username, full_name, display_full_name, avatar_url)')
+    .select('member_id, status, updated_at, members(id, username, full_name, display_full_name, avatar_url)')
     .eq('event_id', eventId);
 
   if (error) {
@@ -63,6 +66,7 @@ async function fetchRsvpRows(eventId: number): Promise<RsvpRow[]> {
     .map((row) => ({
       member_id: row.member_id,
       status: row.status,
+      updated_at: row.updated_at ?? null,
       members: hideUnsharedFullName(unwrapRelation<RsvpMember>(row.members)),
     }))
     .filter(
@@ -84,19 +88,30 @@ function buildRsvpState(rows: RsvpRow[], memberId: string | null): RsvpState {
     : null;
   let myStatus: RsvpStatus | null = null;
 
-  for (const row of rows) {
+  // #206: newest RSVP first, so recent sign-ups are at the top of each list.
+  // A row without a timestamp goes last; ties fall back to display name so
+  // the order stays deterministic.
+  const sorted = lists ? [...rows].sort(byNewestRsvp) : rows;
+
+  for (const row of sorted) {
     counts[row.status] += 1;
     if (lists) lists[row.status].push(row.members);
     if (row.member_id === memberId) myStatus = row.status;
   }
 
-  if (lists) {
-    for (const status of Object.keys(lists) as RsvpStatus[]) {
-      lists[status].sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)));
-    }
-  }
-
   return { counts, myStatus, lists };
+}
+
+function rsvpTime(row: RsvpRow): number {
+  const time = row.updated_at ? Date.parse(row.updated_at) : NaN;
+  return Number.isNaN(time) ? -Infinity : time;
+}
+
+function byNewestRsvp(a: RsvpRow, b: RsvpRow): number {
+  const aTime = rsvpTime(a);
+  const bTime = rsvpTime(b);
+  if (aTime !== bTime) return bTime > aTime ? 1 : -1;
+  return getDisplayName(a.members).localeCompare(getDisplayName(b.members));
 }
 
 // The one write path for "member_id's status on event_id is X" — an upsert

@@ -192,3 +192,37 @@ export function buildGoogleCalendarUrl(event: EventIcsData): string {
 
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
+
+// Outlook's add-event deep link takes ISO 8601 UTC times (2026-09-05T17:00:00Z).
+// Derived from formatIcsDateTime rather than toISOString so a bad date yields
+// a broken link, like the Google one, instead of throwing during render.
+function formatOutlookDateTime(date: Date): string {
+  return formatIcsDateTime(date).replace(
+    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/,
+    "$1-$2-$3T$4:$5:$6Z"
+  );
+}
+
+// #207: Outlook on the web's "new event" deep link, prefilled like the Google
+// one (title, UTC start/end, location, description). It targets
+// outlook.live.com (personal accounts); work/school accounts and desktop
+// Outlook use the .ics download instead. Microsoft doesn't document this
+// link, so the format is the one in common use. Spaces go as %20, not the "+"
+// URLSearchParams would write, so no client has to guess how to read them.
+export function buildOutlookCalendarUrl(event: EventIcsData): string {
+  const { start, end } = getEventBounds(event);
+  const location = buildEventLocation(event);
+  const description = combineDescription(event);
+
+  const params = new URLSearchParams({
+    path: "/calendar/action/compose",
+    rru: "addevent",
+    subject: event.name,
+    startdt: formatOutlookDateTime(start),
+    enddt: formatOutlookDateTime(end),
+  });
+  if (description) params.set("body", description);
+  if (location) params.set("location", location);
+
+  return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString().replace(/\+/g, "%20")}`;
+}

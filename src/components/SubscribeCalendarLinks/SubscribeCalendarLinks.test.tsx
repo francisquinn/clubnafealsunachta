@@ -31,6 +31,28 @@ describe("SubscribeCalendarLinks", () => {
     );
   });
 
+  it("links Outlook to its add-from-web screen with the https feed and a name", () => {
+    render(<SubscribeCalendarLinks feedUrl={FEED_URL} chapterName="Trieste" />);
+    const link = screen.getByRole("link", { name: /outlook/i });
+    const url = new URL(link.getAttribute("href")!);
+    expect(url.origin + url.pathname).toBe("https://outlook.live.com/calendar/0/addfromweb");
+    // Outlook subscribes over https, not webcal.
+    expect(url.searchParams.get("url")).toBe(FEED_URL);
+    expect(url.searchParams.get("name")).toBe("Club na Fealsúnachta Trieste");
+    expect(link.getAttribute("href")).not.toContain("+");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
+  });
+
+  it("keeps Google, Apple and Outlook in that order", () => {
+    render(<SubscribeCalendarLinks feedUrl={FEED_URL} chapterName="Trieste" />);
+    expect(screen.getAllByRole("link").map((a) => a.textContent)).toEqual([
+      "Google Calendar",
+      "Apple Calendar",
+      "Outlook",
+    ]);
+  });
+
   it("turns an http:// feed URL into webcal:// too", () => {
     render(<SubscribeCalendarLinks feedUrl="http://localhost:4321/trieste/events.ics" chapterName="Trieste" />);
     expect(screen.getByRole("link", { name: /apple calendar/i })).toHaveAttribute(
