@@ -9,16 +9,17 @@
 export const prerender = false;
 
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { DEFAULT_CHAPTER_SLUG } from "../lib/chapterDefaults";
 
 const pageTitle = "Page does not exist";
 ---
 
-<BaseLayout pageTitle={pageTitle} description="This page doesn't exist on the Club na Fealsúnachta website.">
+<BaseLayout pageTitle={pageTitle} activeNav="not-found" description="This page doesn't exist on the Club na Fealsúnachta website.">
   <meta slot="head" name="robots" content="noindex" />
   <section class="cnf-section cnf-not-found">
     <h1>{pageTitle}</h1>
     <p>We couldn't find the page you were looking for. It may have moved, or the link may be wrong.</p>
-    <p><a href="/">Go to the homepage</a></p>
+    <p><a href="/">Go to the homepage</a> or <a href={`/${DEFAULT_CHAPTER_SLUG}/events/`}>see our events</a></p>
   </section>
 </BaseLayout>
 

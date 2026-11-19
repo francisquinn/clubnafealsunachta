@@ -6,8 +6,10 @@ import { DEFAULT_CHAPTER_SLUG } from "../../lib/chapterDefaults";
 interface NavMenuProps {
   pathname: string;
   // For a page whose URL doesn't show its section, e.g. a chapter's own page
-  // at /<chapter>/, which belongs under Chapters.
-  activeNav?: "chapters";
+  // at /<chapter>/, which belongs under Chapters. "not-found" is the 404 page,
+  // whose URL is whatever the visitor typed, so the nav must not read a
+  // chapter or a section from it.
+  activeNav?: "chapters" | "not-found";
 }
 
 // #39: matches /[chapterSlug]/events or /[chapterSlug]/events/... — the `(\/|$)`
@@ -28,8 +30,10 @@ export default function NavMenu({ pathname, activeNav }: NavMenuProps) {
   // (a bare /<chapter>/ path can't be told apart from /blog/ or /profile/).
   // Everywhere else there's no chapter to read, so Events falls back to the
   // default chapter.
+  const onNotFound = activeNav === "not-found";
+  const eventsPathSlug = onNotFound ? undefined : pathname.match(CHAPTER_EVENTS_PATH)?.[1];
   const chapterPageSlug = activeNav === "chapters" ? pathname.split("/")[1] : undefined;
-  const currentChapterSlug = pathname.match(CHAPTER_EVENTS_PATH)?.[1] ?? (chapterPageSlug || DEFAULT_CHAPTER_SLUG);
+  const currentChapterSlug = eventsPathSlug ?? (chapterPageSlug || DEFAULT_CHAPTER_SLUG);
   const [isOpen, setIsOpen] = useState(false);
   const handleOpenChange = useCallback((open: boolean) => setIsOpen(open), []);
 
@@ -106,7 +110,7 @@ export default function NavMenu({ pathname, activeNav }: NavMenuProps) {
             Chapters
           </a>
           <a
-            className={`cnf-nav__link ${CHAPTER_EVENTS_PATH.test(pathname) ? "tab-active" : ""}`}
+            className={`cnf-nav__link ${eventsPathSlug ? "tab-active" : ""}`}
             href={`/${currentChapterSlug}/events/`}
           >
             Events
