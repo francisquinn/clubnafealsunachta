@@ -64,7 +64,7 @@ function valueImports(file: string): string[] {
   const specs: string[] = [];
   for (const match of source.matchAll(IMPORT_RE)) {
     if (match[1]) continue; // `import type` / `export type`
-    specs.push(match[2]);
+    specs.push(match[2]!); // group 2 (the path) isn't optional in IMPORT_RE
   }
   return specs;
 }
